@@ -16,6 +16,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { connectSocket, emitLocation, startTracking as startTrackingSession, stopTracking, disconnectSocket } from '../services/socket';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
+import { getConnectionState, onConnectionStateChange } from '../services/socket';
 import ShiftBusIcon from '../components/ShiftBusIcon';
 
 const DriverDashboard = ({ navigation }) => {
@@ -26,14 +27,19 @@ const DriverDashboard = ({ navigation }) => {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const locationSubscription = useRef(null);
+    const [socketState, setSocketState] = useState(getConnectionState());
 
   useEffect(() => {
     loadBusInfo();
     if (token) {
       connectSocket(token);
     }
+      const unsubscribe = onConnectionStateChange((newState) => {
+        setSocketState(newState);
+      });
 
     return () => {
+        unsubscribe();
       if (locationSubscription.current) {
         locationSubscription.current.remove();
       }
@@ -179,9 +185,9 @@ const DriverDashboard = ({ navigation }) => {
           <View style={styles.statusHeader}>
             <View style={styles.statusIndicator}>
               <View style={[styles.pulseDot, isTracking ? styles.pulseDotActive : styles.pulseDotInactive]} />
-              <Text style={styles.statusLabel}>
-                {isTracking ? 'Currently On Journey' : 'Standby Mode'}
-              </Text>
+                <Text style={styles.statusLabel}>
+                  {isTracking ? 'Currently On Journey' : socketState.status === 'connecting' ? 'Connecting to server...' : 'Standby Mode'}
+                </Text>
             </View>
             <View style={[styles.typeBadge, { backgroundColor: isTracking ? `${COLORS.primary}20` : '#f3f4f6' }]}>
                <Text style={[styles.typeText, { color: isTracking ? COLORS.primary : COLORS.textSecondary }]}>

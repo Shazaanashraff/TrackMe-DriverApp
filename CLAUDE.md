@@ -117,3 +117,10 @@ Tests live next to the code they test in `__tests__/` subdirectories.
 
 `src/config.js` exports `API_BASE_URL`. Update for local dev vs. production.
 The backend health endpoint is `GET /health`.
+
+---
+
+## Testing policy (no untested code)
+- Any feature or behavior change must add unit tests for new or changed helpers and components.
+- Any backend contract change requires updated integration tests and a new row in docs/TESTING_GUIDE.md.
+- Keep test:unit and test:e2e green before marking work done.

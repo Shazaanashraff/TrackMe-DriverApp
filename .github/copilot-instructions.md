@@ -134,3 +134,10 @@ Only `driver` role users may log in — enforced in `LoginScreen`.
 - Always use existing UI components from `src/components/ui/` before creating new ones.
 - Use `COLORS`, `FONTS`, `SPACING`, `BORDER_RADIUS` from `src/constants/theme.js` — no inline magic numbers.
 - Do not add comments that explain *what* the code does — only add them when the *why* is non-obvious.
+
+---
+
+## Testing policy (no untested code)
+- Any feature or behavior change must add unit tests for new or changed helpers and components.
+- Any backend contract change requires updated integration tests and a new row in docs/TESTING_GUIDE.md.
+- Keep test:unit and test:e2e green before marking work done.
