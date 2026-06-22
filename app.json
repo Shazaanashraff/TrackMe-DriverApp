@@ -35,7 +35,7 @@
     "web": {
       "name": "TrackMe",
       "shortName": "TrackMe",
-      "favicon": "./assets/trackme-favicon.svg"
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-font"
