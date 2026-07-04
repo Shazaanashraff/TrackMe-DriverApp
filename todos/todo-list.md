@@ -29,7 +29,7 @@ not-blocked rows whose `Dep` are all `[x]`. Spec in `active/NNN-slug.md`. Tick `
 | [x] | 016 | hooks-earnings | P1 | 010,011,012 | stats/history/dailyBreakdown queries + useRequestPayout | done: 2026-07-04 |
 | [x] | 017 | socket-service-typed | P1 | 005 | typed services/socket.ts (emitLocation/start/stop + state) | done: 2026-07-04 |
 | [x] | 018 | use-tracking-session | P1 | 017 | useTrackingSession: start/stop lifecycle + acks | done: 2026-07-04 |
-| [ ] | 019 | use-location-broadcast | P1 | 008,017,018 | watch→throttle/batch→emit; permissions; offline buffer |
+| [x] | 019 | use-location-broadcast | P1 | 008,017,018 | watch→throttle/batch→emit; permissions; offline buffer | done: 2026-07-04 |
 
 ## Phase 2 — UI restructure + error UX (P2, behavior-preserving)
 | ✓ | ID | Slug | Pri | Dep | One-line |
