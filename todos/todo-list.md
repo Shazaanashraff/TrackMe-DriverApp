@@ -8,7 +8,7 @@ not-blocked rows whose `Dep` are all `[x]`. Spec in `active/NNN-slug.md`. Tick `
 | ✓ | ID | Slug | Pri | Dep | One-line |
 |---|----|------|-----|-----|----------|
 | [x] | 001 | typescript-config | P1 | — | tsconfig (allowJs, strict) + typecheck | done: 2026-07-04 |
-| [ ] | 002 | jest-config-ts-coverage | P1 | 001 | Jest TS, test:unit, coverage thresholds, RTL setup |
+| [x] | 002 | jest-config-ts-coverage | P1 | 001 | Jest TS, test:unit, coverage thresholds, RTL setup | done: 2026-07-04 |
 | [ ] | 003 | eslint-config-layering | P1 | 001 | ESLint + lint; no api./fetch(/watchPositionAsync in screens |
 | [ ] | 004 | path-aliases-and-folders | P1 | 001 | aliases + features/ + hooks/ + services/api skeleton |
 | [ ] | 005 | errors-lib | P1 | 001,002 | lib/errors.ts (+permission/tracking kinds) + tests |
