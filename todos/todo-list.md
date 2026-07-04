@@ -23,7 +23,7 @@ not-blocked rows whose `Dep` are all `[x]`. Spec in `active/NNN-slug.md`. Tick `
 | [x] | 010 | react-query-provider | P1 | 001,002,004 | TanStack Query provider + AsyncStorage persister | done: 2026-07-04 |
 | [x] | 011 | api-transport-refactor | P1 | 001,005 | transport (timeout/size/single-read, **preserve code**), authHeaders, split endpoints | done: 2026-07-04 |
 | [x] | 012 | query-keys-registry | P1 | 001 | lib/queryKeys.ts | done: 2026-07-04 |
-| [ ] | 013 | hooks-auth | P1 | 010,011,012 | useLogin (driver-gated), useRegister, useLogout |
+| [x] | 013 | hooks-auth | P1 | 010,011,012 | useLogin (driver-gated), useRegister, useLogout | done: 2026-07-04 |
 | [ ] | 014 | hooks-bus | P1 | 010,011,012 | useMyBusQuery, useRegisterBus, useUpdateBus |
 | [ ] | 015 | hooks-routes | P1 | 010,011,012 | useRoutesQuery, useRoutesManagementQuery, useCreateRoute |
 | [ ] | 016 | hooks-earnings | P1 | 010,011,012 | stats/history/dailyBreakdown queries + useRequestPayout |
