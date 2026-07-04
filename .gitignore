@@ -1,3 +1,14 @@
 node_modules
 .expo
 dist
+web-build
+coverage
+.env
+*.log
+.DS_Store
+ios
+android
+
+# Maestro artifacts
+.maestro/tests
+.maestro/output

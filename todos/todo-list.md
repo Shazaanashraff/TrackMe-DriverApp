@@ -13,7 +13,7 @@ not-blocked rows whose `Dep` are all `[x]`. Spec in `active/NNN-slug.md`. Tick `
 | [ ] | 004 | path-aliases-and-folders | P1 | 001 | aliases + features/ + hooks/ + services/api skeleton |
 | [ ] | 005 | errors-lib | P1 | 001,002 | lib/errors.ts (+permission/tracking kinds) + tests |
 | [ ] | 006 | maestro-setup | P1 | — | Maestro, .maestro/, test:e2e, smoke flow |
-| [ ] | 007 | env-gitignore-doc-drift | P1 | — | add .gitignore + .env.example; fix CLAUDE.md (API_URL, socket names) |
+| [x] | 007 | env-gitignore-doc-drift | P1 | — | add .gitignore + .env.example; fix CLAUDE.md (API_URL, socket names) | done: 2026-07-04 |
 | [ ] | 008 | helper-locationutils | P1 | 001,002 | helpers/locationUtils (distance/throttle/coord) + tests |
 | [ ] | 009 | helper-earnings | P2 | 001,002 | earnings derive/format helpers + tests |
 
