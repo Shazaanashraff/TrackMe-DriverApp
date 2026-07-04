@@ -1,4 +1,3 @@
-// @ts-ignore -- geo.js is untyped (allowJs); haversineMeters is the canonical distance formula.
 import { haversineMeters } from './geo';
 
 export interface LocationFix {
