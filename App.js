@@ -5,6 +5,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { AuthProvider } from './src/context/AuthContext';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 import AppNavigator from './src/navigation/AppNavigator';
 import * as notificationService from './src/services/notificationService';
 import { View } from 'react-native';
@@ -54,14 +55,16 @@ function AppContent() {
 
   return (
     <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
-      <NavigationContainer
-        documentTitle={{
-          formatter: () => 'TrackMe'
-        }}
-      >
-        <StatusBar style="dark" />
-        <AppNavigator backendOnline={backendOnline} />
-      </NavigationContainer>
+      <ErrorBoundary>
+        <NavigationContainer
+          documentTitle={{
+            formatter: () => 'TrackMe'
+          }}
+        >
+          <StatusBar style="dark" />
+          <AppNavigator backendOnline={backendOnline} />
+        </NavigationContainer>
+      </ErrorBoundary>
     </View>
   );
 }

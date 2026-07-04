@@ -34,7 +34,7 @@ not-blocked rows whose `Dep` are all `[x]`. Spec in `active/NNN-slug.md`. Tick `
 ## Phase 2 — UI restructure + error UX (P2, behavior-preserving)
 | ✓ | ID | Slug | Pri | Dep | One-line |
 |---|----|------|-----|-----|----------|
-| [ ] | 020 | error-ux-components | P2 | 002,005 | InlineError, ErrorState, OfflineBanner, ErrorBoundary, tracking/permission states |
+| [x] | 020 | error-ux-components | P2 | 002,005 | InlineError, ErrorState, OfflineBanner, ErrorBoundary, tracking/permission states | done: 2026-07-04 |
 | [ ] | 021 | migrate-login-screen | P2 | 013,020 | Login → useLogin + role-gate + inline errors |
 | [ ] | 022 | split-driver-dashboard | P2 | 014,018,019,020 | features/dashboard/* + tracking hooks; ≤250 LOC; no GPS in screen |
 | [ ] | 023 | split-driver-earnings | P2 | 016,020 | features/earnings/* ; ≤250 LOC |
