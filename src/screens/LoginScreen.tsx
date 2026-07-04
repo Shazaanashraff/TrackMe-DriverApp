@@ -2,56 +2,51 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  Alert,
   StyleSheet,
   ScrollView,
   StatusBar,
   KeyboardAvoidingView,
-  Platform
+  Platform,
 } from 'react-native';
-import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import { useLogin } from '../hooks/auth';
+import { AppError, normalizeError } from '../lib/errors';
 import { COLORS, FONTS, SPACING, SHADOWS } from '../constants/theme';
 import ShiftBusIcon from '../components/ShiftBusIcon';
 import FormInput from '../components/ui/FormInput';
 import PrimaryButton from '../components/ui/PrimaryButton';
+import InlineError from '../components/ui/InlineError';
+import ErrorState from '../components/ui/ErrorState';
+
+function asAppError(error: unknown): AppError {
+  return error instanceof AppError ? error : normalizeError(error);
+}
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const login = useLogin();
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
+  const handleLogin = () => {
+    setEmailError(null);
+    setPasswordError(null);
+
+    let hasError = false;
+    if (!email) {
+      setEmailError('Email is required');
+      hasError = true;
     }
-
-    setLoading(true);
-    try {
-      const response = await api.login(email, password);
-      const { user, accessToken, refreshToken } = response;
-
-      if (user.role !== 'driver') {
-        Alert.alert('Error', 'This app is for drivers only');
-        return;
-      }
-
-      await login(
-        { _id: user._id, name: user.name, email: user.email, role: user.role },
-        accessToken,
-        refreshToken
-      );
-    } catch (error) {
-      if (error?.isBackendConnectionError) {
-        return;
-      }
-
-      Alert.alert('Login Failed', error.message);
-    } finally {
-      setLoading(false);
+    if (!password) {
+      setPasswordError('Password is required');
+      hasError = true;
+    } else if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      hasError = true;
     }
+    if (hasError) return;
+
+    login.mutate({ email, password });
   };
 
   return (
@@ -83,6 +78,7 @@ const LoginScreen = () => {
             keyboardType="email-address"
             autoCapitalize="none"
           />
+          <InlineError message={emailError} />
 
           <FormInput
             label="Password"
@@ -92,11 +88,16 @@ const LoginScreen = () => {
             placeholder="••••••••"
             secureTextEntry
           />
+          <InlineError message={passwordError} />
+
+          {login.isError && (
+            <ErrorState error={asAppError(login.error)} variant="compact" />
+          )}
 
           <PrimaryButton
             title="Sign In"
             onPress={handleLogin}
-            loading={loading}
+            loading={login.isPending}
             style={styles.loginButton}
           />
 
@@ -116,16 +117,16 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background
+    backgroundColor: COLORS.background,
   },
   scrollContent: {
     flexGrow: 1,
     padding: SPACING.lg,
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
   headerContainer: {
     alignItems: 'center',
-    marginBottom: SPACING.xl
+    marginBottom: SPACING.xl,
   },
   logoCircle: {
     width: 98,
@@ -135,56 +136,56 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: SPACING.md,
-    ...SHADOWS.md
+    ...SHADOWS.md,
   },
   logoText: {
     fontSize: 34,
     fontFamily: FONTS.bold,
     color: COLORS.secondary,
-    letterSpacing: -1
+    letterSpacing: -1,
   },
   welcomeText: {
     fontSize: 24,
     fontFamily: FONTS.bold,
     color: COLORS.secondary,
-    marginTop: SPACING.xs
+    marginTop: SPACING.xs,
   },
   subText: {
     fontSize: 15,
     fontFamily: FONTS.medium,
     color: COLORS.textSecondary,
-    marginTop: 4
+    marginTop: 4,
   },
   form: {
-    width: '100%'
+    width: '100%',
   },
   loginButton: {
     backgroundColor: COLORS.primary,
-    ...SHADOWS.md
+    ...SHADOWS.md,
   },
   dividerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: SPACING.xl
+    marginVertical: SPACING.xl,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: COLORS.border
+    backgroundColor: COLORS.border,
   },
   dividerText: {
     color: COLORS.textSecondary,
     paddingHorizontal: 16,
     fontSize: 12,
-    fontFamily: FONTS.medium
+    fontFamily: FONTS.medium,
   },
   hint: {
     textAlign: 'center',
     color: COLORS.textSecondary,
     fontSize: 11,
     fontFamily: FONTS.medium,
-    opacity: 0.6
-  }
+    opacity: 0.6,
+  },
 });
 
 export default LoginScreen;

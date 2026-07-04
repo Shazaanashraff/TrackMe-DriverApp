@@ -32,7 +32,10 @@ export function useLogin() {
       // Driver role-gate: mirrors the current LoginScreen — reject and do not save
       // auth for non-driver accounts.
       if (user.role !== 'driver') {
-        throw new AppError('http', 'This app is for drivers only', { status: 403 });
+        throw new AppError('http', 'This app is for drivers only', {
+          status: 403,
+          code: 'NOT_A_DRIVER',
+        });
       }
 
       await login(
