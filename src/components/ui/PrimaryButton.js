@@ -2,12 +2,13 @@ import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { COLORS, FONTS, BORDER_RADIUS } from '../../constants/theme';
 
-const PrimaryButton = ({ title, onPress, loading = false, disabled = false, style, textStyle }) => (
+const PrimaryButton = ({ title, onPress, loading = false, disabled = false, style, textStyle, testID }) => (
   <TouchableOpacity
     style={[styles.button, (loading || disabled) && styles.disabled, style]}
     onPress={onPress}
     disabled={loading || disabled}
     activeOpacity={0.8}
+    testID={testID}
   >
     {loading ? (
       <ActivityIndicator color={COLORS.white} />

@@ -44,6 +44,17 @@
 | backendStatus | unit | services/__tests__/backendStatus.test.ts | monitor, subscribe, patterns | health logic changes |
 | Offline cold start | e2e | .maestro/offline-*.yaml | cached + banner | offline behavior changes |
 
+## Custom Route Recording (school/work shuttles)
+| Item | Type | Test file | Cases | Update when |
+|---|---|---|---|---|
+| helpers/geo.js (haversine/distance/elapsed) | unit | src/helpers/__tests__/geo.test.js | distance calc, degenerate input, elapsed formatting | geo math changes |
+| CustomRouteRecorder | unit (Jest+RTL) | src/components/__tests__/CustomRouteRecorder.test.js | coach-mark first-run gating, Track/Add Stop/Complete state machine, breadcrumb accumulation + AsyncStorage persistence, crash/background recovery (resume/submit/discard), add-stop guards (no fix yet, too-close dedupe), record POST payload shape, **update mode** (Phase 2): update-specific copy, no onboarding tour, submits via recordRouteUpdate with routeId, mode-specific AsyncStorage buffer key | recording flow, coach-marks, update mode, or AsyncStorage buffer shape changes |
+| DriverDashboard — Update Route banner (Phase 2) | unit (Jest+RTL) | src/screens/__tests__/DriverDashboard.test.js | banner hidden for normal/no-flag routes, shown when an ACTIVE custom route has a pending change request, tapping it opens CustomRouteRecorder in update mode with the right routeId | off-route flag banner or Update Route entry point changes |
+
 ## Existing tests (keep green)
 - helpers/__tests__/formatters.test.js ✓
+- helpers/__tests__/geo.test.js ✓
 - components/ui/__tests__/components.test.js ✓
+- components/__tests__/CustomRouteRecorder.test.js ✓
+- screens/__tests__/DriverDashboard.test.js ✓
+- components/__tests__/CustomRouteRecorder.test.js ✓

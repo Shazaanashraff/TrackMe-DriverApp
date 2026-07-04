@@ -174,6 +174,52 @@ const api = {
       body: JSON.stringify({ bankAccount })
     });
     return parseResponse(response);
+  },
+
+  async getMyCustomRoute(token) {
+    const response = await requestJson(`${API_URL}/api/driver/custom-routes/my-route`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    return parseResponse(response);
+  },
+
+  async recordCustomRoute(token, { busId, breadcrumb, stops }) {
+    const response = await requestJson(`${API_URL}/api/driver/custom-routes/record`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ busId, breadcrumb, stops })
+    });
+    return parseResponse(response);
+  },
+
+  async reportJourney(token, { routeId, busId, breadcrumb }) {
+    const response = await requestJson(`${API_URL}/api/driver/custom-routes/${routeId}/report-journey`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ busId, breadcrumb })
+    });
+    return parseResponse(response);
+  },
+
+  async recordRouteUpdate(token, { routeId, busId, breadcrumb, stops }) {
+    const response = await requestJson(`${API_URL}/api/driver/custom-routes/${routeId}/record-update`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ busId, breadcrumb, stops })
+    });
+    return parseResponse(response);
   }
 };
 

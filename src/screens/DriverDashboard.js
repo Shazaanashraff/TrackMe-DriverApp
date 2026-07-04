@@ -12,12 +12,14 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import { CopilotProvider } from 'react-native-copilot';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { connectSocket, emitLocation, startTracking as startTrackingSession, stopTracking, disconnectSocket } from '../services/socket';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 import { getConnectionState, onConnectionStateChange } from '../services/socket';
 import ShiftBusIcon from '../components/ShiftBusIcon';
+import CustomRouteRecorder from '../components/CustomRouteRecorder';
 
 const DriverDashboard = ({ navigation }) => {
   const { user, token, logout, authenticatedRequest } = useAuth();
@@ -26,11 +28,15 @@ const DriverDashboard = ({ navigation }) => {
   const [currentLocation, setCurrentLocation] = useState(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [customRoute, setCustomRoute] = useState(null);
+  const [showUpdateRecorder, setShowUpdateRecorder] = useState(false);
   const locationSubscription = useRef(null);
+  const journeyBreadcrumbRef = useRef([]);
     const [socketState, setSocketState] = useState(getConnectionState());
 
   useEffect(() => {
     loadBusInfo();
+    loadCustomRouteInfo();
     if (token) {
       connectSocket(token);
     }
@@ -56,6 +62,23 @@ const DriverDashboard = ({ navigation }) => {
     }
   };
 
+  const loadCustomRouteInfo = async () => {
+    try {
+      const res = await authenticatedRequest(api.getMyCustomRoute);
+      setCustomRoute(res.data || res);
+    } catch (error) {
+      setCustomRoute(null);
+    }
+  };
+
+  // A custom-route driver whose route hasn't been recorded+named yet gets the
+  // map-free recorder instead of the normal Start/Stop Journey card.
+  const isPendingCustomRoute = customRoute?.isCustomRoute && customRoute?.status === 'PENDING_NAMING';
+  const isRecordedAwaitingNaming = isPendingCustomRoute && (customRoute?.stopsCount || 0) > 0;
+  // An ACTIVE custom route uses the normal journey flow, but every journey's
+  // breadcrumb is reported for off-route detection (Phase 2).
+  const isActiveCustomRoute = customRoute?.isCustomRoute && customRoute?.status === 'ACTIVE';
+
   const startTracking = async () => {
     if (!bus) {
       Alert.alert('Error', 'No bus assigned to you');
@@ -75,11 +98,13 @@ const DriverDashboard = ({ navigation }) => {
     }
 
     setIsTracking(true);
+    journeyBreadcrumbRef.current = [];
 
     try {
       const initial = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
       const { latitude, longitude } = initial.coords;
       setCurrentLocation({ lat: latitude, lng: longitude });
+      if (isActiveCustomRoute) journeyBreadcrumbRef.current.push({ lat: latitude, lng: longitude });
       emitLocation(
         bus.busId || bus._id,
         bus.routeId || bus.assignedRoute,
@@ -104,6 +129,7 @@ const DriverDashboard = ({ navigation }) => {
       (location) => {
         const { latitude, longitude } = location.coords;
         setCurrentLocation({ lat: latitude, lng: longitude });
+        if (isActiveCustomRoute) journeyBreadcrumbRef.current.push({ lat: latitude, lng: longitude });
         emitLocation(
           bus.busId || bus._id,
           bus.routeId || bus.assignedRoute,
@@ -119,6 +145,22 @@ const DriverDashboard = ({ navigation }) => {
     );
   };
 
+  const reportCompletedJourney = async () => {
+    if (!isActiveCustomRoute || journeyBreadcrumbRef.current.length < 2) return;
+    try {
+      const res = await authenticatedRequest(api.reportJourney, {
+        routeId: customRoute.routeId,
+        busId: bus.busId || bus._id,
+        breadcrumb: journeyBreadcrumbRef.current
+      });
+      if ((res.data || res)?.flagged) {
+        loadCustomRouteInfo();
+      }
+    } catch (error) {
+      console.log('Failed to report journey for off-route detection:', error?.message || error);
+    }
+  };
+
   const handleStopTracking = () => {
     if (locationSubscription.current) {
       locationSubscription.current.remove();
@@ -127,6 +169,8 @@ const DriverDashboard = ({ navigation }) => {
     if (bus) {
       stopTracking(bus.busId || bus._id);
     }
+    reportCompletedJourney();
+    journeyBreadcrumbRef.current = [];
     setIsTracking(false);
     setCurrentLocation(null);
   };
@@ -180,55 +224,99 @@ const DriverDashboard = ({ navigation }) => {
         contentContainerStyle={styles.scrollPadding}
       >
         
-        {/* Active Journey Status */}
-        <View style={[styles.mainCard, isTracking && styles.activeCardBorder]}>
-          <View style={styles.statusHeader}>
-            <View style={styles.statusIndicator}>
-              <View style={[styles.pulseDot, isTracking ? styles.pulseDotActive : styles.pulseDotInactive]} />
-                <Text style={styles.statusLabel}>
-                  {isTracking ? 'Currently On Journey' : socketState.status === 'connecting' ? 'Connecting to server...' : 'Standby Mode'}
-                </Text>
+        {/* Active Journey Status / Custom Route Recorder */}
+        {isRecordedAwaitingNaming ? (
+          <View style={styles.mainCard} testID="custom-route-pending-naming">
+            <View style={styles.statusHeader}>
+              <View style={styles.statusIndicator}>
+                <Ionicons name="time-outline" size={20} color={COLORS.textSecondary} style={{ marginRight: 8 }} />
+                <Text style={styles.statusLabel}>Awaiting manager naming</Text>
+              </View>
             </View>
-            <View style={[styles.typeBadge, { backgroundColor: isTracking ? `${COLORS.primary}20` : '#f3f4f6' }]}>
-               <Text style={[styles.typeText, { color: isTracking ? COLORS.primary : COLORS.textSecondary }]}>
-                 {isTracking ? 'Live' : 'Offline'}
-               </Text>
-            </View>
-          </View>
-
-          {isTracking && currentLocation && (
-            <View style={styles.locationContainer}>
-               <View style={styles.locationIconWrap}>
-                 <Ionicons name="location" size={24} color={COLORS.primary} />
-               </View>
-               <View>
-                 <Text style={styles.coordLabel}>Current Coordinates</Text>
-                 <Text style={styles.coordValue}>{currentLocation.lat.toFixed(5)}, {currentLocation.lng.toFixed(5)}</Text>
-               </View>
-            </View>
-          )}
-
-          <TouchableOpacity
-            style={[
-              styles.actionButton,
-              isTracking ? styles.stopButton : styles.startButton,
-              (!bus && !isTracking) && styles.disabledButton
-            ]}
-            onPress={isTracking ? handleStopTracking : startTracking}
-            disabled={!bus && !isTracking}
-            activeOpacity={0.9}
-          >
-            <Ionicons 
-              name={isTracking ? "stop-circle" : "play-circle"} 
-              size={24} 
-              color={COLORS.white} 
-              style={styles.buttonIcon} 
-            />
-            <Text style={styles.actionButtonText}>
-              {isTracking ? 'End Journey' : 'Start Journey'}
+            <Text style={styles.subtitleText}>
+              Your recorded route ({customRoute.stopsCount} stops, {customRoute.distance ?? 0} km) has been sent to your manager. You'll be able to start journeys once it's named.
             </Text>
-          </TouchableOpacity>
-        </View>
+          </View>
+        ) : isPendingCustomRoute ? (
+          <CopilotProvider>
+            <CustomRouteRecorder bus={bus} onSubmitted={loadCustomRouteInfo} />
+          </CopilotProvider>
+        ) : showUpdateRecorder ? (
+          <CopilotProvider>
+            <CustomRouteRecorder
+              bus={bus}
+              routeId={customRoute.routeId}
+              mode="update"
+              onSubmitted={() => { setShowUpdateRecorder(false); loadCustomRouteInfo(); }}
+            />
+          </CopilotProvider>
+        ) : (
+          <View style={[styles.mainCard, isTracking && styles.activeCardBorder]}>
+            <View style={styles.statusHeader}>
+              <View style={styles.statusIndicator}>
+                <View style={[styles.pulseDot, isTracking ? styles.pulseDotActive : styles.pulseDotInactive]} />
+                  <Text style={styles.statusLabel}>
+                    {isTracking ? 'Currently On Journey' : socketState.status === 'connecting' ? 'Connecting to server...' : 'Standby Mode'}
+                  </Text>
+              </View>
+              <View style={[styles.typeBadge, { backgroundColor: isTracking ? `${COLORS.primary}20` : '#f3f4f6' }]}>
+                 <Text style={[styles.typeText, { color: isTracking ? COLORS.primary : COLORS.textSecondary }]}>
+                   {isTracking ? 'Live' : 'Offline'}
+                 </Text>
+              </View>
+            </View>
+
+            {isTracking && currentLocation && (
+              <View style={styles.locationContainer}>
+                 <View style={styles.locationIconWrap}>
+                   <Ionicons name="location" size={24} color={COLORS.primary} />
+                 </View>
+                 <View>
+                   <Text style={styles.coordLabel}>Current Coordinates</Text>
+                   <Text style={styles.coordValue}>{currentLocation.lat.toFixed(5)}, {currentLocation.lng.toFixed(5)}</Text>
+                 </View>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={[
+                styles.actionButton,
+                isTracking ? styles.stopButton : styles.startButton,
+                (!bus && !isTracking) && styles.disabledButton
+              ]}
+              onPress={isTracking ? handleStopTracking : startTracking}
+              disabled={!bus && !isTracking}
+              activeOpacity={0.9}
+            >
+              <Ionicons
+                name={isTracking ? "stop-circle" : "play-circle"}
+                size={24}
+                color={COLORS.white}
+                style={styles.buttonIcon}
+              />
+              <Text style={styles.actionButtonText}>
+                {isTracking ? 'End Journey' : 'Start Journey'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {isActiveCustomRoute && customRoute?.hasPendingChangeRequest && !showUpdateRecorder && (
+          <View style={styles.updateRouteBanner} testID="update-route-banner">
+            <Ionicons name="alert-circle-outline" size={22} color={COLORS.primary} />
+            <View style={styles.updateRouteTextWrap}>
+              <Text style={styles.updateRouteTitle}>Route may have changed</Text>
+              <Text style={styles.updateRouteSubtitle}>Re-record your route so your manager can review the update.</Text>
+            </View>
+            <TouchableOpacity
+              style={styles.updateRouteButton}
+              onPress={() => setShowUpdateRecorder(true)}
+              testID="update-route-button"
+            >
+              <Text style={styles.updateRouteButtonText}>Update Route</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Bus Info Section */}
         <Text style={styles.sectionTitle}>Assigned Vehicle</Text>
@@ -410,6 +498,46 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: FONTS.bold,
     color: COLORS.secondary
+  },
+  subtitleText: {
+    fontSize: 13,
+    fontFamily: FONTS.medium,
+    color: COLORS.textSecondary,
+    lineHeight: 18
+  },
+  updateRouteBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#eff6ff',
+    borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.lg,
+    gap: 10
+  },
+  updateRouteTextWrap: {
+    flex: 1
+  },
+  updateRouteTitle: {
+    fontSize: 14,
+    fontFamily: FONTS.bold,
+    color: COLORS.secondary
+  },
+  updateRouteSubtitle: {
+    fontSize: 12,
+    fontFamily: FONTS.medium,
+    color: COLORS.textSecondary,
+    marginTop: 2
+  },
+  updateRouteButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: 14,
+    paddingVertical: 8
+  },
+  updateRouteButtonText: {
+    fontSize: 12,
+    fontFamily: FONTS.bold,
+    color: COLORS.white
   },
   typeBadge: {
     paddingHorizontal: 12,

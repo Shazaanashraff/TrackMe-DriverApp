@@ -6,20 +6,25 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
-  ActivityIndicator
+  ActivityIndicator,
+  TouchableOpacity,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
 import ScreenHeader from '../components/ui/ScreenHeader';
 import InfoRow from '../components/ui/InfoRow';
 import SectionCard from '../components/ui/SectionCard';
+import { ONBOARDING_DONE_KEY } from '../components/CustomRouteRecorder';
 
 const DriverProfileScreen = ({ navigation }) => {
   const { user, authenticatedRequest } = useAuth();
   const [bus, setBus] = useState(null);
   const [loadingBus, setLoadingBus] = useState(true);
+  const [isCustomRoute, setIsCustomRoute] = useState(false);
 
   useEffect(() => {
     const loadBusInfo = async () => {
@@ -33,8 +38,23 @@ const DriverProfileScreen = ({ navigation }) => {
       }
     };
 
+    const loadCustomRouteInfo = async () => {
+      try {
+        const res = await authenticatedRequest(api.getMyCustomRoute);
+        setIsCustomRoute(Boolean((res.data || res)?.isCustomRoute));
+      } catch (error) {
+        setIsCustomRoute(false);
+      }
+    };
+
     loadBusInfo();
+    loadCustomRouteInfo();
   }, [authenticatedRequest]);
+
+  const handleReplayTutorial = async () => {
+    await AsyncStorage.removeItem(ONBOARDING_DONE_KEY);
+    Alert.alert('Tutorial reset', 'The route-recording tutorial will show again next time you open your dashboard.');
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -70,6 +90,15 @@ const DriverProfileScreen = ({ navigation }) => {
             </>
           )}
         </SectionCard>
+
+        {isCustomRoute && (
+          <SectionCard title="Custom Route">
+            <TouchableOpacity style={styles.replayRow} onPress={handleReplayTutorial} testID="replay-tutorial-button">
+              <Ionicons name="play-circle-outline" size={20} color={COLORS.primary} />
+              <Text style={styles.replayText}>Replay route-recording tutorial</Text>
+            </TouchableOpacity>
+          </SectionCard>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -102,6 +131,17 @@ const styles = StyleSheet.create({
   },
   loader: {
     paddingVertical: 16
+  },
+  replayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 8
+  },
+  replayText: {
+    fontSize: 14,
+    fontFamily: FONTS.medium,
+    color: COLORS.secondary
   }
 });
 
