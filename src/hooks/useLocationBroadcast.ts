@@ -18,6 +18,7 @@ export interface UseLocationBroadcastOptions {
 export interface UseLocationBroadcastResult {
   permission: LocationPermissionStatus;
   bufferedCount: number;
+  lastFix: LocationFix | null;
 }
 
 function isNackResponse(response: unknown): boolean {
@@ -31,6 +32,7 @@ export function useLocationBroadcast({
 }: UseLocationBroadcastOptions): UseLocationBroadcastResult {
   const [permission, setPermission] = useState<LocationPermissionStatus>('undetermined');
   const [bufferedCount, setBufferedCount] = useState(0);
+  const [lastFix, setLastFix] = useState<LocationFix | null>(null);
 
   const subscriptionRef = useRef<{ remove: () => void } | null>(null);
   const lastFixRef = useRef<LocationFix | null>(null);
@@ -57,6 +59,7 @@ export function useLocationBroadcast({
     (fix: LocationFix) => {
       if (!shouldEmit(lastFixRef.current, fix, MIN_DISTANCE_METERS, MIN_INTERVAL_MS)) return;
       lastFixRef.current = fix;
+      setLastFix(fix);
 
       if (getConnectionState().status !== 'connected') {
         pushToBuffer(fix);
@@ -121,8 +124,9 @@ export function useLocationBroadcast({
         subscriptionRef.current = null;
       }
       lastFixRef.current = null;
+      setLastFix(null);
     };
   }, [active, handleFix]);
 
-  return { permission, bufferedCount };
+  return { permission, bufferedCount, lastFix };
 }
