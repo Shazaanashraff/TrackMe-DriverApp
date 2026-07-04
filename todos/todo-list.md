@@ -24,7 +24,7 @@ not-blocked rows whose `Dep` are all `[x]`. Spec in `active/NNN-slug.md`. Tick `
 | [x] | 011 | api-transport-refactor | P1 | 001,005 | transport (timeout/size/single-read, **preserve code**), authHeaders, split endpoints | done: 2026-07-04 |
 | [x] | 012 | query-keys-registry | P1 | 001 | lib/queryKeys.ts | done: 2026-07-04 |
 | [x] | 013 | hooks-auth | P1 | 010,011,012 | useLogin (driver-gated), useRegister, useLogout | done: 2026-07-04 |
-| [ ] | 014 | hooks-bus | P1 | 010,011,012 | useMyBusQuery, useRegisterBus, useUpdateBus |
+| [x] | 014 | hooks-bus | P1 | 010,011,012 | useMyBusQuery, useRegisterBus, useUpdateBus | done: 2026-07-04 |
 | [ ] | 015 | hooks-routes | P1 | 010,011,012 | useRoutesQuery, useRoutesManagementQuery, useCreateRoute |
 | [ ] | 016 | hooks-earnings | P1 | 010,011,012 | stats/history/dailyBreakdown queries + useRequestPayout |
 | [ ] | 017 | socket-service-typed | P1 | 005 | typed services/socket.ts (emitLocation/start/stop + state) |
