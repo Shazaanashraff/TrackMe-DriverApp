@@ -62,7 +62,7 @@ Only `driver` role users may log in (enforced in `LoginScreen`).
 ### Location tracking (DriverDashboard)
 - `expo-location` `watchPositionAsync` at 3 s / 3 m intervals while tracking.
 - Each location update calls `emitLocation()` from `services/socket.js` which emits a `update-location` socket event to the backend.
-- `startTrackingSession()` / `stopTracking()` are socket calls that tell the backend to mark the bus as live or offline.
+- `startTracking()` / `stopTracking()` are socket calls that tell the backend to mark the bus as live or offline.
 
 ### backendStatus service
 - Identical pattern to user-app; started in `App.js`, checked via `isBackendConnectionError()` in catch blocks.
@@ -115,8 +115,12 @@ Tests live next to the code they test in `__tests__/` subdirectories.
 
 ## Environment
 
-`src/config.js` exports `API_BASE_URL`. Update for local dev vs. production.
+`src/config.js` exports `API_URL` and `SOCKET_URL`, both built as `http://<host>:5000`. The
+host resolves from `EXPO_PUBLIC_API_HOST` (env var, see `.env.example`), then Expo's dev-server
+host (LAN dev), then falls back to `localhost`.
 The backend health endpoint is `GET /health`.
+
+Architecture/testing plans live in `docs/`; task execution lives in `todos/`.
 
 ---
 
