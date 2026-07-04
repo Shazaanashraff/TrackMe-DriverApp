@@ -10,7 +10,13 @@
     "moduleResolution": "bundler",
     "target": "esnext",
     "module": "esnext",
-    "lib": ["esnext"]
+    "lib": ["esnext"],
+    "types": ["jest"],
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src", "App.js"]
 }

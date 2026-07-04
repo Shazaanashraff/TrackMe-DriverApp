@@ -10,7 +10,7 @@ not-blocked rows whose `Dep` are all `[x]`. Spec in `active/NNN-slug.md`. Tick `
 | [x] | 001 | typescript-config | P1 | — | tsconfig (allowJs, strict) + typecheck | done: 2026-07-04 |
 | [ ] | 002 | jest-config-ts-coverage | P1 | 001 | Jest TS, test:unit, coverage thresholds, RTL setup |
 | [ ] | 003 | eslint-config-layering | P1 | 001 | ESLint + lint; no api./fetch(/watchPositionAsync in screens |
-| [ ] | 004 | path-aliases-and-folders | P1 | 001 | aliases + features/ + hooks/ + services/api skeleton |
+| [x] | 004 | path-aliases-and-folders | P1 | 001 | aliases + features/ + hooks/ + services/api skeleton | done: 2026-07-04 |
 | [ ] | 005 | errors-lib | P1 | 001,002 | lib/errors.ts (+permission/tracking kinds) + tests |
 | [ ] | 006 | maestro-setup | P1 | — | Maestro, .maestro/, test:e2e, smoke flow |
 | [ ] | 007 | env-gitignore-doc-drift | P1 | — | add .gitignore + .env.example; fix CLAUDE.md (API_URL, socket names) |
