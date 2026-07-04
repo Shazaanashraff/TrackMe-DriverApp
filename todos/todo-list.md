@@ -27,7 +27,7 @@ not-blocked rows whose `Dep` are all `[x]`. Spec in `active/NNN-slug.md`. Tick `
 | [x] | 014 | hooks-bus | P1 | 010,011,012 | useMyBusQuery, useRegisterBus, useUpdateBus | done: 2026-07-04 |
 | [x] | 015 | hooks-routes | P1 | 010,011,012 | useRoutesQuery, useRoutesManagementQuery, useCreateRoute | done: 2026-07-04 |
 | [x] | 016 | hooks-earnings | P1 | 010,011,012 | stats/history/dailyBreakdown queries + useRequestPayout | done: 2026-07-04 |
-| [ ] | 017 | socket-service-typed | P1 | 005 | typed services/socket.ts (emitLocation/start/stop + state) |
+| [x] | 017 | socket-service-typed | P1 | 005 | typed services/socket.ts (emitLocation/start/stop + state) | done: 2026-07-04 |
 | [ ] | 018 | use-tracking-session | P1 | 017 | useTrackingSession: start/stop lifecycle + acks |
 | [ ] | 019 | use-location-broadcast | P1 | 008,017,018 | watch→throttle/batch→emit; permissions; offline buffer |
 
