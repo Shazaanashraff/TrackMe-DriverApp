@@ -3,11 +3,13 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { AuthProvider } from './src/context/AuthContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import * as notificationService from './src/services/notificationService';
 import { View } from 'react-native';
 import { getBackendOnline, subscribeBackendStatus, startBackendHealthMonitor } from './src/services/backendStatus';
+import { queryClient, persistOptions } from './src/app/queryClient';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -66,8 +68,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </PersistQueryClientProvider>
   );
 }
