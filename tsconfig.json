@@ -11,7 +11,12 @@
     "target": "esnext",
     "module": "esnext",
     "lib": ["esnext"],
-    "types": ["jest"]
+    "types": ["jest"],
+    "baseUrl": ".",
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": ["src", "App.js"]
 }
