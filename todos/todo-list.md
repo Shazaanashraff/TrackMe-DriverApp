@@ -12,7 +12,7 @@ not-blocked rows whose `Dep` are all `[x]`. Spec in `active/NNN-slug.md`. Tick `
 | [x] | 003 | eslint-config-layering | P1 | 001 | ESLint + lint; no api./fetch(/watchPositionAsync in screens | done: 2026-07-04 |
 | [x] | 004 | path-aliases-and-folders | P1 | 001 | aliases + features/ + hooks/ + services/api skeleton | done: 2026-07-04 |
 | [x] | 005 | errors-lib | P1 | 001,002 | lib/errors.ts (+permission/tracking kinds) + tests | done: 2026-07-04 |
-| [ ] | 006 | maestro-setup | P1 | — | Maestro, .maestro/, test:e2e, smoke flow |
+| [x] | 006 | maestro-setup | P1 | — | Maestro, .maestro/, test:e2e, smoke flow | done: 2026-07-04 |
 | [ ] | 007 | env-gitignore-doc-drift | P1 | — | add .gitignore + .env.example; fix CLAUDE.md (API_URL, socket names) |
 | [x] | 008 | helper-locationutils | P1 | 001,002 | helpers/locationUtils (distance/throttle/coord) + tests | done: 2026-07-04 |
 | [x] | 009 | helper-earnings | P2 | 001,002 | earnings derive/format helpers + tests | done: 2026-07-04 |

@@ -9,6 +9,8 @@
     "test": "jest",
     "test:unit": "jest",
     "test:coverage": "jest --coverage",
+    "test:e2e": "maestro test .maestro",
+    "test:e2e:dry": "maestro test --dry-run .maestro",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix"
