@@ -36,7 +36,7 @@ not-blocked rows whose `Dep` are all `[x]`. Spec in `active/NNN-slug.md`. Tick `
 |---|----|------|-----|-----|----------|
 | [x] | 020 | error-ux-components | P2 | 002,005 | InlineError, ErrorState, OfflineBanner, ErrorBoundary, tracking/permission states | done: 2026-07-04 |
 | [x] | 021 | migrate-login-screen | P2 | 013,020 | Login → useLogin + role-gate + inline errors | done: 2026-07-04 |
-| [ ] | 022 | split-driver-dashboard | P2 | 014,018,019,020 | features/dashboard/* + tracking hooks; ≤250 LOC; no GPS in screen |
+| [x] | 022 | split-driver-dashboard | P2 | 014,018,019,020 | features/dashboard/* + tracking hooks; ≤250 LOC; no GPS in screen | done: 2026-07-04 |
 | [ ] | 023 | split-driver-earnings | P2 | 016,020 | features/earnings/* ; ≤250 LOC |
 | [ ] | 024 | split-route-management | P2 | 015,020 | features/route-management/* ; ≤250 LOC |
 | [ ] | 025 | split-bus-registration | P2 | 014,015,020 | features/bus-registration/* ; ≤250 LOC |
