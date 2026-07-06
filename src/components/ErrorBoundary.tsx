@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
 
@@ -42,6 +42,12 @@ export class ErrorBoundary extends Component<Props, State> {
           <TouchableOpacity style={styles.button} onPress={this.handleReset}>
             <Text style={styles.buttonText}>Reload</Text>
           </TouchableOpacity>
+          {__DEV__ && this.state.error ? (
+            <ScrollView style={styles.devBox} contentContainerStyle={{ padding: SPACING.sm }}>
+              <Text selectable style={styles.devText}>{String(this.state.error?.message || this.state.error)}</Text>
+              <Text selectable style={styles.devStack}>{String(this.state.error?.stack || '').slice(0, 1200)}</Text>
+            </ScrollView>
+          ) : null}
         </View>
       );
     }
@@ -82,5 +88,25 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     color: COLORS.white,
     fontSize: 15,
+  },
+  devBox: {
+    maxHeight: 260,
+    alignSelf: 'stretch',
+    marginTop: SPACING.md,
+    backgroundColor: '#fff',
+    borderRadius: BORDER_RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  devText: {
+    fontFamily: FONTS.bold,
+    fontSize: 12,
+    color: COLORS.error,
+  },
+  devStack: {
+    fontFamily: FONTS.medium,
+    fontSize: 10,
+    color: COLORS.textSecondary,
+    marginTop: SPACING.xs,
   },
 });

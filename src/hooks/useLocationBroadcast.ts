@@ -9,6 +9,18 @@ const MIN_DISTANCE_METERS = 3;
 const MIN_INTERVAL_MS = 2500;
 const MAX_BUFFER_SIZE = 50;
 
+// expo-location's web build can throw on subscription.remove()
+// ("LocationEventEmitter.removeSubscription is not a function") depending on the
+// Expo/RN version. Removing the watcher must never crash the app (e.g. on End
+// Journey), so swallow that teardown error.
+export function safeRemove(subscription: { remove: () => void } | null): void {
+  try {
+    subscription?.remove();
+  } catch {
+    /* expo-location web teardown incompatibility — safe to ignore */
+  }
+}
+
 export interface UseLocationBroadcastOptions {
   active: boolean;
   busId: string;
@@ -107,7 +119,7 @@ export function useLocationBroadcast({
         }
       );
       if (cancelled) {
-        subscription.remove();
+        safeRemove(subscription);
         return;
       }
       subscriptionRef.current = subscription;
@@ -120,7 +132,7 @@ export function useLocationBroadcast({
     return () => {
       cancelled = true;
       if (subscriptionRef.current) {
-        subscriptionRef.current.remove();
+        safeRemove(subscriptionRef.current);
         subscriptionRef.current = null;
       }
       lastFixRef.current = null;
