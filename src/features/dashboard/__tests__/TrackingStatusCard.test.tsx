@@ -3,6 +3,11 @@ import { Text } from 'react-native';
 import { render } from '@testing-library/react-native';
 import TrackingStatusCard from '../TrackingStatusCard';
 
+// LiveStatsBar reverse-geocodes the coordinate; keep the test off the network.
+jest.mock('../../../services/api/places', () => ({
+  reverseGeocode: jest.fn().mockResolvedValue(null),
+}));
+
 describe('TrackingStatusCard', () => {
   it('shows "Standby Mode" when idle and not connecting', () => {
     const { getByText } = render(
