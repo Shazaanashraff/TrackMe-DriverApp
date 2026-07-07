@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Text, ScrollView, StatusBar, SafeAreaView, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useMyBusQuery } from '../hooks/bus';
 import { useTrackingSession } from '../hooks/useTrackingSession';
 import { useLocationBroadcast } from '../hooks/useLocationBroadcast';
-import { useLogout } from '../hooks/auth';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
 import DashboardHeader from '../features/dashboard/DashboardHeader';
 import TrackingStatusCard from '../features/dashboard/TrackingStatusCard';
@@ -12,7 +11,7 @@ import TrackingToggle from '../features/dashboard/TrackingToggle';
 import AssignedBusCard from '../features/dashboard/AssignedBusCard';
 import CustomRouteSection from '../features/dashboard/CustomRouteSection';
 import DashboardMenu from '../features/dashboard/DashboardMenu';
-import LogoutModal from '../features/dashboard/LogoutModal';
+import TripProgressCard from '../features/dashboard/TripProgressCard';
 import PermissionDeniedState from '../components/PermissionDeniedState';
 import { useCustomRouteJourney } from '../features/dashboard/useCustomRouteJourney';
 import { useSocketConnection } from '../features/dashboard/useSocketConnection';
@@ -32,7 +31,7 @@ function unwrap<T>(response: unknown): T {
 }
 
 type Props = {
-  navigation: { navigate: (screen: string) => void; reset: (state: unknown) => void };
+  navigation: { navigate: (screen: string) => void };
 };
 
 const DriverDashboard = ({ navigation }: Props) => {
@@ -45,11 +44,8 @@ const DriverDashboard = ({ navigation }: Props) => {
 
   const session = useTrackingSession();
   const broadcast = useLocationBroadcast({ active: session.status === 'tracking', busId, routeId });
-  const logout = useLogout();
   const { connecting } = useSocketConnection(token);
   const journey = useCustomRouteJourney(busId);
-
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // Record every broadcast fix as a breadcrumb point while on an active custom route.
   useEffect(() => {
@@ -61,16 +57,6 @@ const DriverDashboard = ({ navigation }: Props) => {
   const handleStop = () => {
     session.stop(busId);
     journey.reportCompletedJourney();
-  };
-
-  const executeLogout = () => {
-    if (session.status === 'tracking') handleStop();
-    logout.mutate(undefined, {
-      onSettled: () => {
-        setShowLogoutModal(false);
-        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-      },
-    });
   };
 
   return (
@@ -108,6 +94,12 @@ const DriverDashboard = ({ navigation }: Props) => {
           </TrackingStatusCard>
         </CustomRouteSection>
 
+        <TripProgressCard
+          routeId={routeId}
+          fix={session.status === 'tracking' ? broadcast.lastFix : null}
+          isTracking={session.status === 'tracking'}
+        />
+
         <Text style={styles.sectionTitle}>Assigned Vehicle</Text>
         <AssignedBusCard bus={bus} onRegisterPress={() => navigation.navigate('BusRegistration')} />
 
@@ -115,16 +107,8 @@ const DriverDashboard = ({ navigation }: Props) => {
         <DashboardMenu
           onEarningsPress={() => navigation.navigate('DriverEarnings')}
           onHistoryPress={() => navigation.navigate('TripHistory')}
-          onLogoutPress={() => setShowLogoutModal(true)}
         />
       </ScrollView>
-
-      <LogoutModal
-        visible={showLogoutModal}
-        isLoggingOut={logout.isPending}
-        onCancel={() => setShowLogoutModal(false)}
-        onConfirm={executeLogout}
-      />
     </SafeAreaView>
   );
 };

@@ -19,6 +19,7 @@ const api = {
   // routes
   getRoutes: routes.getRoutes,
   getRoutesManagementList: routes.getRoutesManagementList,
+  getRouteById: routes.getRouteById,
   createRoute: routes.createRoute,
 
   // earnings

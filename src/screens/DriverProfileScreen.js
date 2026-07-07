@@ -13,18 +13,22 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
+import { useLogout } from '../hooks/auth';
 import api from '../services/api';
 import { COLORS, FONTS, SPACING } from '../constants/theme';
 import ScreenHeader from '../components/ui/ScreenHeader';
 import InfoRow from '../components/ui/InfoRow';
 import SectionCard from '../components/ui/SectionCard';
+import LogoutModal from '../features/dashboard/LogoutModal';
 import { ONBOARDING_DONE_KEY } from '../components/CustomRouteRecorder';
 
 const DriverProfileScreen = ({ navigation }) => {
   const { user, authenticatedRequest } = useAuth();
+  const logout = useLogout();
   const [bus, setBus] = useState(null);
   const [loadingBus, setLoadingBus] = useState(true);
   const [isCustomRoute, setIsCustomRoute] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => {
     const loadBusInfo = async () => {
@@ -54,6 +58,14 @@ const DriverProfileScreen = ({ navigation }) => {
   const handleReplayTutorial = async () => {
     await AsyncStorage.removeItem(ONBOARDING_DONE_KEY);
     Alert.alert('Tutorial reset', 'The route-recording tutorial will show again next time you open your dashboard.');
+  };
+
+  // Clearing auth flips AppNavigator back to the Login stack automatically, so no
+  // manual navigation is needed here — just close the modal once the mutation settles.
+  const executeLogout = () => {
+    logout.mutate(undefined, {
+      onSettled: () => setShowLogoutModal(false),
+    });
   };
 
   return (
@@ -99,7 +111,23 @@ const DriverProfileScreen = ({ navigation }) => {
             </TouchableOpacity>
           </SectionCard>
         )}
+
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={() => setShowLogoutModal(true)}
+          testID="logout-button"
+        >
+          <Ionicons name="log-out-outline" size={20} color={COLORS.error} />
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
       </ScrollView>
+
+      <LogoutModal
+        visible={showLogoutModal}
+        isLoggingOut={logout.isPending}
+        onCancel={() => setShowLogoutModal(false)}
+        onConfirm={executeLogout}
+      />
     </SafeAreaView>
   );
 };
@@ -142,6 +170,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: FONTS.medium,
     color: COLORS.secondary
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: SPACING.md,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: COLORS.white,
+    borderWidth: 1,
+    borderColor: '#fecaca'
+  },
+  logoutText: {
+    fontSize: 15,
+    fontFamily: FONTS.bold,
+    color: COLORS.error
   }
 });
 

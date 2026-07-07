@@ -6,10 +6,9 @@ import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/
 type Props = {
   onEarningsPress: () => void;
   onHistoryPress: () => void;
-  onLogoutPress: () => void;
 };
 
-export default function DashboardMenu({ onEarningsPress, onHistoryPress, onLogoutPress }: Props) {
+export default function DashboardMenu({ onEarningsPress, onHistoryPress }: Props) {
   return (
     <View style={styles.grid}>
       <TouchableOpacity style={styles.card} onPress={onEarningsPress}>
@@ -25,13 +24,6 @@ export default function DashboardMenu({ onEarningsPress, onHistoryPress, onLogou
         </View>
         <Text style={styles.label}>History</Text>
       </TouchableOpacity>
-
-      <TouchableOpacity style={styles.card} onPress={onLogoutPress}>
-        <View style={[styles.iconBox, { backgroundColor: '#fef2f2' }]}>
-          <Ionicons name="log-out" size={22} color={COLORS.error} />
-        </View>
-        <Text style={styles.label}>Logout</Text>
-      </TouchableOpacity>
     </View>
   );
 }
@@ -44,7 +36,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   card: {
-    width: '31.5%',
+    width: '48%',
     backgroundColor: COLORS.white,
     borderRadius: BORDER_RADIUS.md,
     padding: SPACING.md,

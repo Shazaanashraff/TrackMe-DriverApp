@@ -13,6 +13,12 @@ export async function getRoutesManagementList() {
   return requestJson(`${API_URL}/api/routes`);
 }
 
+// Public — full route document (stops + distance + source/destination) for one route.
+// Used by the driver dashboard's trip-progress card. Only resolves PUBLIC routes.
+export async function getRouteById(routeId: string) {
+  return requestJson(`${API_URL}/api/routes/${encodeURIComponent(routeId)}`);
+}
+
 export async function createRoute(token: string, routeData: Record<string, unknown>) {
   return requestJson(`${API_URL}/api/routes`, {
     method: 'POST',

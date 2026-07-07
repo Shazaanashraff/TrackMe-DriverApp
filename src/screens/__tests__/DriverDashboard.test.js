@@ -37,6 +37,12 @@ jest.mock('../../hooks/auth', () => ({
   useLogout: () => ({ mutate: jest.fn(), isPending: false }),
 }));
 
+// TripProgressCard fetches route geometry via react-query; stub it so the dashboard
+// test needs no QueryClientProvider (undefined data => the card renders nothing).
+jest.mock('../../hooks/route', () => ({
+  useRouteDetailsQuery: () => ({ data: undefined }),
+}));
+
 jest.mock('../../features/dashboard/useSocketConnection', () => ({
   useSocketConnection: () => ({ connecting: false }),
 }));
