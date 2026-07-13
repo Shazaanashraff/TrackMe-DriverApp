@@ -94,5 +94,12 @@ not-blocked rows whose `Dep` are all `[x]`. Spec in `active/NNN-slug.md`. Tick `
 | [ ] | 077 | haptics-microinteractions | P3 | 021 | expo-haptics on start/stop/payout/error |
 | [ ] | 078 | accessibility-pass | P2 | 022,023,025 | a11y labels/roles (esp. tracking control), 44px, contrast |
 
+## Phase 8 — QR Attendance (NEXT version) — cite docs/features/qr-attendance/QR_ATTENDANCE_PLAN.md
+| ✓ | ID | Slug | Pri | Dep | One-line |
+|---|----|------|-----|-----|----------|
+| [ ] | 090 | qr-attendance-scanner | P3 | 019,022 | expo-camera QR scanner → submit BOARD/ALIGHT; on-board roster; offline queue. Needs backend qr foundation |
+
 > ~57 todos across Phases 0–7. Phases 0–1 are the critical path. Cite docs/LOCATION_TRACKING.md
 > for all tracking/location todos and docs/OPTIMISATION.md + UX_GUIDELINES.md for Phase 7.
+> Phase 8 (QR) is cross-repo (backend 001 → user-app 090 → driver-app 090 → web-admin 025); Blocked
+> until the backend qr foundation ships.
