@@ -36,8 +36,8 @@ not-blocked rows whose `Dep` are all `[x]`. Spec in `active/NNN-slug.md`. Tick `
 |---|----|------|-----|-----|----------|
 | [x] | 020 | error-ux-components | P2 | 002,005 | InlineError, ErrorState, OfflineBanner, ErrorBoundary, tracking/permission states | done: 2026-07-04 |
 | [x] | 021 | migrate-login-screen | P2 | 013,020 | Login → useLogin + role-gate + inline errors | done: 2026-07-04 |
-| [ ] | 022 | split-driver-dashboard | P2 | 014,018,019,020 | features/dashboard/* + tracking hooks; ≤250 LOC; no GPS in screen |
-| [ ] | 023 | split-driver-earnings | P2 | 016,020 | features/earnings/* ; ≤250 LOC |
+| [x] | 022 | split-driver-dashboard | P2 | 014,018,019,020 | features/dashboard/* + tracking hooks; ≤250 LOC; no GPS in screen | done: 2026-07-04 |
+| [x] | 023 | split-driver-earnings | P2 | 016,020 | features/earnings/* ; ≤250 LOC | done: 2026-07-04 |
 | [ ] | 024 | split-route-management | P2 | 015,020 | features/route-management/* ; ≤250 LOC |
 | [ ] | 025 | split-bus-registration | P2 | 014,015,020 | features/bus-registration/* ; ≤250 LOC |
 | [ ] | 026 | migrate-trip-history | P2 | 016,020 | TripHistory → hooks + list + 4 states |
@@ -94,5 +94,12 @@ not-blocked rows whose `Dep` are all `[x]`. Spec in `active/NNN-slug.md`. Tick `
 | [ ] | 077 | haptics-microinteractions | P3 | 021 | expo-haptics on start/stop/payout/error |
 | [ ] | 078 | accessibility-pass | P2 | 022,023,025 | a11y labels/roles (esp. tracking control), 44px, contrast |
 
+## Phase 8 — QR Attendance (NEXT version) — cite docs/features/qr-attendance/QR_ATTENDANCE_PLAN.md
+| ✓ | ID | Slug | Pri | Dep | One-line |
+|---|----|------|-----|-----|----------|
+| [ ] | 090 | qr-attendance-scanner | P3 | 019,022 | expo-camera QR scanner → submit BOARD/ALIGHT; on-board roster; offline queue. Needs backend qr foundation |
+
 > ~57 todos across Phases 0–7. Phases 0–1 are the critical path. Cite docs/LOCATION_TRACKING.md
 > for all tracking/location todos and docs/OPTIMISATION.md + UX_GUIDELINES.md for Phase 7.
+> Phase 8 (QR) is cross-repo (backend 001 → user-app 090 → driver-app 090 → web-admin 025); Blocked
+> until the backend qr foundation ships.
