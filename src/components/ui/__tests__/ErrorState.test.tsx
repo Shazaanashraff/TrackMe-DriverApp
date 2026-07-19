@@ -23,10 +23,21 @@ describe('ErrorState', () => {
     expect(queryByText('Try again')).toBeNull();
   });
 
+  it('uses the message override instead of the derived AppError message when given', () => {
+    const { getByText, queryByText } = render(
+      <ErrorState
+        error={new AppError('http', 'raw server detail')}
+        message="Couldn't load. Pull down to try again."
+      />
+    );
+    expect(getByText("Couldn't load. Pull down to try again.")).toBeTruthy();
+    expect(queryByText(/raw server detail/i)).toBeNull();
+  });
+
   it('renders the compact variant', () => {
     const { getByText } = render(
       <ErrorState error={new AppError('tracking', 'ack failed')} variant="compact" />
     );
-    expect(getByText(/tracking/i)).toBeTruthy();
+    expect(getByText(/couldn't confirm you're online/i)).toBeTruthy();
   });
 });

@@ -24,7 +24,9 @@ jest.mock('expo-location', () => ({
   Accuracy: { High: 4 },
 }));
 
-let watchCallback: ((location: { coords: { latitude: number; longitude: number } }) => void) | null;
+let watchCallback:
+  | ((location: { coords: { latitude: number; longitude: number; accuracy?: number | null } }) => void)
+  | null;
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -38,8 +40,8 @@ beforeEach(() => {
   });
 });
 
-function fireFix(lat: number, lng: number) {
-  watchCallback?.({ coords: { latitude: lat, longitude: lng } });
+function fireFix(lat: number, lng: number, accuracy?: number) {
+  watchCallback?.({ coords: { latitude: lat, longitude: lng, accuracy } });
 }
 
 describe('permission', () => {
@@ -106,6 +108,28 @@ describe('throttle', () => {
 
     expect(mockEmitLocation).toHaveBeenCalledWith('b1', 'r1', 6.93, 79.87, expect.any(Function));
     jest.useRealTimers();
+  });
+});
+
+describe('accuracy', () => {
+  it('carries the reported accuracy through to lastFix', async () => {
+    const { result } = renderHook(() =>
+      useLocationBroadcast({ active: true, busId: 'b1', routeId: 'r1' })
+    );
+    await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
+
+    act(() => fireFix(6.9271, 79.8612, 12));
+    expect(result.current.lastFix?.accuracy).toBe(12);
+  });
+
+  it('leaves accuracy undefined when the platform does not report one', async () => {
+    const { result } = renderHook(() =>
+      useLocationBroadcast({ active: true, busId: 'b1', routeId: 'r1' })
+    );
+    await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
+
+    act(() => fireFix(6.9271, 79.8612));
+    expect(result.current.lastFix?.accuracy).toBeUndefined();
   });
 });
 

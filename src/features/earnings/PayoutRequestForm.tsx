@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet } from 'react-native';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
+import { View, Modal, StyleSheet } from 'react-native';
+import { theme } from '../../theme';
+import AppText from '../../components/ui/AppText';
+import FormInput from '../../components/ui/FormInput';
+import PrimaryButton from '../../components/ui/PrimaryButton';
+import InlineError from '../../components/ui/InlineError';
 import { formatCurrency } from '../../helpers/formatters';
 import { AppError, userMessage } from '../../lib/errors';
-import FormInput from '../../components/ui/FormInput';
-import InlineError from '../../components/ui/InlineError';
 
 export type BankAccount = {
   accountNumber: string;
@@ -54,34 +56,45 @@ export default function PayoutRequestForm({ visible, earningAmount, isSubmitting
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={handleCancel}>
       <View style={styles.overlay}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Request Payout</Text>
-          <Text style={styles.subtitle}>{formatCurrency(earningAmount)} will be sent to this account</Text>
+        <View style={styles.sheet}>
+          <AppText variant="h2">Request payout</AppText>
+          <AppText variant="label" color={theme.color.text.secondary} style={styles.subtitle}>
+            {formatCurrency(earningAmount)} will be sent to this account
+          </AppText>
 
-          <FormInput label="Account Number" value={accountNumber} onChangeText={setAccountNumber} placeholder="1234567890" keyboardType="number-pad" />
-          <InlineError message={fieldErrors.accountNumber ?? null} />
+          <FormInput
+            label="Account number"
+            value={accountNumber}
+            onChangeText={setAccountNumber}
+            placeholder="1234567890"
+            keyboardType="number-pad"
+            error={fieldErrors.accountNumber}
+          />
+          <FormInput
+            label="Bank name"
+            value={bankName}
+            onChangeText={setBankName}
+            placeholder="Bank of Example"
+            error={fieldErrors.bankName}
+          />
+          <FormInput
+            label="IFSC code"
+            value={ifscCode}
+            onChangeText={setIfscCode}
+            placeholder="ABCD0123456"
+            autoCapitalize="characters"
+            error={fieldErrors.ifscCode}
+          />
 
-          <FormInput label="Bank Name" value={bankName} onChangeText={setBankName} placeholder="Bank of Example" />
-          <InlineError message={fieldErrors.bankName ?? null} />
+          {error ? <InlineError message={userMessage(error)} /> : null}
 
-          <FormInput label="IFSC Code" value={ifscCode} onChangeText={setIfscCode} placeholder="ABCD0123456" autoCapitalize="characters" />
-          <InlineError message={fieldErrors.ifscCode ?? null} />
-
-          {error && <InlineError message={userMessage(error)} />}
-
-          <View style={styles.actionsRow}>
-            <TouchableOpacity style={[styles.actionButton, styles.cancelButton]} onPress={handleCancel} disabled={isSubmitting}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionButton, styles.confirmButton, isSubmitting && styles.confirmButtonDisabled]}
-              onPress={handleSubmit}
-              disabled={isSubmitting}
-            >
-              <Text style={styles.confirmText}>{isSubmitting ? 'Submitting…' : 'Submit'}</Text>
-            </TouchableOpacity>
-          </View>
+          <PrimaryButton
+            title="Submit"
+            onPress={handleSubmit}
+            loading={isSubmitting}
+            style={styles.submitButton}
+          />
+          <PrimaryButton title="Cancel" variant="secondary" onPress={handleCancel} disabled={isSubmitting} />
         </View>
       </View>
     </Modal>
@@ -91,65 +104,23 @@ export default function PayoutRequestForm({ visible, earningAmount, isSubmitting
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.45)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: SPACING.lg,
+    backgroundColor: 'rgba(23, 32, 51, 0.45)',
+    justifyContent: 'flex-end',
   },
-  card: {
-    width: '100%',
-    maxWidth: 360,
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.md,
-  },
-  title: {
-    fontSize: 20,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary,
-    marginBottom: 6,
+  sheet: {
+    backgroundColor: theme.color.surface.card,
+    borderTopLeftRadius: theme.radius.sheet,
+    borderTopRightRadius: theme.radius.sheet,
+    padding: theme.space[5],
+    paddingBottom: theme.space[8],
+    ...theme.elevation.sheet,
   },
   subtitle: {
-    fontSize: 13,
-    fontFamily: FONTS.medium,
-    color: COLORS.textSecondary,
-    marginBottom: SPACING.md,
+    marginTop: theme.space[1],
+    marginBottom: theme.space[5],
   },
-  actionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-    marginTop: SPACING.sm,
-  },
-  actionButton: {
-    flex: 1,
-    height: 46,
-    borderRadius: BORDER_RADIUS.md,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  cancelButton: {
-    backgroundColor: '#f3f4f6',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  confirmButton: {
-    backgroundColor: COLORS.primary,
-  },
-  confirmButtonDisabled: {
-    opacity: 0.65,
-  },
-  cancelText: {
-    fontSize: 14,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary,
-  },
-  confirmText: {
-    fontSize: 14,
-    fontFamily: FONTS.bold,
-    color: COLORS.white,
+  submitButton: {
+    marginTop: theme.space[2],
+    marginBottom: theme.space[3],
   },
 });

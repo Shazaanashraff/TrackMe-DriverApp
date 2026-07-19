@@ -10,13 +10,23 @@
     "moduleResolution": "bundler",
     "target": "esnext",
     "module": "esnext",
-    "lib": ["esnext"],
-    "types": ["jest"],
+    "lib": [
+      "esnext"
+    ],
+    "types": [
+      "jest"
+    ],
     "baseUrl": ".",
     "ignoreDeprecations": "6.0",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ]
     }
   },
-  "include": ["src", "App.js"]
+  "include": [
+    "src",
+    "App.js"
+  ],
+  "extends": "expo/tsconfig.base"
 }

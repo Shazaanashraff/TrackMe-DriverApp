@@ -1,26 +1,29 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
+import { theme } from '../../theme';
 import { AppError, userMessage } from '../../lib/errors';
 
 type Props = {
   error: AppError;
   onRetry?: () => void;
   variant?: 'full' | 'compact';
+  // Overrides the derived AppError message — e.g. "Couldn't load. Pull down
+  // to try again." on a pull-to-refresh list, per STYLEGUIDE §8.
+  message?: string;
 };
 
-export default function ErrorState({ error, onRetry, variant = 'full' }: Props) {
-  const message = userMessage(error);
+export default function ErrorState({ error, onRetry, variant = 'full', message: messageOverride }: Props) {
+  const message = messageOverride ?? userMessage(error);
   const isCompact = variant === 'compact';
 
   return (
     <View style={[styles.container, isCompact && styles.compact]}>
-      <Ionicons name="alert-circle" size={isCompact ? 32 : 48} color={COLORS.error} />
+      <Ionicons name="alert-circle" size={isCompact ? 32 : 48} color={theme.color.danger.main} />
       <Text style={[styles.title, isCompact && styles.titleCompact]}>Something went wrong</Text>
       <Text style={styles.message}>{message}</Text>
       {onRetry && (
-        <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
+        <TouchableOpacity style={styles.retryButton} onPress={onRetry} accessibilityRole="button">
           <Text style={styles.retryText}>Try again</Text>
         </TouchableOpacity>
       )}
@@ -33,38 +36,32 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: SPACING.lg,
-    gap: SPACING.sm,
+    padding: theme.space[6],
+    gap: theme.space[2],
   },
   compact: {
     flex: 0,
-    padding: SPACING.sm,
+    padding: theme.space[2],
   },
   title: {
-    fontFamily: FONTS.bold,
-    fontSize: 18,
-    color: COLORS.secondary,
+    ...theme.textStyle('h2', { color: theme.color.text.primary }),
     textAlign: 'center',
   },
   titleCompact: {
-    fontSize: 15,
+    fontSize: theme.font.size.label,
   },
   message: {
-    fontFamily: FONTS.medium,
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    ...theme.textStyle('label', { color: theme.color.text.secondary }),
     textAlign: 'center',
   },
   retryButton: {
-    marginTop: SPACING.xs,
-    paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.md,
-    backgroundColor: COLORS.secondary,
-    borderRadius: BORDER_RADIUS.md,
+    marginTop: theme.space[1],
+    paddingVertical: theme.space[2],
+    paddingHorizontal: theme.space[4],
+    backgroundColor: theme.color.primary[500],
+    borderRadius: theme.radius.control,
   },
   retryText: {
-    fontFamily: FONTS.bold,
-    color: COLORS.white,
-    fontSize: 14,
+    ...theme.textStyle('label', { weight: 'medium', color: theme.color.white }),
   },
 });

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { StyleSheet, SafeAreaView, StatusBar, View, Text } from 'react-native';
+import { StyleSheet, SafeAreaView, StatusBar, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { theme } from '../theme';
 import { AppError, normalizeError } from '../lib/errors';
 import { useRoutesManagementQuery, useCreateRoute } from '../hooks/routes';
+import AppText from '../components/ui/AppText';
 import ScreenHeader from '../components/ui/ScreenHeader';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import OfflineBanner from '../components/ui/OfflineBanner';
+import Card from '../components/ui/Card';
 import RouteForm, { NewRoutePayload } from '../features/route-management/RouteForm';
 import RouteList from '../features/route-management/RouteList';
 import { Route } from '../features/route-management/RouteListItem';
@@ -49,7 +51,7 @@ const RouteManagementScreen = ({ navigation }: Props) => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <OfflineBanner />
-      <ScreenHeader title="Route Management" onBack={() => navigation.goBack()} rightElement={undefined} style={undefined} />
+      <ScreenHeader title="My routes" onBack={() => navigation.goBack()} />
 
       <RouteList
         routes={routes}
@@ -60,12 +62,16 @@ const RouteManagementScreen = ({ navigation }: Props) => {
         onRefresh={onRefresh}
         formSlot={
           <View style={styles.formSlot}>
-            {createdRouteName && (
-              <View style={styles.successBanner}>
-                <Ionicons name="checkmark-circle" size={16} color={COLORS.primary} />
-                <Text style={styles.successText}>{createdRouteName} created successfully.</Text>
-              </View>
-            )}
+            {createdRouteName ? (
+              <Card style={styles.successBanner}>
+                <View style={styles.successRow}>
+                  <Ionicons name="checkmark-circle" size={18} color={theme.color.success.main} />
+                  <AppText variant="label" weight="medium" color={theme.color.success.text}>
+                    {`${createdRouteName} added.`}
+                  </AppText>
+                </View>
+              </Card>
+            ) : null}
             <RouteForm
               isSubmitting={createRoute.isPending}
               error={createRoute.isError ? asAppError(createRoute.error) : null}
@@ -81,25 +87,19 @@ const RouteManagementScreen = ({ navigation }: Props) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: theme.color.surface.page,
   },
   formSlot: {
-    marginBottom: SPACING.lg,
+    marginBottom: theme.space[4],
   },
   successBanner: {
+    backgroundColor: theme.color.success.bg,
+    marginBottom: theme.space[4],
+  },
+  successRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: `${COLORS.primary}15`,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  successText: {
-    fontSize: 13,
-    fontFamily: FONTS.medium,
-    color: COLORS.primary,
-    flexShrink: 1,
+    gap: theme.space[2],
   },
 });
 

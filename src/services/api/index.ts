@@ -3,6 +3,7 @@ import * as bus from './bus';
 import * as routes from './routes';
 import * as earnings from './earnings';
 import * as customRoutes from './customRoutes';
+import * as boarding from './boarding';
 
 const api = {
   // auth
@@ -32,6 +33,9 @@ const api = {
   recordCustomRoute: customRoutes.recordCustomRoute,
   reportJourney: customRoutes.reportJourney,
   recordRouteUpdate: customRoutes.recordRouteUpdate,
+
+  // boarding
+  submitBoardingScan: boarding.submitBoardingScan,
 };
 
 export default api;

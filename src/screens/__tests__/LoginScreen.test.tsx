@@ -57,7 +57,7 @@ beforeEach(() => {
 describe('LoginScreen', () => {
   it('renders the email and password inputs', () => {
     const { getByTestId } = render(<LoginScreen />);
-    expect(getByTestId('input-Email Address')).toBeTruthy();
+    expect(getByTestId('input-Email')).toBeTruthy();
     expect(getByTestId('input-Password')).toBeTruthy();
   });
 
@@ -72,7 +72,7 @@ describe('LoginScreen', () => {
 
   it('blocks submit with an inline error when the password is too short', () => {
     const { getByTestId, getByText } = render(<LoginScreen />);
-    fireEvent.changeText(getByTestId('input-Email Address'), 'a@b.com');
+    fireEvent.changeText(getByTestId('input-Email'), 'a@b.com');
     fireEvent.changeText(getByTestId('input-Password'), '123');
     fireEvent.press(getByTestId('primary-btn'));
 
@@ -82,7 +82,7 @@ describe('LoginScreen', () => {
 
   it('calls useLogin.mutate with valid credentials', () => {
     const { getByTestId } = render(<LoginScreen />);
-    fireEvent.changeText(getByTestId('input-Email Address'), 'driver@test.com');
+    fireEvent.changeText(getByTestId('input-Email'), 'driver@test.com');
     fireEvent.changeText(getByTestId('input-Password'), 'password123');
     fireEvent.press(getByTestId('primary-btn'));
 

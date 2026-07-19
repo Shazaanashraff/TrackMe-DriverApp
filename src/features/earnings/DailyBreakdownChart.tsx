@@ -1,7 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
+import { View, StyleSheet } from 'react-native';
+import { theme } from '../../theme';
+import AppText from '../../components/ui/AppText';
+import Card from '../../components/ui/Card';
+import EmptyState from '../../components/ui/EmptyState';
+import Skeleton from '../../components/ui/Skeleton';
 import { formatCurrency } from '../../helpers/formatters';
 import { AppError } from '../../lib/errors';
 import ErrorState from '../../components/ui/ErrorState';
@@ -24,149 +27,108 @@ type Props = {
 export default function DailyBreakdownChart({ breakdown, isLoading, isError, error, onRetry }: Props) {
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.sectionTitle}>Daily Breakdown</Text>
-        <Text style={styles.loadingText}>Loading breakdown…</Text>
-      </View>
+      <Card style={styles.card}>
+        <AppText variant="h2" style={styles.title}>Daily breakdown</AppText>
+        <Skeleton height={56} style={styles.rowSkeleton} />
+        <Skeleton height={56} style={styles.rowSkeleton} />
+        <Skeleton height={56} />
+      </Card>
     );
   }
 
   if (isError) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.sectionTitle}>Daily Breakdown</Text>
-        <ErrorState error={error ?? new AppError('unknown', 'Failed to load breakdown')} onRetry={onRetry} variant="compact" />
-      </View>
+      <Card style={styles.card}>
+        <AppText variant="h2" style={styles.title}>Daily breakdown</AppText>
+        <ErrorState
+          error={error ?? new AppError('unknown', 'Failed to load breakdown')}
+          onRetry={onRetry}
+          variant="compact"
+          message="Couldn't load. Pull down to try again."
+        />
+      </Card>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Daily Breakdown</Text>
+    <Card style={styles.card}>
+      <AppText variant="h2" style={styles.title}>Daily breakdown</AppText>
 
       {breakdown.length > 0 ? (
-        <View style={styles.breakdownList}>
+        <View style={styles.list}>
           {breakdown.map((day, idx) => (
-            <View key={day._id ?? idx} style={styles.breakdownItem}>
-              <View style={styles.breakdownDateBox}>
-                <Text style={styles.breakdownDay}>{day._id.split('-')[2]}</Text>
-                <Text style={styles.breakdownMonth}>
+            <View key={day._id ?? idx} style={styles.row}>
+              <View style={styles.dateBox}>
+                <AppText variant="body" weight="medium">{day._id.split('-')[2]}</AppText>
+                <AppText variant="caption" color={theme.color.text.muted}>
                   {new Date(day._id).toLocaleString('default', { month: 'short' })}
-                </Text>
+                </AppText>
               </View>
-              <View style={styles.breakdownMain}>
-                <Text style={styles.breakdownTrips}>
-                  {day.trips} Trips • {day.passengers} Passengers
-                </Text>
-                <View style={styles.progressContainer}>
-                  <View style={[styles.progressBar, { width: `${Math.min((day.earnings / 500) * 100, 100)}%` }]} />
+              <View style={styles.main}>
+                <AppText variant="label" color={theme.color.text.secondary} style={styles.tripsLabel}>
+                  {day.trips} trips · {day.passengers} passengers
+                </AppText>
+                <View style={styles.track}>
+                  <View style={[styles.bar, { width: `${Math.min((day.earnings / 500) * 100, 100)}%` }]} />
                 </View>
               </View>
-              <Text style={styles.breakdownValue}>{formatCurrency(day.earnings)}</Text>
+              <AppText variant="body" weight="medium" style={styles.value}>{formatCurrency(day.earnings)}</AppText>
             </View>
           ))}
         </View>
       ) : (
-        <View style={styles.emptyWrap}>
-          <Ionicons name="calendar-outline" size={60} color={COLORS.border} />
-          <Text style={styles.emptyHeading}>No Breakdown Available</Text>
-          <Text style={styles.emptySub}>Complete more trips to see your daily analysis.</Text>
-        </View>
+        <EmptyState
+          icon="calendar-outline"
+          title="No breakdown yet"
+          subtitle="Complete more trips to see your daily earnings."
+        />
       )}
-    </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: SPACING.lg,
+  card: {
+    marginTop: theme.space[4],
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary,
-    marginBottom: SPACING.md,
+  title: {
+    marginBottom: theme.space[3],
   },
-  loadingText: {
-    fontFamily: FONTS.medium,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    paddingVertical: 40,
+  rowSkeleton: {
+    marginBottom: theme.space[2],
   },
-  breakdownList: {
-    gap: SPACING.sm,
+  list: {
+    gap: theme.space[2],
   },
-  breakdownItem: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.md,
-    padding: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
   },
-  breakdownDateBox: {
-    width: 45,
-    alignItems: 'center',
-    marginRight: 16,
-    paddingRight: 16,
-    borderRightWidth: 1,
-    borderRightColor: COLORS.border,
+  dateBox: {
+    width: 44,
+    marginRight: theme.space[3],
+    paddingRight: theme.space[3],
+    borderRightWidth: theme.borderWidth.hairline,
+    borderRightColor: theme.color.border.hairline,
   },
-  breakdownDay: {
-    fontSize: 18,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary,
-  },
-  breakdownMonth: {
-    fontSize: 10,
-    fontFamily: FONTS.medium,
-    color: COLORS.textSecondary,
-    textTransform: 'uppercase',
-  },
-  breakdownMain: {
+  main: {
     flex: 1,
   },
-  breakdownTrips: {
-    fontSize: 12,
-    fontFamily: FONTS.medium,
-    color: COLORS.secondary,
-    marginBottom: 6,
+  tripsLabel: {
+    marginBottom: theme.space[1],
   },
-  progressContainer: {
+  track: {
     height: 4,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: theme.color.surface.field,
     borderRadius: 2,
     width: '100%',
   },
-  progressBar: {
+  bar: {
     height: '100%',
-    backgroundColor: COLORS.primary,
+    backgroundColor: theme.color.primary[500],
     borderRadius: 2,
   },
-  breakdownValue: {
-    fontSize: 16,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary,
-    marginLeft: 16,
-  },
-  emptyWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyHeading: {
-    fontSize: 18,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary,
-    marginTop: 16,
-  },
-  emptySub: {
-    fontSize: 14,
-    fontFamily: FONTS.medium,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginTop: 8,
-    paddingHorizontal: 40,
+  value: {
+    marginLeft: theme.space[3],
   },
 });

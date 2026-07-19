@@ -4,6 +4,7 @@ import { ViewStyle } from 'react-native';
 interface FormInputProps {
   label?: string;
   icon?: string;
+  error?: string;
   value?: string;
   onChangeText?: (text: string) => void;
   placeholder?: string;

@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../../constants/theme';
+import { theme } from '../../theme';
 
 const FormInput = ({
   label,
   icon,
+  error,
   value,
   onChangeText,
   placeholder,
@@ -13,56 +14,74 @@ const FormInput = ({
   autoCapitalize = 'sentences',
   secureTextEntry = false,
   style,
+  onFocus,
+  onBlur,
   ...rest
-}) => (
-  <View style={[styles.group, style]}>
-    {label ? <Text style={styles.label}>{label}</Text> : null}
-    <View style={styles.wrapper}>
-      {icon ? <Ionicons name={icon} size={20} color={COLORS.textSecondary} style={styles.icon} /> : null}
-      <TextInput
-        style={styles.input}
-        placeholder={placeholder}
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-        secureTextEntry={secureTextEntry}
-        placeholderTextColor="#9ca3af"
-        {...rest}
-      />
+}) => {
+  const [focused, setFocused] = useState(false);
+
+  return (
+    <View style={[styles.group, style]}>
+      {label ? <Text style={styles.label}>{label}</Text> : null}
+      <View style={[styles.wrapper, focused && styles.wrapperFocused, error && styles.wrapperError]}>
+        {icon ? (
+          <Ionicons name={icon} size={20} color={theme.color.text.secondary} style={styles.icon} />
+        ) : null}
+        <TextInput
+          style={styles.input}
+          placeholder={placeholder}
+          value={value}
+          onChangeText={onChangeText}
+          keyboardType={keyboardType}
+          autoCapitalize={autoCapitalize}
+          secureTextEntry={secureTextEntry}
+          placeholderTextColor={theme.color.text.muted}
+          onFocus={(e) => { setFocused(true); onFocus?.(e); }}
+          onBlur={(e) => { setFocused(false); onBlur?.(e); }}
+          accessibilityLabel={label || placeholder}
+          {...rest}
+        />
+      </View>
+      {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
-  </View>
-);
+  );
+};
 
 const styles = StyleSheet.create({
   group: {
-    marginBottom: SPACING.md,
+    marginBottom: theme.space[4],
   },
   label: {
-    fontSize: 14,
-    fontFamily: FONTS.medium,
-    color: COLORS.secondary,
-    marginBottom: 8,
-    marginLeft: 4,
+    ...theme.textStyle('label', { weight: 'medium', color: theme.color.text.primary }),
+    marginBottom: theme.space[2],
   },
   wrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.md,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-    paddingHorizontal: 16,
+    height: 52,
+    backgroundColor: theme.color.surface.field,
+    borderRadius: theme.radius.control,
+    borderWidth: theme.borderWidth.strong,
+    borderColor: 'transparent',
+    paddingHorizontal: theme.space[4],
+  },
+  wrapperFocused: {
+    borderColor: theme.color.primary[500],
+  },
+  wrapperError: {
+    borderColor: theme.color.danger.main,
   },
   icon: {
-    marginRight: 10,
+    marginRight: theme.space[2],
   },
   input: {
     flex: 1,
-    paddingVertical: 14,
-    fontSize: 15,
-    color: COLORS.text,
-    fontFamily: FONTS.medium,
+    ...theme.textStyle('body'),
+    color: theme.color.text.primary,
+  },
+  error: {
+    ...theme.textStyle('label', { color: theme.color.danger.text }),
+    marginTop: theme.space[1],
   },
 });
 

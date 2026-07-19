@@ -99,7 +99,12 @@ describe('userMessage', () => {
 
   it('returns friendly message for tracking', () => {
     const msg = userMessage(new AppError('tracking', 'Start-tracking ack failed'));
-    expect(msg.toLowerCase()).toContain('tracking');
+    expect(msg).toBe("Couldn't confirm you're online with the server. Please try again.");
+  });
+
+  it('returns the exact STYLEGUIDE §8 copy for INVALID_CREDENTIALS', () => {
+    const err = new AppError('http', 'Unauthorized', { status: 401, code: 'INVALID_CREDENTIALS' });
+    expect(userMessage(err)).toBe('Wrong email or password. Try again.');
   });
 
   it('returns known code message for DUPLICATE_PLATE', () => {

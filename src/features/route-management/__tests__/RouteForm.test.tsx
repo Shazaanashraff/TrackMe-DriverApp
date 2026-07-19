@@ -25,7 +25,7 @@ describe('RouteForm', () => {
     const onSubmit = jest.fn();
     const { getByText } = render(<RouteForm {...baseProps} onSubmit={onSubmit} />);
 
-    fireEvent.press(getByText('Register Route'));
+    fireEvent.press(getByText('Add route'));
 
     expect(getByText('Route ID is required')).toBeTruthy();
     expect(getByText('Route name is required')).toBeTruthy();
@@ -43,7 +43,7 @@ describe('RouteForm', () => {
     );
 
     fillValidForm(getByPlaceholderText, getAllByPlaceholderText);
-    fireEvent.press(getByText('Register Route'));
+    fireEvent.press(getByText('Add route'));
 
     expect(onSubmit).toHaveBeenCalledWith({
       routeId: 'R101',
@@ -65,7 +65,7 @@ describe('RouteForm', () => {
     );
 
     fillValidForm(getByPlaceholderText, getAllByPlaceholderText);
-    fireEvent.press(getByText('Register Route'));
+    fireEvent.press(getByText('Add route'));
 
     expect(getByPlaceholderText('e.g. R101').props.value).toBe('');
   });

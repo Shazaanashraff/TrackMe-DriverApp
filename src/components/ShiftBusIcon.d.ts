@@ -3,6 +3,8 @@ import { ViewStyle } from 'react-native';
 
 interface ShiftBusIconProps {
   size?: number;
+  bodyColor?: string;
+  detailColor?: string;
   style?: ViewStyle;
 }
 

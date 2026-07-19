@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS } from '../constants/theme';
+import { theme } from '../theme';
 
 type Props = {
   children: React.ReactNode;
@@ -36,7 +36,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <View style={styles.container}>
-          <Ionicons name="warning-outline" size={56} color={COLORS.error} />
+          <Ionicons name="warning-outline" size={56} color={theme.color.danger.main} />
           <Text style={styles.title}>Something went wrong</Text>
           <Text style={styles.subtitle}>The app encountered an unexpected error.</Text>
           <TouchableOpacity style={styles.button} onPress={this.handleReset}>
@@ -55,32 +55,26 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: SPACING.lg,
-    gap: SPACING.sm,
-    backgroundColor: COLORS.background,
+    padding: theme.space[6],
+    gap: theme.space[2],
+    backgroundColor: theme.color.surface.page,
   },
   title: {
-    fontFamily: FONTS.bold,
-    fontSize: 20,
-    color: COLORS.secondary,
+    ...theme.textStyle('h1', { weight: 'medium', color: theme.color.text.primary }),
     textAlign: 'center',
   },
   subtitle: {
-    fontFamily: FONTS.medium,
-    fontSize: 14,
-    color: COLORS.textSecondary,
+    ...theme.textStyle('label', { color: theme.color.text.secondary }),
     textAlign: 'center',
   },
   button: {
-    marginTop: SPACING.xs,
-    paddingVertical: SPACING.xs,
-    paddingHorizontal: SPACING.md,
-    backgroundColor: COLORS.secondary,
-    borderRadius: BORDER_RADIUS.md,
+    marginTop: theme.space[1],
+    paddingVertical: theme.space[1],
+    paddingHorizontal: theme.space[4],
+    backgroundColor: theme.color.primary[500],
+    borderRadius: theme.radius.control,
   },
   buttonText: {
-    fontFamily: FONTS.bold,
-    color: COLORS.white,
-    fontSize: 15,
+    ...theme.textStyle('body', { weight: 'medium', color: theme.color.white }),
   },
 });

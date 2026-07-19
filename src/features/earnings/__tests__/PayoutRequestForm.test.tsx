@@ -41,9 +41,10 @@ describe('PayoutRequestForm', () => {
     });
   });
 
-  it('disables actions and shows a submitting label while isSubmitting', () => {
-    const { getByText } = render(<PayoutRequestForm {...baseProps} isSubmitting />);
-    expect(getByText('Submitting…')).toBeTruthy();
+  it('shows a loading spinner in place of the Submit label while isSubmitting', () => {
+    const { getByTestId, queryByText } = render(<PayoutRequestForm {...baseProps} isSubmitting />);
+    expect(getByTestId('button-loading-indicator')).toBeTruthy();
+    expect(queryByText('Submit')).toBeNull();
   });
 
   it('calls onCancel when Cancel is pressed', () => {

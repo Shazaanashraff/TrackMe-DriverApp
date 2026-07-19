@@ -4,6 +4,9 @@ export interface LocationFix {
   lat: number;
   lng: number;
   timestamp: number;
+  // Horizontal accuracy in meters, when the platform reports one. UI-only (e.g. the
+  // Signal Ink GPS stat chip) — never sent over the wire, never used by shouldEmit().
+  accuracy?: number | null;
 }
 
 /** Haversine distance in metres between two coordinates. */

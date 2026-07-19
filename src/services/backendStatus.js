@@ -65,6 +65,10 @@ const checkBackendHealth = async () => {
   }
 };
 
+// Manual re-check, e.g. a "Try again" button on the offline screen. Same
+// request the 30s poller already makes — just triggered on demand.
+export const recheckBackendHealth = () => checkBackendHealth();
+
 export const startBackendHealthMonitor = () => {
   if (healthMonitorStarted) {
     return () => {};

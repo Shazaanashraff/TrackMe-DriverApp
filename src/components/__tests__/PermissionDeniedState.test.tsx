@@ -4,15 +4,16 @@ import { render, fireEvent } from '@testing-library/react-native';
 import PermissionDeniedState from '../PermissionDeniedState';
 
 describe('PermissionDeniedState', () => {
-  it('explains why location is needed', () => {
+  it('shows the STYLEGUIDE §8 copy', () => {
     const { getByText } = render(<PermissionDeniedState />);
-    expect(getByText(/location access needed/i)).toBeTruthy();
+    expect(getByText('Allow location so riders can see your bus')).toBeTruthy();
+    expect(getByText('Allow location')).toBeTruthy();
   });
 
   it('opens settings when the button is pressed', () => {
     const openSettingsSpy = jest.spyOn(Linking, 'openSettings').mockResolvedValue();
     const { getByText } = render(<PermissionDeniedState />);
-    fireEvent.press(getByText('Open Settings'));
+    fireEvent.press(getByText('Allow location'));
     expect(openSettingsSpy).toHaveBeenCalledTimes(1);
   });
 });

@@ -98,11 +98,12 @@ export function useLocationBroadcast({
           timeInterval: 3000,
           distanceInterval: 3,
         },
-        (location: { coords: { latitude: number; longitude: number } }) => {
+        (location: { coords: { latitude: number; longitude: number; accuracy?: number | null } }) => {
           handleFix({
             lat: location.coords.latitude,
             lng: location.coords.longitude,
             timestamp: Date.now(),
+            accuracy: location.coords.accuracy,
           });
         }
       );

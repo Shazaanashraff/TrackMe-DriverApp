@@ -4,6 +4,7 @@ import { ViewStyle, TextStyle } from 'react-native';
 interface PrimaryButtonProps {
   title: string;
   onPress: () => void;
+  variant?: 'primary' | 'secondary' | 'danger';
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;

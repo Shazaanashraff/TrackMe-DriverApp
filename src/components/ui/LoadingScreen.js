@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { COLORS } from '../../constants/theme';
+import { theme } from '../../theme';
 
-const LoadingScreen = ({ color = COLORS.primary, backgroundColor = COLORS.background }) => (
+const LoadingScreen = ({ color = theme.color.primary[500], backgroundColor = theme.color.surface.page }) => (
   <View style={[styles.container, { backgroundColor }]}>
     <ActivityIndicator size="large" color={color} />
   </View>
