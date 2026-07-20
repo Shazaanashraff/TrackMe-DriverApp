@@ -1,9 +1,8 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import FormInput from '../FormInput';
 import PrimaryButton from '../PrimaryButton';
 import InfoRow from '../InfoRow';
-import SectionCard from '../SectionCard';
 import LoadingScreen from '../LoadingScreen';
 import ScreenHeader from '../ScreenHeader';
 
@@ -14,6 +13,27 @@ describe('FormInput', () => {
     );
     expect(getByText('Email')).toBeTruthy();
     expect(getByPlaceholderText('Enter email')).toBeTruthy();
+  });
+
+  it('renders an error message below the field', () => {
+    const { getByText } = render(
+      <FormInput label="Email" value="" onChangeText={() => {}} error="Email is required" />
+    );
+    expect(getByText('Email is required')).toBeTruthy();
+  });
+
+  it('renders no error text when none is given', () => {
+    const { queryByText } = render(
+      <FormInput label="Email" value="" onChangeText={() => {}} />
+    );
+    expect(queryByText(/required/i)).toBeNull();
+  });
+
+  it('exposes an accessibilityLabel derived from the label', () => {
+    const { getByLabelText } = render(
+      <FormInput label="Email" value="" onChangeText={() => {}} />
+    );
+    expect(getByLabelText('Email')).toBeTruthy();
   });
 });
 
@@ -26,10 +46,27 @@ describe('PrimaryButton', () => {
   });
 
   it('hides title and shows spinner when loading', () => {
-    const { queryByText } = render(
+    const { queryByText, getByTestId } = render(
       <PrimaryButton title="Sign In" onPress={() => {}} loading />
     );
     expect(queryByText('Sign In')).toBeNull();
+    expect(getByTestId('button-loading-indicator')).toBeTruthy();
+  });
+
+  it('does not fire onPress when disabled', () => {
+    const onPress = jest.fn();
+    const { getByText } = render(
+      <PrimaryButton title="Save bus" onPress={onPress} disabled />
+    );
+    fireEvent.press(getByText('Save bus'));
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
+  it.each(['primary', 'secondary', 'danger'])('renders the %s variant', (variant) => {
+    const { getByText } = render(
+      <PrimaryButton title="Action" onPress={() => {}} variant={variant} />
+    );
+    expect(getByText('Action')).toBeTruthy();
   });
 });
 
@@ -40,27 +77,6 @@ describe('InfoRow', () => {
     );
     expect(getByText('Full Name')).toBeTruthy();
     expect(getByText('Mohammed')).toBeTruthy();
-  });
-});
-
-describe('SectionCard', () => {
-  it('renders title and children', () => {
-    const { getByText } = render(
-      <SectionCard title="Personal Information">
-        <InfoRow label="Email" value="test@test.com" />
-      </SectionCard>
-    );
-    expect(getByText('Personal Information')).toBeTruthy();
-    expect(getByText('Email')).toBeTruthy();
-  });
-
-  it('renders without a title', () => {
-    const { getByText } = render(
-      <SectionCard>
-        <InfoRow label="Role" value="Driver" />
-      </SectionCard>
-    );
-    expect(getByText('Role')).toBeTruthy();
   });
 });
 

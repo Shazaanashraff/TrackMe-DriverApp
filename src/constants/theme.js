@@ -1,53 +1,47 @@
+// Compat shim — re-exports the Signal Ink theme (src/theme/) under the old
+// COLORS/FONTS/SPACING/BORDER_RADIUS/SHADOWS names so every unmigrated screen
+// re-colors with zero edits. New code should import from '../theme' directly;
+// this file exists only until every consumer has migrated (Phase 6).
+import { theme } from '../theme';
+
 export const COLORS = {
-  primary: '#10b981', // AceBus Mint Green
-  secondary: '#111827', // Dark Navy
-  background: '#f8f9fa', // Clean light background
-  card: '#ffffff',
-  text: '#111827',
-  textSecondary: '#6b7280',
-  accent: '#6ee7b7',
-  border: '#e5e7eb',
-  white: '#ffffff',
-  error: '#ef4444',
-  success: '#10b981',
-  warning: '#f59e0b',
-  info: '#3b82f6'
+  primary: theme.color.primary[500],
+  secondary: theme.color.ink.base,
+  background: theme.color.surface.page,
+  card: theme.color.surface.card,
+  text: theme.color.text.primary,
+  textSecondary: theme.color.text.secondary,
+  accent: theme.color.primary[300],
+  border: theme.color.border.hairline,
+  white: theme.color.white,
+  error: theme.color.danger.main,
+  success: theme.color.success.main,
+  warning: theme.color.warning.main,
+  info: theme.color.secondary[500],
 };
 
 export const FONTS = {
-  bold: 'UberMove-Bold',
-  medium: 'UberMove-Medium'
+  bold: 'Inter_500Medium', // the design has no bold — old "bold" maps to medium
+  medium: 'Inter_400Regular',
 };
 
 export const SPACING = {
-  xs: 4,
-  sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32
+  xs: theme.space[1],
+  sm: theme.space[2],
+  md: theme.space[4],
+  lg: theme.space[6],
+  xl: theme.space[8],
 };
 
 export const BORDER_RADIUS = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
-  full: 9999
+  sm: theme.radius.control,
+  md: theme.radius.card,
+  lg: theme.radius.sheet,
+  xl: 24, // hero bottom-corner radius (STYLEGUIDE §4) — no named token
+  full: theme.radius.pill,
 };
 
 export const SHADOWS = {
-  sm: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2
-  },
-  md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4
-  }
+  sm: theme.elevation.card,
+  md: theme.elevation.sheet,
 };

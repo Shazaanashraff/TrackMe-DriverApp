@@ -1,7 +1,7 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
+import { useFonts, Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { AuthProvider } from './src/context/AuthContext';
@@ -18,8 +18,8 @@ SplashScreen.preventAutoHideAsync();
 function AppContent() {
   const [backendOnline, setBackendOnline] = useState(getBackendOnline());
   const [fontsLoaded] = useFonts({
-    'UberMove-Bold': require('./assets/fonts/UberMoveBold.otf'),
-    'UberMove-Medium': require('./assets/fonts/UberMoveMedium.otf'),
+    Inter_400Regular,
+    Inter_500Medium,
   });
 
   const onLayoutRootView = useCallback(async () => {

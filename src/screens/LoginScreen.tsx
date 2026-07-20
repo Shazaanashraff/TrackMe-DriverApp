@@ -1,16 +1,9 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, ScrollView, StatusBar, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 import { useLogin } from '../hooks/auth';
 import { AppError, normalizeError } from '../lib/errors';
-import { COLORS, FONTS, SPACING, SHADOWS } from '../constants/theme';
+import { theme } from '../theme';
+import AppText from '../components/ui/AppText';
 import ShiftBusIcon from '../components/ShiftBusIcon';
 import FormInput from '../components/ui/FormInput';
 import PrimaryButton from '../components/ui/PrimaryButton';
@@ -50,27 +43,18 @@ const LoginScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <StatusBar barStyle="dark-content" />
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.headerContainer}>
-          <View style={styles.logoCircle}>
-            <ShiftBusIcon size={56} />
-          </View>
-          <Text style={styles.logoText}>TrackMe</Text>
-          <Text style={styles.welcomeText}>Driver Portal</Text>
-          <Text style={styles.subText}>Manage your journeys with ease</Text>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <StatusBar barStyle="light-content" />
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.hero}>
+          <ShiftBusIcon size={56} />
+          <AppText variant="h1" onInk style={styles.appName}>TrackMe</AppText>
+          <AppText variant="label" color={theme.color.primary[300]}>Drive. Go live. Get paid.</AppText>
         </View>
 
         <View style={styles.form}>
           <FormInput
-            label="Email Address"
+            label="Email"
             icon="mail-outline"
             value={email}
             onChangeText={setEmail}
@@ -90,24 +74,9 @@ const LoginScreen = () => {
           />
           <InlineError message={passwordError} />
 
-          {login.isError && (
-            <ErrorState error={asAppError(login.error)} variant="compact" />
-          )}
+          {login.isError && <ErrorState error={asAppError(login.error)} variant="compact" />}
 
-          <PrimaryButton
-            title="Sign In"
-            onPress={handleLogin}
-            loading={login.isPending}
-            style={styles.loginButton}
-          />
-
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>Trusted by thousands</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <Text style={styles.hint}>Testing credentials: driver@test.com / password123</Text>
+          <PrimaryButton title="Sign in" onPress={handleLogin} loading={login.isPending} style={styles.loginButton} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -117,74 +86,31 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: theme.color.surface.page,
   },
   scrollContent: {
     flexGrow: 1,
-    padding: SPACING.lg,
-    justifyContent: 'center',
   },
-  headerContainer: {
+  hero: {
+    height: '35%',
+    minHeight: 220,
+    backgroundColor: theme.color.ink.base,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
     alignItems: 'center',
-    marginBottom: SPACING.xl,
-  },
-  logoCircle: {
-    width: 98,
-    height: 98,
-    borderRadius: 49,
-    backgroundColor: COLORS.white,
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: SPACING.md,
-    ...SHADOWS.md,
+    gap: theme.space[2],
+    paddingHorizontal: theme.space[5],
   },
-  logoText: {
-    fontSize: 34,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary,
-    letterSpacing: -1,
-  },
-  welcomeText: {
-    fontSize: 24,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary,
-    marginTop: SPACING.xs,
-  },
-  subText: {
-    fontSize: 15,
-    fontFamily: FONTS.medium,
-    color: COLORS.textSecondary,
-    marginTop: 4,
+  appName: {
+    marginTop: theme.space[1],
   },
   form: {
-    width: '100%',
+    padding: theme.space[5],
+    paddingTop: theme.space[6],
   },
   loginButton: {
-    backgroundColor: COLORS.primary,
-    ...SHADOWS.md,
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: SPACING.xl,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: COLORS.border,
-  },
-  dividerText: {
-    color: COLORS.textSecondary,
-    paddingHorizontal: 16,
-    fontSize: 12,
-    fontFamily: FONTS.medium,
-  },
-  hint: {
-    textAlign: 'center',
-    color: COLORS.textSecondary,
-    fontSize: 11,
-    fontFamily: FONTS.medium,
-    opacity: 0.6,
+    marginTop: theme.space[2],
   },
 });
 

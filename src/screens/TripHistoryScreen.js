@@ -1,22 +1,24 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  RefreshControl,
-  SafeAreaView,
-  StatusBar,
-  TouchableOpacity
-} from 'react-native';
+import { FlatList, RefreshControl, SafeAreaView, StatusBar, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
-import ScreenHeader from '../components/ui/ScreenHeader';
-import LoadingScreen from '../components/ui/LoadingScreen';
+import { theme } from '../theme';
+import AppText from '../components/ui/AppText';
+import Card from '../components/ui/Card';
+import StatusPill from '../components/ui/StatusPill';
+import EmptyState from '../components/ui/EmptyState';
+import Skeleton from '../components/ui/Skeleton';
+import { formatCurrency } from '../helpers/formatters';
 
-const TripHistoryScreen = ({ navigation }) => {
+const STATUS_VARIANT = {
+  PAID: 'live',
+  PROCESSED: 'neutral',
+  PENDING: 'warn',
+  FAILED: 'danger',
+};
+
+const TripHistoryScreen = () => {
   const { authenticatedRequest } = useAuth();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,83 +50,66 @@ const TripHistoryScreen = ({ navigation }) => {
     const tripDate = new Date(item.journeyDate).toLocaleDateString(undefined, {
       day: 'numeric',
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
     });
 
     return (
-      <View style={styles.tripCard}>
-        <View style={styles.tripHeader}>
-          <View style={styles.tripIconBox}>
-            <Ionicons name="bus" size={20} color={COLORS.white} />
+      <Card style={styles.tripCard}>
+        <View style={styles.tripRow}>
+          <View style={styles.iconBadge}>
+            <Ionicons name="bus" size={20} color={theme.color.primary[500]} />
           </View>
-          <View style={styles.tripTitleArea}>
-            <Text style={styles.routeText} numberOfLines={1}>
+          <View style={styles.textBlock}>
+            <AppText variant="body" weight="medium" numberOfLines={1}>
               {item.routeId?.source || 'Origin'} → {item.routeId?.destination || 'Destination'}
-            </Text>
-            <Text style={styles.dateText}>{tripDate}</Text>
+            </AppText>
+            <AppText variant="caption" color={theme.color.text.muted}>{tripDate}</AppText>
           </View>
-          <View style={[styles.statusBadge, item.paymentStatus === 'PAID' ? styles.statusPaid : styles.statusPending]}>
-            <Text style={[styles.statusText, { color: item.paymentStatus === 'PAID' ? COLORS.primary : '#f59e0b' }]}>
-              {item.paymentStatus || 'PENDING'}
-            </Text>
-          </View>
+          <AppText variant="body" weight="medium">{formatCurrency(item.netEarnings || 0)}</AppText>
         </View>
-
-        <View style={styles.tripBody}>
-          <View style={styles.infoCol}>
-            <Text style={styles.infoLabel}>EARNINGS</Text>
-            <Text style={styles.earningsValue}>₹{item.netEarnings || 0}</Text>
-          </View>
-          <View style={styles.infoDivider} />
-          <View style={styles.infoCol}>
-            <Text style={styles.infoLabel}>PASSENGERS</Text>
-            <Text style={styles.infoValue}>{item.totalPassengers || 0} Seats</Text>
-          </View>
-          <View style={styles.infoDivider} />
-          <View style={styles.infoCol}>
-            <Text style={styles.infoLabel}>BUS ID</Text>
-            <Text style={styles.infoValue}>{item.busId?.busId || 'N/A'}</Text>
-          </View>
+        <View style={styles.tripFooter}>
+          <StatusPill
+            label={item.paymentStatus || 'PENDING'}
+            variant={STATUS_VARIANT[item.paymentStatus] || 'warn'}
+          />
         </View>
-
-        <TouchableOpacity style={styles.detailsBtn} activeOpacity={0.7}>
-          <Text style={styles.detailsBtnText}>View Details</Text>
-          <Ionicons name="arrow-forward" size={14} color={COLORS.primary} />
-        </TouchableOpacity>
-      </View>
+      </Card>
     );
   }, []);
-
-  if (loading && !refreshing) {
-    return <LoadingScreen />;
-  }
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
-      <ScreenHeader title="Trip History" onBack={() => navigation.goBack()} />
+      <View style={styles.header}>
+        <AppText variant="h1">Trips</AppText>
+        <AppText variant="label" color={theme.color.text.secondary}>Your completed journeys</AppText>
+      </View>
 
-      <FlatList
-        data={trips}
-        keyExtractor={(item) => String(item._id)}
-        renderItem={renderTrip}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <Ionicons name="receipt-outline" size={60} color={COLORS.border} />
-            <Text style={styles.emptyText}>No trip records found.</Text>
-          </View>
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={COLORS.primary}
-            colors={[COLORS.primary]}
-          />
-        }
-      />
+      {loading && !refreshing ? (
+        <View style={styles.listContent}>
+          <Skeleton height={92} style={styles.skeletonRow} />
+          <Skeleton height={92} style={styles.skeletonRow} />
+          <Skeleton height={92} />
+        </View>
+      ) : (
+        <FlatList
+          data={trips}
+          keyExtractor={(item) => String(item._id)}
+          renderItem={renderTrip}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <EmptyState
+              icon="receipt-outline"
+              title="No trips yet"
+              subtitle="Your completed journeys will show up here."
+            />
+          }
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.color.primary[500]} />
+          }
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -132,122 +117,43 @@ const TripHistoryScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background
+    backgroundColor: theme.color.surface.page,
+  },
+  header: {
+    padding: theme.space[5],
+    paddingBottom: theme.space[3],
   },
   listContent: {
-    padding: SPACING.md,
-    paddingBottom: 40
+    padding: theme.space[5],
+    paddingTop: 0,
+    paddingBottom: theme.space[8],
+  },
+  skeletonRow: {
+    marginBottom: theme.space[3],
   },
   tripCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.sm
+    marginBottom: theme.space[3],
+    gap: theme.space[3],
   },
-  tripHeader: {
+  tripRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: SPACING.md
+    gap: theme.space[3],
   },
-  tripIconBox: {
+  iconBadge: {
     width: 40,
     height: 40,
-    borderRadius: 10,
-    backgroundColor: COLORS.secondary,
+    borderRadius: theme.radius.control,
+    backgroundColor: theme.color.primary[50],
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12
   },
-  tripTitleArea: {
-    flex: 1
-  },
-  routeText: {
-    fontSize: 15,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary
-  },
-  dateText: {
-    fontSize: 12,
-    fontFamily: FONTS.medium,
-    color: COLORS.textSecondary,
-    marginTop: 2
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6
-  },
-  statusPaid: {
-    backgroundColor: `${COLORS.primary}15`
-  },
-  statusPending: {
-    backgroundColor: '#fef3c7'
-  },
-  statusText: {
-    fontSize: 10,
-    fontFamily: FONTS.bold,
-    textTransform: 'uppercase'
-  },
-  tripBody: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: SPACING.md,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: COLORS.border
-  },
-  infoCol: {
+  textBlock: {
     flex: 1,
-    alignItems: 'center'
   },
-  infoDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: COLORS.border
-  },
-  infoLabel: {
-    fontSize: 9,
-    fontFamily: FONTS.bold,
-    color: COLORS.textSecondary,
-    marginBottom: 4,
-    letterSpacing: 0.5
-  },
-  earningsValue: {
-    fontSize: 16,
-    fontFamily: FONTS.bold,
-    color: COLORS.primary
-  },
-  infoValue: {
-    fontSize: 14,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary
-  },
-  detailsBtn: {
+  tripFooter: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: SPACING.md,
-    gap: 6
   },
-  detailsBtnText: {
-    fontSize: 13,
-    fontFamily: FONTS.bold,
-    color: COLORS.primary
-  },
-  emptyWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 100
-  },
-  emptyText: {
-    fontSize: 14,
-    fontFamily: FONTS.medium,
-    color: COLORS.textSecondary,
-    marginTop: 16
-  }
 });
 
 export default TripHistoryScreen;

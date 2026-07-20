@@ -1,18 +1,18 @@
-import React, { useEffect } from 'react';
-import { Text, ScrollView, StatusBar, SafeAreaView, StyleSheet } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, SafeAreaView, StatusBar, View, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useMyBusQuery } from '../hooks/bus';
 import { useTrackingSession } from '../hooks/useTrackingSession';
 import { useLocationBroadcast } from '../hooks/useLocationBroadcast';
-import { COLORS, FONTS, SPACING } from '../constants/theme';
-import DashboardHeader from '../features/dashboard/DashboardHeader';
-import TrackingStatusCard from '../features/dashboard/TrackingStatusCard';
-import TrackingToggle from '../features/dashboard/TrackingToggle';
-import AssignedBusCard from '../features/dashboard/AssignedBusCard';
+import { theme } from '../theme';
+import AppText from '../components/ui/AppText';
+import Card from '../components/ui/Card';
+import ListRow from '../components/ui/ListRow';
+import ConfirmSheet from '../components/ui/ConfirmSheet';
+import DutyHero from '../features/dashboard/DutyHero';
+import VehicleCard from '../features/dashboard/VehicleCard';
 import CustomRouteSection from '../features/dashboard/CustomRouteSection';
-import DashboardMenu from '../features/dashboard/DashboardMenu';
 import TripProgressCard from '../features/dashboard/TripProgressCard';
-import PermissionDeniedState from '../components/PermissionDeniedState';
 import { useCustomRouteJourney } from '../features/dashboard/useCustomRouteJourney';
 import { useSocketConnection } from '../features/dashboard/useSocketConnection';
 
@@ -31,7 +31,7 @@ function unwrap<T>(response: unknown): T {
 }
 
 type Props = {
-  navigation: { navigate: (screen: string) => void };
+  navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void };
 };
 
 const DriverDashboard = ({ navigation }: Props) => {
@@ -47,6 +47,8 @@ const DriverDashboard = ({ navigation }: Props) => {
   const { connecting } = useSocketConnection(token);
   const journey = useCustomRouteJourney(busId);
 
+  const [showEndConfirm, setShowEndConfirm] = useState(false);
+
   // Record every broadcast fix as a breadcrumb point while on an active custom route.
   useEffect(() => {
     if (broadcast.lastFix) journey.recordFix(broadcast.lastFix);
@@ -57,14 +59,53 @@ const DriverDashboard = ({ navigation }: Props) => {
   const handleStop = () => {
     session.stop(busId);
     journey.reportCompletedJourney();
+    setShowEndConfirm(false);
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      <DashboardHeader driverName={user?.name} onProfilePress={() => navigation.navigate('DriverProfile')} />
+  const firstName = user?.name?.split(' ')[0];
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollPadding}>
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <SafeAreaView style={styles.heroSafeArea}>
+        <DutyHero
+          firstName={firstName}
+          busName={bus?.busName}
+          status={session.status}
+          isReconnecting={session.isReconnecting}
+          connecting={connecting}
+          permission={broadcast.permission}
+          lastFix={session.status === 'tracking' ? broadcast.lastFix : null}
+          hasBus={!!bus}
+          onGoPress={handleStart}
+          onEndPress={() => setShowEndConfirm(true)}
+        />
+      </SafeAreaView>
+
+      <ScrollView
+        style={styles.scroll}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <AppText variant="h2" style={styles.sectionTitle}>Your vehicle</AppText>
+        <VehicleCard bus={bus} onRegisterPress={() => navigation.navigate('BusRegistration')} />
+
+        <TripProgressCard
+          routeId={routeId}
+          fix={session.status === 'tracking' ? broadcast.lastFix : null}
+          isTracking={session.status === 'tracking'}
+        />
+
+        <Card style={styles.scanCard} padding={0}>
+          <ListRow
+            testID="scan-rider-qr-row"
+            icon="qr-code-outline"
+            title="Scan rider QR"
+            subtitle={bus ? 'Record boarding or alighting' : 'Register a bus to enable scanning'}
+            onPress={bus ? () => navigation.navigate('QRScanner', { busId }) : undefined}
+          />
+        </Card>
+
         <CustomRouteSection
           bus={bus}
           customRoute={journey.customRoute}
@@ -74,63 +115,42 @@ const DriverDashboard = ({ navigation }: Props) => {
             journey.setShowUpdateRecorder(false);
             journey.reload();
           }}
-        >
-          <TrackingStatusCard
-            status={session.status}
-            isReconnecting={session.isReconnecting}
-            connecting={connecting}
-            lastFix={session.status === 'tracking' ? broadcast.lastFix : null}
-          >
-            {session.status === 'tracking' && broadcast.permission === 'denied' ? (
-              <PermissionDeniedState />
-            ) : (
-              <TrackingToggle
-                isTracking={session.status === 'tracking'}
-                disabled={!bus}
-                onStart={handleStart}
-                onStop={handleStop}
-              />
-            )}
-          </TrackingStatusCard>
-        </CustomRouteSection>
-
-        <TripProgressCard
-          routeId={routeId}
-          fix={session.status === 'tracking' ? broadcast.lastFix : null}
-          isTracking={session.status === 'tracking'}
-        />
-
-        <Text style={styles.sectionTitle}>Assigned Vehicle</Text>
-        <AssignedBusCard bus={bus} onRegisterPress={() => navigation.navigate('BusRegistration')} />
-
-        <Text style={styles.sectionTitle}>Dashboard Menu</Text>
-        <DashboardMenu
-          onEarningsPress={() => navigation.navigate('DriverEarnings')}
-          onHistoryPress={() => navigation.navigate('TripHistory')}
         />
       </ScrollView>
-    </SafeAreaView>
+
+      <ConfirmSheet
+        visible={showEndConfirm}
+        title="End this journey?"
+        message="Riders will stop seeing your bus."
+        confirmLabel="End journey"
+        onConfirm={handleStop}
+        onCancel={() => setShowEndConfirm(false)}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: theme.color.surface.page,
   },
-  content: {
+  heroSafeArea: {
+    backgroundColor: theme.color.ink.base,
+  },
+  scroll: {
     flex: 1,
   },
-  scrollPadding: {
-    padding: SPACING.md,
-    paddingBottom: 40,
+  scrollContent: {
+    padding: theme.space[5],
+    paddingBottom: theme.space[8],
   },
   sectionTitle: {
-    fontSize: 18,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary,
-    marginBottom: SPACING.md,
-    marginTop: SPACING.sm,
+    marginBottom: theme.space[3],
+  },
+  scanCard: {
+    marginTop: theme.space[4],
+    paddingHorizontal: theme.space[4],
   },
 });
 

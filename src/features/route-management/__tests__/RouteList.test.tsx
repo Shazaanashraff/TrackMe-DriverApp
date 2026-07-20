@@ -30,7 +30,8 @@ describe('RouteList', () => {
 
   it('shows the empty state when there are no routes', () => {
     const { getByText } = render(<RouteList {...baseProps} routes={[]} />);
-    expect(getByText('No routes found. Start by creating one!')).toBeTruthy();
+    expect(getByText('No routes yet')).toBeTruthy();
+    expect(getByText('Start by adding one above.')).toBeTruthy();
   });
 
   it('shows an error state with retry when isError', () => {
@@ -38,6 +39,7 @@ describe('RouteList', () => {
     const { getByText } = render(
       <RouteList {...baseProps} routes={[]} isError error={new AppError('http', 'boom')} onRetry={onRetry} />
     );
+    expect(getByText("Couldn't load. Pull down to try again.")).toBeTruthy();
     fireEvent.press(getByText('Try again'));
     expect(onRetry).toHaveBeenCalled();
   });

@@ -1,10 +1,14 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
+import { View, Pressable, StyleSheet } from 'react-native';
+import { theme } from '../../theme';
+import AppText from '../../components/ui/AppText';
+import Card from '../../components/ui/Card';
+import StatusPill, { StatusPillVariant } from '../../components/ui/StatusPill';
+import EmptyState from '../../components/ui/EmptyState';
+import Skeleton from '../../components/ui/Skeleton';
+import ErrorState from '../../components/ui/ErrorState';
 import { formatCurrency } from '../../helpers/formatters';
 import { AppError } from '../../lib/errors';
-import ErrorState from '../../components/ui/ErrorState';
 
 export type EarningHistoryItem = {
   _id?: string;
@@ -23,6 +27,13 @@ type Props = {
   onRequestPayout: (item: EarningHistoryItem) => void;
 };
 
+const STATUS_VARIANT: Record<EarningHistoryItem['paymentStatus'], StatusPillVariant> = {
+  PAID: 'live',
+  PROCESSED: 'neutral',
+  PENDING: 'warn',
+  FAILED: 'danger',
+};
+
 export default function EarningsHistoryList({
   history,
   isLoading,
@@ -33,202 +44,97 @@ export default function EarningsHistoryList({
 }: Props) {
   if (isLoading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.sectionTitle}>Transaction History</Text>
-        <Text style={styles.loadingText}>Loading history…</Text>
+      <View style={styles.list}>
+        <Skeleton height={84} style={styles.rowSkeleton} />
+        <Skeleton height={84} style={styles.rowSkeleton} />
+        <Skeleton height={84} />
       </View>
     );
   }
 
   if (isError) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.sectionTitle}>Transaction History</Text>
-        <ErrorState error={error ?? new AppError('unknown', 'Failed to load history')} onRetry={onRetry} variant="compact" />
-      </View>
+      <ErrorState
+        error={error ?? new AppError('unknown', 'Failed to load history')}
+        onRetry={onRetry}
+        variant="compact"
+        message="Couldn't load. Pull down to try again."
+      />
+    );
+  }
+
+  if (history.length === 0) {
+    return (
+      <EmptyState
+        icon="receipt-outline"
+        title="No history yet"
+        subtitle="Your earnings history will appear here after your first trip."
+      />
     );
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Transaction History</Text>
-
-      {history.length > 0 ? (
-        history.map((item, idx) => (
-          <View key={item._id ?? idx} style={styles.historyCard}>
-            <View style={styles.historyTop}>
-              <View style={styles.historyIconBox}>
-                <Ionicons name="bus-outline" size={20} color={COLORS.secondary} />
-              </View>
-              <View style={styles.historyRouteInfo}>
-                <Text style={styles.historyRouteText} numberOfLines={1}>
-                  {item.routeId?.source || 'Origin'} → {item.routeId?.destination || 'Dest'}
-                </Text>
-                <Text style={styles.historyDateText}>
-                  {new Date(item.journeyDate).toLocaleDateString(undefined, {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </Text>
-              </View>
-              <Text style={styles.historyAmountText}>+{formatCurrency(item.netEarnings)}</Text>
+    <View style={styles.list}>
+      {history.map((item, idx) => (
+        <Card key={item._id ?? idx} style={styles.card}>
+          <View style={styles.row}>
+            <View style={styles.textBlock}>
+              <AppText variant="body" weight="medium" numberOfLines={1}>
+                {item.routeId?.source || 'Origin'} → {item.routeId?.destination || 'Destination'}
+              </AppText>
+              <AppText variant="caption" color={theme.color.text.muted}>
+                {new Date(item.journeyDate).toLocaleDateString(undefined, {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </AppText>
             </View>
-            <View style={styles.historyBottom}>
-              <View style={[styles.statusTag, item.paymentStatus === 'PAID' ? styles.statusPaid : styles.statusPending]}>
-                <View
-                  style={[
-                    styles.statusDot,
-                    { backgroundColor: item.paymentStatus === 'PAID' ? COLORS.primary : '#f59e0b' },
-                  ]}
-                />
-                <Text
-                  style={[
-                    styles.statusTagText,
-                    { color: item.paymentStatus === 'PAID' ? COLORS.primary : '#f59e0b' },
-                  ]}
-                >
-                  {item.paymentStatus}
-                </Text>
-              </View>
-              {item.paymentStatus === 'PENDING' ? (
-                <TouchableOpacity onPress={() => onRequestPayout(item)}>
-                  <Text style={styles.requestPayoutText}>Request Payout</Text>
-                </TouchableOpacity>
-              ) : (
-                <Text style={styles.tripIdText}>Trip #{item._id?.slice(-6).toUpperCase()}</Text>
-              )}
-            </View>
+            <AppText variant="body" weight="medium">{`+${formatCurrency(item.netEarnings)}`}</AppText>
           </View>
-        ))
-      ) : (
-        <View style={styles.emptyWrap}>
-          <Ionicons name="receipt-outline" size={60} color={COLORS.border} />
-          <Text style={styles.emptyHeading}>No History Yet</Text>
-          <Text style={styles.emptySub}>Your earnings history will appear here after your first trip.</Text>
-        </View>
-      )}
+
+          <View style={styles.footer}>
+            <StatusPill label={item.paymentStatus} variant={STATUS_VARIANT[item.paymentStatus]} />
+            {item.paymentStatus === 'PENDING' ? (
+              <Pressable
+                onPress={() => onRequestPayout(item)}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                accessibilityRole="button"
+              >
+                <AppText variant="label" weight="medium" color={theme.color.primary[500]}>
+                  Request payout
+                </AppText>
+              </Pressable>
+            ) : null}
+          </View>
+        </Card>
+      ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: SPACING.lg,
+  list: {
+    gap: theme.space[3],
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary,
-    marginBottom: SPACING.md,
+  rowSkeleton: {
+    marginBottom: theme.space[3],
   },
-  loadingText: {
-    fontFamily: FONTS.medium,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    paddingVertical: 40,
+  card: {
+    gap: theme.space[3],
   },
-  historyCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md,
-    marginBottom: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.sm,
-  },
-  historyTop: {
+  row: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: theme.space[3],
   },
-  historyIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#f3f4f6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  historyRouteInfo: {
+  textBlock: {
     flex: 1,
   },
-  historyRouteText: {
-    fontSize: 14,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary,
-  },
-  historyDateText: {
-    fontSize: 11,
-    fontFamily: FONTS.medium,
-    color: COLORS.textSecondary,
-    marginTop: 2,
-  },
-  historyAmountText: {
-    fontSize: 16,
-    fontFamily: FONTS.bold,
-    color: COLORS.primary,
-  },
-  historyBottom: {
+  footer: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  statusTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  statusPaid: {
-    backgroundColor: `${COLORS.primary}15`,
-  },
-  statusPending: {
-    backgroundColor: '#fef3c7',
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  statusTagText: {
-    fontSize: 10,
-    fontFamily: FONTS.bold,
-    textTransform: 'uppercase',
-  },
-  tripIdText: {
-    fontSize: 10,
-    fontFamily: FONTS.medium,
-    color: COLORS.textSecondary,
-  },
-  requestPayoutText: {
-    fontSize: 11,
-    fontFamily: FONTS.bold,
-    color: COLORS.primary,
-  },
-  emptyWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyHeading: {
-    fontSize: 18,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary,
-    marginTop: 16,
-  },
-  emptySub: {
-    fontSize: 14,
-    fontFamily: FONTS.medium,
-    color: COLORS.textSecondary,
-    textAlign: 'center',
-    marginTop: 8,
-    paddingHorizontal: 40,
   },
 });

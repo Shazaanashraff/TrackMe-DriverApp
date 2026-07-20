@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, FlatList, RefreshControl, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS, SPACING } from '../../constants/theme';
-import { AppError } from '../../lib/errors';
+import { View, FlatList, RefreshControl, StyleSheet } from 'react-native';
+import { theme } from '../../theme';
+import AppText from '../../components/ui/AppText';
+import EmptyState from '../../components/ui/EmptyState';
 import ErrorState from '../../components/ui/ErrorState';
+import { AppError } from '../../lib/errors';
 import RouteListItem, { Route } from './RouteListItem';
 
 type Props = {
@@ -21,7 +22,11 @@ export default function RouteList({ routes, isError, error, onRetry, refreshing,
     return (
       <View style={styles.listContent}>
         {formSlot}
-        <ErrorState error={error ?? new AppError('unknown', 'Failed to load routes')} onRetry={onRetry} />
+        <ErrorState
+          error={error ?? new AppError('unknown', 'Failed to load routes')}
+          onRetry={onRetry}
+          message="Couldn't load. Pull down to try again."
+        />
       </View>
     );
   }
@@ -31,24 +36,23 @@ export default function RouteList({ routes, isError, error, onRetry, refreshing,
       data={routes}
       keyExtractor={(item) => String(item._id || item.routeId)}
       renderItem={({ item }) => <RouteListItem route={item} />}
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} colors={[COLORS.primary]} />}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.color.primary[500]} />
+      }
       contentContainerStyle={styles.listContent}
       ListHeaderComponent={
         <View style={styles.listHeaderWrap}>
           {formSlot}
           <View style={styles.listHeaderArea}>
-            <Text style={styles.listTitle}>Existing Routes</Text>
+            <AppText variant="h2">Existing routes</AppText>
             <View style={styles.countBadge}>
-              <Text style={styles.countText}>{routes.length}</Text>
+              <AppText variant="caption" weight="medium" color={theme.color.white}>{routes.length}</AppText>
             </View>
           </View>
         </View>
       }
       ListEmptyComponent={
-        <View style={styles.emptyContainer}>
-          <Ionicons name="map-outline" size={48} color={COLORS.border} />
-          <Text style={styles.emptyText}>No routes found. Start by creating one!</Text>
-        </View>
+        <EmptyState icon="map-outline" title="No routes yet" subtitle="Start by adding one above." />
       }
     />
   );
@@ -56,46 +60,23 @@ export default function RouteList({ routes, isError, error, onRetry, refreshing,
 
 const styles = StyleSheet.create({
   listContent: {
-    padding: SPACING.md,
-    paddingBottom: 40,
+    padding: theme.space[5],
+    paddingBottom: theme.space[8],
   },
   listHeaderWrap: {
-    marginBottom: SPACING.lg,
+    marginBottom: theme.space[3],
   },
   listHeaderArea: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: SPACING.xl,
-    marginBottom: SPACING.sm,
-    paddingHorizontal: 4,
-  },
-  listTitle: {
-    fontSize: 20,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary,
+    gap: theme.space[2],
+    marginTop: theme.space[6],
+    marginBottom: theme.space[3],
   },
   countBadge: {
-    backgroundColor: COLORS.secondary,
-    paddingHorizontal: 10,
+    backgroundColor: theme.color.primary[500],
+    paddingHorizontal: theme.space[2],
     paddingVertical: 2,
-    borderRadius: 12,
-    marginLeft: 10,
-  },
-  countText: {
-    color: COLORS.white,
-    fontSize: 12,
-    fontFamily: FONTS.bold,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyText: {
-    fontSize: 14,
-    fontFamily: FONTS.medium,
-    color: COLORS.textSecondary,
-    marginTop: 12,
-    textAlign: 'center',
+    borderRadius: theme.radius.pill,
   },
 });

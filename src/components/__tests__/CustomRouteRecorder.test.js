@@ -145,7 +145,7 @@ describe('Track / Add Stop / Complete state machine', () => {
 });
 
 describe('Add Stop guards', () => {
-  it('rejects adding a stop before any GPS fix is available', async () => {
+  it('rejects adding a stop before any location update is available', async () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     const { getByTestId, queryByTestId } = render(<CustomRouteRecorder bus={BUS} />);
     await act(async () => fireEvent.press(getByTestId('track-route-button')));
@@ -153,7 +153,7 @@ describe('Add Stop guards', () => {
 
     await act(async () => fireEvent.press(getByTestId('add-stop-button')));
 
-    expect(alertSpy).toHaveBeenCalledWith('No GPS fix yet', expect.any(String));
+    expect(alertSpy).toHaveBeenCalledWith('No location yet', expect.any(String));
     expect(queryByTestId('stop-name-input')).toBeNull();
     alertSpy.mockRestore();
   });

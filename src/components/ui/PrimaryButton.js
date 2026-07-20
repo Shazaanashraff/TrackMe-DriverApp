@@ -1,38 +1,73 @@
 import React from 'react';
-import { TouchableOpacity, Text, ActivityIndicator, StyleSheet } from 'react-native';
-import { COLORS, FONTS, BORDER_RADIUS } from '../../constants/theme';
+import { Pressable, Text, ActivityIndicator, StyleSheet } from 'react-native';
+import { theme } from '../../theme';
 
-const PrimaryButton = ({ title, onPress, loading = false, disabled = false, style, textStyle, testID }) => (
-  <TouchableOpacity
-    style={[styles.button, (loading || disabled) && styles.disabled, style]}
-    onPress={onPress}
-    disabled={loading || disabled}
-    activeOpacity={0.8}
-    testID={testID}
-  >
-    {loading ? (
-      <ActivityIndicator color={COLORS.white} />
-    ) : (
-      <Text style={[styles.text, textStyle]}>{title}</Text>
-    )}
-  </TouchableOpacity>
-);
+const VARIANTS = {
+  primary: {
+    bg: theme.color.primary[500],
+    pressedBg: theme.color.primary[600],
+    text: theme.color.white,
+  },
+  secondary: {
+    bg: theme.color.surface.field,
+    pressedBg: theme.color.surface.field,
+    text: theme.color.text.primary,
+  },
+  danger: {
+    bg: theme.color.danger.main,
+    pressedBg: theme.color.danger.main,
+    text: theme.color.white,
+  },
+};
+
+const PrimaryButton = ({
+  title,
+  onPress,
+  variant = 'primary',
+  loading = false,
+  disabled = false,
+  style,
+  textStyle,
+  testID,
+}) => {
+  const v = VARIANTS[variant] || VARIANTS.primary;
+  const isDisabled = loading || disabled;
+
+  return (
+    <Pressable
+      testID={testID}
+      onPress={onPress}
+      disabled={isDisabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: isDisabled, busy: loading }}
+      style={({ pressed }) => [
+        styles.button,
+        { backgroundColor: pressed && !isDisabled ? v.pressedBg : v.bg },
+        isDisabled && styles.disabled,
+        style,
+      ]}
+    >
+      {loading ? (
+        <ActivityIndicator testID="button-loading-indicator" color={v.text} />
+      ) : (
+        <Text style={[styles.text, { color: v.text }, textStyle]}>{title}</Text>
+      )}
+    </Pressable>
+  );
+};
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: COLORS.secondary,
-    borderRadius: BORDER_RADIUS.md,
-    paddingVertical: 16,
+    height: 52,
+    borderRadius: theme.radius.control,
     alignItems: 'center',
     justifyContent: 'center',
   },
   disabled: {
-    opacity: 0.7,
+    opacity: 0.6,
   },
   text: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontFamily: FONTS.bold,
+    ...theme.textStyle('body', { weight: 'medium' }),
   },
 });
 

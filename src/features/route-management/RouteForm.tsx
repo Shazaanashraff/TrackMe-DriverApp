@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
-import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../../constants/theme';
+import { View, StyleSheet } from 'react-native';
+import { theme } from '../../theme';
 import { AppError, userMessage } from '../../lib/errors';
+import Card from '../../components/ui/Card';
+import FormInput from '../../components/ui/FormInput';
 import PrimaryButton from '../../components/ui/PrimaryButton';
 import InlineError from '../../components/ui/InlineError';
 
@@ -69,103 +71,88 @@ export default function RouteForm({ isSubmitting, error, onSubmit }: Props) {
   };
 
   return (
-    <View style={styles.formCard}>
-      <Text style={styles.formTitle}>Add New Route</Text>
-
-      <View style={styles.formGrid}>
-        <View style={[styles.inputBox, { width: '48%' }]}>
-          <Text style={styles.label}>Route ID</Text>
-          <TextInput style={styles.input} placeholder="e.g. R101" placeholderTextColor="#9ca3af" value={form.routeId} onChangeText={(v) => onChange('routeId', v)} />
-          <InlineError message={fieldErrors.routeId ?? null} />
-        </View>
-        <View style={[styles.inputBox, { width: '48%' }]}>
-          <Text style={styles.label}>Route Name</Text>
-          <TextInput style={styles.input} placeholder="Express Way" placeholderTextColor="#9ca3af" value={form.routeName} onChangeText={(v) => onChange('routeName', v)} />
-          <InlineError message={fieldErrors.routeName ?? null} />
-        </View>
+    <Card title="Add a route">
+      <View style={styles.row}>
+        <FormInput
+          label="Route ID"
+          placeholder="e.g. R101"
+          value={form.routeId}
+          onChangeText={(v) => onChange('routeId', v)}
+          error={fieldErrors.routeId}
+          style={styles.half}
+        />
+        <FormInput
+          label="Route name"
+          placeholder="Express Way"
+          value={form.routeName}
+          onChangeText={(v) => onChange('routeName', v)}
+          error={fieldErrors.routeName}
+          style={styles.half}
+        />
       </View>
 
-      <View style={styles.inputBox}>
-        <Text style={styles.label}>Source Location</Text>
-        <TextInput style={styles.input} placeholder="Starting point" placeholderTextColor="#9ca3af" value={form.source} onChangeText={(v) => onChange('source', v)} />
-        <InlineError message={fieldErrors.source ?? null} />
+      <FormInput
+        label="Source location"
+        placeholder="Starting point"
+        value={form.source}
+        onChangeText={(v) => onChange('source', v)}
+        error={fieldErrors.source}
+      />
+      <FormInput
+        label="Destination location"
+        placeholder="Endpoint"
+        value={form.destination}
+        onChangeText={(v) => onChange('destination', v)}
+        error={fieldErrors.destination}
+      />
+
+      <View style={styles.row}>
+        <FormInput
+          label="Distance (km)"
+          placeholder="0"
+          keyboardType="numeric"
+          value={form.distance}
+          onChangeText={(v) => onChange('distance', v)}
+          error={fieldErrors.distance}
+          style={styles.third}
+        />
+        <FormInput
+          label="Time (min)"
+          placeholder="0"
+          keyboardType="numeric"
+          value={form.estimatedTime}
+          onChangeText={(v) => onChange('estimatedTime', v)}
+          error={fieldErrors.estimatedTime}
+          style={styles.third}
+        />
+        <FormInput
+          label="Fare"
+          placeholder="0"
+          keyboardType="numeric"
+          value={form.fare}
+          onChangeText={(v) => onChange('fare', v)}
+          error={fieldErrors.fare}
+          style={styles.third}
+        />
       </View>
 
-      <View style={styles.inputBox}>
-        <Text style={styles.label}>Destination Location</Text>
-        <TextInput style={styles.input} placeholder="Endpoint" placeholderTextColor="#9ca3af" value={form.destination} onChangeText={(v) => onChange('destination', v)} />
-        <InlineError message={fieldErrors.destination ?? null} />
-      </View>
+      {error ? <InlineError message={userMessage(error)} /> : null}
 
-      <View style={styles.formGrid}>
-        <View style={[styles.inputBox, { width: '31%' }]}>
-          <Text style={styles.label}>Dist (km)</Text>
-          <TextInput style={styles.input} placeholder="0" placeholderTextColor="#9ca3af" keyboardType="numeric" value={form.distance} onChangeText={(v) => onChange('distance', v)} />
-          <InlineError message={fieldErrors.distance ?? null} />
-        </View>
-        <View style={[styles.inputBox, { width: '31%' }]}>
-          <Text style={styles.label}>Time (min)</Text>
-          <TextInput style={styles.input} placeholder="0" placeholderTextColor="#9ca3af" keyboardType="numeric" value={form.estimatedTime} onChangeText={(v) => onChange('estimatedTime', v)} />
-          <InlineError message={fieldErrors.estimatedTime ?? null} />
-        </View>
-        <View style={[styles.inputBox, { width: '31%' }]}>
-          <Text style={styles.label}>Fare ($)</Text>
-          <TextInput style={styles.input} placeholder="0" placeholderTextColor="#9ca3af" keyboardType="numeric" value={form.fare} onChangeText={(v) => onChange('fare', v)} />
-          <InlineError message={fieldErrors.fare ?? null} />
-        </View>
-      </View>
-
-      {error && <InlineError message={userMessage(error)} />}
-
-      <PrimaryButton title="Register Route" onPress={handleSubmit} loading={isSubmitting} style={styles.submitButton} />
-    </View>
+      <PrimaryButton title="Add route" onPress={handleSubmit} loading={isSubmitting} />
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  formCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.lg,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    ...SHADOWS.md,
-  },
-  formTitle: {
-    fontSize: 18,
-    fontFamily: FONTS.bold,
-    color: COLORS.secondary,
-    marginBottom: SPACING.lg,
-  },
-  formGrid: {
+  row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: '100%',
+    gap: theme.space[3],
   },
-  inputBox: {
-    marginBottom: SPACING.md,
+  half: {
+    flex: 1,
   },
-  label: {
-    fontSize: 12,
-    fontFamily: FONTS.medium,
-    color: COLORS.textSecondary,
-    marginBottom: 6,
-    marginLeft: 2,
-  },
-  input: {
-    backgroundColor: '#f9fafb',
-    color: COLORS.text,
-    borderRadius: BORDER_RADIUS.md,
-    height: 48,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    fontFamily: FONTS.medium,
-    fontSize: 14,
-  },
-  submitButton: {
-    backgroundColor: COLORS.primary,
-    marginTop: SPACING.sm,
-    ...SHADOWS.md,
+  third: {
+    flex: 1,
   },
 });

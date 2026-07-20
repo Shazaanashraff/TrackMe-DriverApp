@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { startTracking as startTrackingSession, stopTracking } from '../services/socket';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
+import { theme } from '../theme';
 import { haversineMeters, totalDistanceMeters, formatElapsed } from '../helpers/geo';
 import PrimaryButton from './ui/PrimaryButton';
 
@@ -233,7 +234,7 @@ const CustomRouteRecorder = ({ bus, routeId, mode = 'initial', onSubmitted }) =>
 
   const handleAddStop = () => {
     if (!currentLocation) {
-      Alert.alert('No GPS fix yet', 'Wait for a location fix before adding a stop.');
+      Alert.alert('No location yet', 'Wait for a location update before adding a stop.');
       return;
     }
     const last = stopsRef.current[stopsRef.current.length - 1];
@@ -466,14 +467,14 @@ const styles = StyleSheet.create({
   },
   statBox: {
     flex: 1,
-    backgroundColor: '#f0fdf4',
+    backgroundColor: theme.color.surface.tile,
     borderRadius: BORDER_RADIUS.md,
     padding: 12
   },
   statBoxThird: {
     flex: 1,
     alignItems: 'center',
-    backgroundColor: '#f8fafc',
+    backgroundColor: theme.color.surface.tile,
     borderRadius: BORDER_RADIUS.md,
     paddingVertical: 10
   },
@@ -582,7 +583,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 46,
     borderRadius: BORDER_RADIUS.md,
-    backgroundColor: '#f3f4f6',
+    backgroundColor: theme.color.surface.field,
     justifyContent: 'center',
     alignItems: 'center'
   },

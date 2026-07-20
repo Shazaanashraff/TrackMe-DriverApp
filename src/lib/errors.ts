@@ -84,7 +84,7 @@ export function isOfflineError(err: unknown): boolean {
 
 const CODE_MESSAGES: Record<string, string> = {
   DUPLICATE_PLATE: 'A bus with that number plate is already registered.',
-  INVALID_CREDENTIALS: 'Incorrect email or password.',
+  INVALID_CREDENTIALS: 'Wrong email or password. Try again.',
   NOT_A_DRIVER: 'This account is not registered as a driver.',
   PAYOUT_PENDING: 'A payout request is already pending.',
 };
@@ -96,7 +96,7 @@ const KIND_MESSAGES: Record<AppErrorKind, string> = {
   parse: 'Unexpected response from server. Please try again.',
   unknown: 'An unexpected error occurred. Please try again.',
   permission: 'Location permission is required to track your bus. Please enable it in Settings.',
-  tracking: "Couldn't confirm tracking with the server. Please try again.",
+  tracking: "Couldn't confirm you're online with the server. Please try again.",
 };
 
 export function userMessage(err: AppError): string {

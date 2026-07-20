@@ -16,24 +16,21 @@ describe('EarningsSummary', () => {
     );
 
     expect(getByText('Today')).toBeTruthy();
-    expect(getByText('This Week')).toBeTruthy();
-    expect(getByText('This Month')).toBeTruthy();
+    expect(getByText('This week')).toBeTruthy();
+    expect(getByText('This month')).toBeTruthy();
     expect(getByText('Pending')).toBeTruthy();
     expect(getByText('Rs. 1200.00')).toBeTruthy();
+    expect(getByText('3 trips')).toBeTruthy();
   });
 
   it('renders zeroed totals when stats is null', () => {
     const { getAllByText } = render(<EarningsSummary stats={null} />);
     expect(getAllByText('Rs. 0.00').length).toBeGreaterThan(0);
+    expect(getAllByText('0 trips').length).toBeGreaterThan(0);
   });
 
-  it('shows the withdraw call-to-action only when there is a pending count', () => {
-    const { queryByText, rerender } = render(
-      <EarningsSummary stats={{ pending: { totalPending: 0, count: 0 } }} />
-    );
-    expect(queryByText('Withdraw Earnings')).toBeNull();
-
-    rerender(<EarningsSummary stats={{ pending: { totalPending: 500, count: 1 } }} />);
-    expect(queryByText('Withdraw Earnings')).toBeTruthy();
+  it('shows skeletons instead of amounts while loading', () => {
+    const { queryByText } = render(<EarningsSummary stats={null} isLoading />);
+    expect(queryByText('Rs. 0.00')).toBeNull();
   });
 });
