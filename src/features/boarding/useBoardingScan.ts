@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import { subscribeBackendStatus } from '../../services/backendStatus';
 import { AppError, normalizeError, isOfflineError } from '../../lib/errors';
+import { qk } from '../../lib/queryKeys';
 import api from '../../services/api';
 
 export type BoardingEventType = 'BOARD' | 'ALIGHT';
@@ -70,6 +72,7 @@ type AuthenticatedRequest = (fn: (...args: any[]) => Promise<unknown>, ...args: 
 
 export function useBoardingScan(busId: string) {
   const { authenticatedRequest } = useAuth() as { authenticatedRequest: AuthenticatedRequest };
+  const queryClient = useQueryClient();
 
   const [status, setStatus] = useState<BoardingScanStatus>('idle');
   const [lastResult, setLastResult] = useState<BoardingScanResult | null>(null);
@@ -121,6 +124,8 @@ export function useBoardingScan(busId: string) {
           setStatus('debounced');
         } else {
           setStatus('success');
+          // A new BOARD/ALIGHT changed the on-board roster — refresh the count card + page.
+          queryClient.invalidateQueries({ queryKey: qk.boardingRoster(busId) });
         }
         setLastResult(data);
       } catch (err) {
@@ -135,7 +140,7 @@ export function useBoardingScan(busId: string) {
         setErrorMessage(friendlyMessageFor(normalized));
       }
     },
-    [authenticatedRequest, busId, queueScan, startCooldown]
+    [authenticatedRequest, busId, queueScan, startCooldown, queryClient]
   );
 
   const replayQueuedScans = useCallback(async () => {

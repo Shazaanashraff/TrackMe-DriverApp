@@ -11,6 +11,7 @@ import ListRow from '../components/ui/ListRow';
 import ConfirmSheet from '../components/ui/ConfirmSheet';
 import DutyHero from '../features/dashboard/DutyHero';
 import VehicleCard from '../features/dashboard/VehicleCard';
+import OnBoardCard from '../features/dashboard/OnBoardCard';
 import CustomRouteSection from '../features/dashboard/CustomRouteSection';
 import { useCustomRouteJourney } from '../features/dashboard/useCustomRouteJourney';
 import { useSocketConnection } from '../features/dashboard/useSocketConnection';
@@ -98,6 +99,10 @@ const DriverDashboard = ({ navigation }: Props) => {
             onPress={bus ? () => navigation.navigate('QRScanner', { busId }) : undefined}
           />
         </Card>
+
+        {bus ? (
+          <OnBoardCard busId={busId} onPress={() => navigation.navigate('BoardingRoster', { busId })} />
+        ) : null}
 
         <CustomRouteSection
           bus={bus}

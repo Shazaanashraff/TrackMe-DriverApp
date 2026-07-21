@@ -41,6 +41,12 @@ jest.mock('../../features/dashboard/useSocketConnection', () => ({
   useSocketConnection: () => ({ connecting: false }),
 }));
 
+// OnBoardCard (Home "X / Y on board") owns its own roster query; stub it so this
+// banner-focused test needs no QueryClient. Its own behaviour is covered in OnBoardCard.test.tsx.
+jest.mock('../../hooks/boarding', () => ({
+  useBoardingRosterQuery: () => ({ data: undefined, isLoading: false, isError: true }),
+}));
+
 jest.mock('../../context/AuthContext', () => ({
   useAuth: () => ({
     user: { name: 'Test Driver' },

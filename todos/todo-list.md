@@ -98,6 +98,7 @@ not-blocked rows whose `Dep` are all `[x]`. Spec in `active/NNN-slug.md`. Tick `
 | ✓ | ID | Slug | Pri | Dep | One-line |
 |---|----|------|-----|-----|----------|
 | [x] | 090 | qr-attendance-scanner | P3 | 019,022 | expo-camera QR scanner → submit BOARD/ALIGHT; offline queue; account-scoped (no roster/membership) | done: 2026-07-18 |
+| [x] | 091 | on-board-roster | P3 | 090 | Home "X / Y on board" card + dedicated enrolled-roster page (GET /api/driver/boarding/roster) | done: 2026-07-22 |
 
 > ~57 todos across Phases 0–7. Phases 0–1 are the critical path. Cite docs/LOCATION_TRACKING.md
 > for all tracking/location todos and docs/OPTIMISATION.md + UX_GUIDELINES.md for Phase 7.

@@ -118,6 +118,15 @@
 | CustomRouteRecorder | unit (Jest+RTL) | src/components/__tests__/CustomRouteRecorder.test.js | coach-mark first-run gating, Track/Add Stop/Complete state machine, breadcrumb accumulation + AsyncStorage persistence, crash/background recovery (resume/submit/discard), add-stop guards (no fix yet, too-close dedupe), record POST payload shape, **update mode** (Phase 2): update-specific copy, no onboarding tour, submits via recordRouteUpdate with routeId, mode-specific AsyncStorage buffer key | recording flow, coach-marks, update mode, or AsyncStorage buffer shape changes |
 | DriverDashboard — Update Route banner (Phase 2) | unit (Jest+RTL) | src/screens/__tests__/DriverDashboard.test.js | banner hidden for normal/no-flag routes, shown when an ACTIVE custom route has a pending change request, tapping it opens CustomRouteRecorder in update mode with the right routeId | off-route flag banner or Update Route entry point changes |
 
+## QR Attendance — on-board roster (todo 091)
+| Item | Type | Test file | Cases | Update when |
+|---|---|---|---|---|
+| api/boarding.getBoardingRoster + useBoardingRosterQuery | unit | src/hooks/boarding/__tests__/useBoardingRosterQuery.test.ts | GET URL/`{busId}` arg, unwraps `{data}`, disabled without busId, error surface | roster endpoint contract or query key/cache policy changes |
+| useBoardingScan → roster invalidation | unit | src/features/boarding/__tests__/useBoardingScan.test.ts | invalidates `['boarding','roster',busId]` on a non-debounced success; not on debounce | scan→roster refresh behaviour changes |
+| OnBoardCard (Home "X / Y on board") | unit (Jest+RTL) | src/features/dashboard/__tests__/OnBoardCard.test.tsx | count render + navigate on press, no-enrolled empty state (non-pressable), loading skeleton, hidden on query error | card copy, gating, or navigation target changes |
+| BoardingRosterScreen (enrolled roster page) | unit (Jest+RTL) | src/screens/__tests__/BoardingRosterScreen.test.tsx | count summary, every rider + status pill (ON/OFF/NOT_BOARDED), guests section, empty state, error state, back | roster page layout, status mapping, or guests handling changes |
+| On-board roster flow | e2e | .maestro/on-board-roster.yaml | login → tap "On board" card → assert roster page | Home card entry point or roster screen title changes |
+
 ## Existing tests (keep green)
 - helpers/__tests__/formatters.test.js ✓
 - helpers/__tests__/geo.test.js ✓

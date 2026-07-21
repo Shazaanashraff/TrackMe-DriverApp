@@ -36,6 +36,13 @@ jest.mock('../../../services/api', () => ({
   },
 }));
 
+const mockInvalidateQueries = jest.fn();
+
+jest.mock('@tanstack/react-query', () => ({
+  __esModule: true,
+  useQueryClient: () => ({ invalidateQueries: mockInvalidateQueries }),
+}));
+
 beforeEach(async () => {
   jest.clearAllMocks();
   await AsyncStorage.clear();
@@ -78,6 +85,38 @@ describe('useBoardingScan', () => {
       busId: 'BUS-1',
       type: undefined,
     });
+  });
+
+  it('invalidates the on-board roster query after a successful (non-debounced) scan', async () => {
+    mockSubmitBoardingScan.mockResolvedValueOnce({
+      success: true,
+      debounced: false,
+      data: { eventId: 'e1', type: 'BOARD' },
+    });
+
+    const { result } = renderHook(() => useBoardingScan('BUS-1'));
+
+    await act(async () => {
+      await result.current.submitScan('qr-token-1');
+    });
+
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['boarding', 'roster', 'BUS-1'] });
+  });
+
+  it('does not invalidate the roster on a debounced (no-op) scan', async () => {
+    mockSubmitBoardingScan.mockResolvedValueOnce({
+      success: true,
+      debounced: true,
+      data: { eventId: 'e1', type: 'BOARD' },
+    });
+
+    const { result } = renderHook(() => useBoardingScan('BUS-1'));
+
+    await act(async () => {
+      await result.current.submitScan('qr-token-1');
+    });
+
+    expect(mockInvalidateQueries).not.toHaveBeenCalled();
   });
 
   it('sets status to debounced on a duplicate scan', async () => {

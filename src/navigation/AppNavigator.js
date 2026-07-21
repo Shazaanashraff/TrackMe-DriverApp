@@ -12,6 +12,7 @@ import TripHistoryScreen from '../screens/TripHistoryScreen';
 import DriverProfileScreen from '../screens/DriverProfileScreen';
 import RouteManagementScreen from '../screens/RouteManagementScreen';
 import QRScannerScreen from '../screens/QRScannerScreen';
+import BoardingRosterScreen from '../screens/BoardingRosterScreen';
 import OfflineScreen from '../components/OfflineScreen';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import { theme } from '../theme';
@@ -92,6 +93,7 @@ const AppNavigator = ({ backendOnline }) => {
           <Stack.Screen name="BusRegistration" component={BusRegistrationScreen} />
           <Stack.Screen name="RouteManagement" component={RouteManagementScreen} />
           <Stack.Screen name="QRScanner" component={QRScannerScreen} />
+          <Stack.Screen name="BoardingRoster" component={BoardingRosterScreen} />
         </>
       )}
     </Stack.Navigator>

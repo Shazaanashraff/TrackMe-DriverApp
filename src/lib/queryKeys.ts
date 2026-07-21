@@ -5,4 +5,5 @@ export const qk = {
   earningsStats: () => ['earnings', 'stats'] as const,
   earningsHistory: (page: number) => ['earnings', 'history', page] as const,
   dailyBreakdown: () => ['earnings', 'daily'] as const,
+  boardingRoster: (busId: string) => ['boarding', 'roster', busId] as const,
 };

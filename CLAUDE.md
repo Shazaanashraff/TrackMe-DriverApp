@@ -55,8 +55,10 @@ App.js
     ├── [offline]      → OfflineScreen
     ├── [logged out]   → Login
     └── [logged in]    → MainTabs (bottom tabs) + BusRegistration + RouteManagement
+                           + QRScanner + BoardingRoster
                            MainTabs:
-                           ├── Dashboard      ("Home" tab — DutyHero + VehicleCard + custom-route section)
+                           ├── Dashboard      ("Home" tab — DutyHero + VehicleCard + scan card
+                           │                    + OnBoardCard ("X/Y on board") + custom-route section)
                            ├── DriverEarnings ("Earnings" tab)
                            ├── TripHistory    ("Trips" tab)
                            └── DriverProfile  ("Profile" tab)
@@ -65,8 +67,9 @@ App.js
 `AppNavigator` receives `backendOnline` prop from `App.js`.
 Only `driver` role users may log in (enforced in `LoginScreen`).
 Screen names inside `MainTabs` stay `Dashboard`/`DriverEarnings`/`TripHistory`/`DriverProfile` so
-existing `navigation.navigate('…')` call sites keep working; `BusRegistration` and
-`RouteManagement` are pushed screens registered on the root stack above the tabs — calling
+existing `navigation.navigate('…')` call sites keep working; `BusRegistration`,
+`RouteManagement`, `QRScanner`, and `BoardingRoster` (the enrolled on-board roster opened from the
+Home `OnBoardCard`) are pushed screens registered on the root stack above the tabs — calling
 `navigation.navigate('BusRegistration')` from a tab screen bubbles up automatically.
 See `docs/redesign/SIGNAL_INK_PLAN.md` for the in-progress "Signal Ink" reskin driving this.
 
