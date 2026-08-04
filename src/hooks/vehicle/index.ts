@@ -7,40 +7,40 @@ const FIVE_MINUTES = 5 * 60 * 1000;
 
 type AuthCtx = { token: string | null };
 
-export function useMyBusQuery() {
+export function useMyVehicleQuery() {
   const { token } = useAuth() as AuthCtx;
   return useQuery({
-    queryKey: qk.myBus(),
-    queryFn: () => api.getMyBus(token!),
+    queryKey: qk.myVehicle(),
+    queryFn: () => api.getMyVehicle(token!),
     staleTime: FIVE_MINUTES,
     enabled: !!token,
   });
 }
 
-export function useRegisterBus() {
+export function useRegisterVehicle() {
   const { token } = useAuth() as AuthCtx;
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (busData: Record<string, unknown>) => api.registerBus(busData, token!),
+    mutationFn: (vehicleData: Record<string, unknown>) => api.registerVehicle(vehicleData, token!),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: qk.myBus() });
+      queryClient.invalidateQueries({ queryKey: qk.myVehicle() });
     },
   });
 }
 
-export function useUpdateBus() {
+export function useUpdateVehicle() {
   const { token } = useAuth() as AuthCtx;
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({
-      busId,
+      vehicleId,
       updateData,
     }: {
-      busId: string;
+      vehicleId: string;
       updateData: Record<string, unknown>;
-    }) => api.updateBus(token!, busId, updateData),
+    }) => api.updateVehicle(token!, vehicleId, updateData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: qk.myBus() });
+      queryClient.invalidateQueries({ queryKey: qk.myVehicle() });
     },
   });
 }

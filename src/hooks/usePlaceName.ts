@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { reverseGeocode } from '../services/api/places';
 
-// Re-geocode only after the bus has moved a meaningful distance AND enough time has
+// Re-geocode only after the vehicle has moved a meaningful distance AND enough time has
 // passed. Reverse-geocoding is a paid API call and the GPS fix updates every ~3s, so
-// without this a moving bus would fire hundreds of calls per hour. These bounds keep
+// without this a moving vehicle would fire hundreds of calls per hour. These bounds keep
 // it to roughly one call every 30s+ while moving.
 export const MOVE_THRESHOLD_M = 250;
 export const MIN_INTERVAL_MS = 30_000;
@@ -26,7 +26,7 @@ export function haversineMeters(aLat: number, aLng: number, bLat: number, bLng: 
 }
 
 // Pure decision: should we spend an API call to refresh the place name? Yes on the
-// first fix, otherwise only when the bus moved far enough AND enough time elapsed.
+// first fix, otherwise only when the vehicle moved far enough AND enough time elapsed.
 export function shouldRefetchPlace(last: Fix | null, lat: number, lng: number, now: number): boolean {
   if (!last) return true;
   const movedFar = haversineMeters(last.lat, last.lng, lat, lng) > MOVE_THRESHOLD_M;
@@ -35,7 +35,7 @@ export function shouldRefetchPlace(last: Fix | null, lat: number, lng: number, n
 }
 
 // Returns the reverse-geocoded place name for the given coordinate, refreshed
-// sparingly as the bus moves.
+// sparingly as the vehicle moves.
 export function usePlaceName(lat: number | null, lng: number | null, enabled: boolean): string | null {
   const [name, setName] = useState<string | null>(null);
   const lastRef = useRef<Fix | null>(null);

@@ -49,7 +49,7 @@ beforeEach(() => {
 });
 
 const navigation = { goBack: jest.fn() };
-const route = { params: { busId: 'BUS-1' } };
+const route = { params: { vehicleId: 'VEHICLE-1' } };
 
 describe('QRScannerScreen', () => {
   it('renders a permission-denied state when camera permission is not granted', () => {

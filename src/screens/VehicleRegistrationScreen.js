@@ -20,20 +20,20 @@ import Card from '../components/ui/Card';
 import StatusPill from '../components/ui/StatusPill';
 import InlineError from '../components/ui/InlineError';
 
-const BUS_TYPES = ['AC', 'NON-AC', 'DELUXE', 'SLEEPER'];
+const VEHICLE_TYPES = ['AC', 'NON-AC', 'DELUXE', 'SLEEPER'];
 const SERVICE_TYPES = ['PUBLIC', 'SCHOOL', 'OFFICE'];
 
-const BusRegistrationScreen = ({ navigation }) => {
+const VehicleRegistrationScreen = ({ navigation }) => {
   const { authenticatedRequest } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [formError, setFormError] = useState(null);
   const [formData, setFormData] = useState({
-    busId: '',
-    busName: '',
+    vehicleId: '',
+    vehicleName: '',
     registrationNumber: '',
     seatCapacity: '',
-    busType: 'AC',
+    vehicleType: 'AC',
     serviceType: 'PUBLIC',
     bookingEnabled: true,
   });
@@ -42,8 +42,8 @@ const BusRegistrationScreen = ({ navigation }) => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.busId.trim()) newErrors.busId = 'Bus ID is required';
-    if (!formData.busName.trim()) newErrors.busName = 'Bus name is required';
+    if (!formData.vehicleId.trim()) newErrors.vehicleId = 'Vehicle ID is required';
+    if (!formData.vehicleName.trim()) newErrors.vehicleName = 'Vehicle name is required';
     if (!formData.registrationNumber.trim()) newErrors.registrationNumber = 'Registration number is required';
     if (!formData.seatCapacity.trim()) {
       newErrors.seatCapacity = 'Seat count is required';
@@ -55,36 +55,36 @@ const BusRegistrationScreen = ({ navigation }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleRegisterBus = async () => {
+  const handleRegisterVehicle = async () => {
     setFormError(null);
     setSaved(false);
     if (!validateForm()) return;
 
     setLoading(true);
     try {
-      const busData = {
-        busId: formData.busId.toUpperCase().trim(),
-        busName: formData.busName.trim(),
+      const vehicleData = {
+        vehicleId: formData.vehicleId.toUpperCase().trim(),
+        vehicleName: formData.vehicleName.trim(),
         registrationNumber: formData.registrationNumber.toUpperCase().trim(),
         seatCapacity: parseInt(formData.seatCapacity),
-        busType: formData.busType,
+        vehicleType: formData.vehicleType,
         serviceType: formData.serviceType,
         bookingEnabled: formData.bookingEnabled,
       };
 
-      const response = await authenticatedRequest(api.registerBus, busData);
+      const response = await authenticatedRequest(api.registerVehicle, vehicleData);
 
       if (response.success) {
         setSaved(true);
         setTimeout(() => navigation.goBack(), 700);
       } else {
-        setFormError(response.message || "Couldn't save your bus. Try again.");
+        setFormError(response.message || "Couldn't save your vehicle. Try again.");
       }
     } catch (error) {
       if (error?.isBackendConnectionError) {
         return;
       }
-      setFormError(error.message || "Couldn't save your bus. Try again.");
+      setFormError(error.message || "Couldn't save your vehicle. Try again.");
     } finally {
       setLoading(false);
     }
@@ -120,26 +120,26 @@ const BusRegistrationScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.flex}>
-        <ScreenHeader title="Your bus" onBack={() => navigation.goBack()} />
+        <ScreenHeader title="Your vehicle" onBack={() => navigation.goBack()} />
 
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <Card>
             <FormInput
-              label="Bus ID"
+              label="Vehicle ID"
               icon="finger-print"
-              value={formData.busId}
-              onChangeText={(v) => handleInputChange('busId', v)}
-              placeholder="e.g. BUS-102"
+              value={formData.vehicleId}
+              onChangeText={(v) => handleInputChange('vehicleId', v)}
+              placeholder="e.g. VEHICLE-102"
               autoCapitalize="characters"
-              error={errors.busId}
+              error={errors.vehicleId}
             />
             <FormInput
-              label="Bus name"
-              icon="bus"
-              value={formData.busName}
-              onChangeText={(v) => handleInputChange('busName', v)}
+              label="Vehicle name"
+              icon="vehicle"
+              value={formData.vehicleName}
+              onChangeText={(v) => handleInputChange('vehicleName', v)}
               placeholder="e.g. Silver Express"
-              error={errors.busName}
+              error={errors.vehicleName}
             />
             <FormInput
               label="Registration number"
@@ -161,9 +161,9 @@ const BusRegistrationScreen = ({ navigation }) => {
 
             <View style={styles.specGroup}>
               <AppText variant="label" color={theme.color.text.secondary} style={styles.specLabel}>
-                Bus category
+                Vehicle category
               </AppText>
-              {renderChips(BUS_TYPES, formData.busType, 'busType')}
+              {renderChips(VEHICLE_TYPES, formData.vehicleType, 'vehicleType')}
             </View>
 
             <View style={styles.specGroup}>
@@ -196,7 +196,7 @@ const BusRegistrationScreen = ({ navigation }) => {
           ) : null}
           <InlineError message={formError} />
 
-          <PrimaryButton title="Save bus" onPress={handleRegisterBus} loading={loading} style={styles.submitButton} />
+          <PrimaryButton title="Save vehicle" onPress={handleRegisterVehicle} loading={loading} style={styles.submitButton} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -283,4 +283,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default BusRegistrationScreen;
+export default VehicleRegistrationScreen;

@@ -13,13 +13,13 @@ import { LocationFix } from '../../helpers/locationUtils';
 
 type Props = {
   firstName?: string;
-  busName?: string;
+  vehicleName?: string;
   status: TrackingStatus;
   isReconnecting: boolean;
   connecting: boolean;
   permission: LocationPermissionStatus;
   lastFix: LocationFix | null;
-  hasBus: boolean;
+  hasVehicle: boolean;
   onGoPress: () => void;
   onEndPress: () => void;
 };
@@ -58,13 +58,13 @@ function LiveDot({ color, pulsing }: { color: string; pulsing: boolean }) {
 
 export default function DutyHero({
   firstName,
-  busName,
+  vehicleName,
   status,
   isReconnecting,
   connecting,
   permission,
   lastFix,
-  hasBus,
+  hasVehicle,
   onGoPress,
   onEndPress,
 }: Props) {
@@ -105,14 +105,14 @@ export default function DutyHero({
     isReconnecting,
     connecting,
     permission,
-    hasBus,
+    hasVehicle,
     secondsSinceFix,
   });
 
   const dotColor =
     state.dot === 'on' ? theme.color.duty.on : state.dot === 'warn' ? theme.color.duty.warn : theme.color.duty.off;
 
-  const greeting = `Hi ${firstName || 'Driver'}${busName ? ` · ${busName}` : ''}`;
+  const greeting = `Hi ${firstName || 'Driver'}${vehicleName ? ` · ${vehicleName}` : ''}`;
   const timeOnline = startedAt != null ? formatElapsed(now - startedAt) : '00:00';
   const gps = gpsQualityLabel(lastFix?.accuracy);
 

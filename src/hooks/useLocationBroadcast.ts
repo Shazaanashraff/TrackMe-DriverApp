@@ -23,7 +23,7 @@ export function safeRemove(subscription: { remove: () => void } | null): void {
 
 export interface UseLocationBroadcastOptions {
   active: boolean;
-  busId: string;
+  vehicleId: string;
   routeId: string;
 }
 
@@ -39,7 +39,7 @@ function isNackResponse(response: unknown): boolean {
 
 export function useLocationBroadcast({
   active,
-  busId,
+  vehicleId,
   routeId,
 }: UseLocationBroadcastOptions): UseLocationBroadcastResult {
   const [permission, setPermission] = useState<LocationPermissionStatus>('undetermined');
@@ -58,13 +58,13 @@ export function useLocationBroadcast({
 
   const emitFix = useCallback(
     (fix: LocationFix) => {
-      emitLocation(busId, routeId, fix.lat, fix.lng, (response: unknown) => {
+      emitLocation(vehicleId, routeId, fix.lat, fix.lng, (response: unknown) => {
         if (isNackResponse(response)) {
           pushToBuffer(fix);
         }
       });
     },
-    [busId, routeId, pushToBuffer]
+    [vehicleId, routeId, pushToBuffer]
   );
 
   const handleFix = useCallback(

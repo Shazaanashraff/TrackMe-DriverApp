@@ -18,7 +18,7 @@ type CustomRoute = {
 } | null;
 
 type Props = {
-  bus: unknown;
+  vehicle: unknown;
   customRoute: CustomRoute;
   showUpdateRecorder: boolean;
   onShowUpdateRecorder: () => void;
@@ -26,7 +26,7 @@ type Props = {
 };
 
 export default function CustomRouteSection({
-  bus,
+  vehicle,
   customRoute,
   showUpdateRecorder,
   onShowUpdateRecorder,
@@ -58,12 +58,12 @@ export default function CustomRouteSection({
         </Card>
       ) : isPendingCustomRoute ? (
         <CopilotProvider>
-          <CustomRouteRecorder bus={bus} onSubmitted={onRecorderSubmitted} />
+          <CustomRouteRecorder vehicle={vehicle} onSubmitted={onRecorderSubmitted} />
         </CopilotProvider>
       ) : showUpdateRecorder ? (
         <CopilotProvider>
           <CustomRouteRecorder
-            bus={bus}
+            vehicle={vehicle}
             routeId={customRoute?.routeId}
             mode="update"
             onSubmitted={onRecorderSubmitted}

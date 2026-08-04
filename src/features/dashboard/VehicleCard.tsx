@@ -6,27 +6,27 @@ import AppText from '../../components/ui/AppText';
 import Card from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
 
-type Bus = {
-  busName?: string;
+type Vehicle = {
+  vehicleName?: string;
   registrationNumber?: string;
   seatCapacity?: number;
   routeName?: string;
 };
 
 type Props = {
-  bus: Bus | null;
+  vehicle: Vehicle | null;
   onRegisterPress: () => void;
 };
 
-export default function VehicleCard({ bus, onRegisterPress }: Props) {
-  if (!bus) {
+export default function VehicleCard({ vehicle, onRegisterPress }: Props) {
+  if (!vehicle) {
     return (
       <Card>
         <EmptyState
           icon="bus-outline"
-          title="No bus yet"
-          subtitle="Add your bus so riders can find it"
-          actionLabel="Add my bus"
+          title="No vehicle yet"
+          subtitle="Add your vehicle so riders can find it"
+          actionLabel="Add my vehicle"
           onAction={onRegisterPress}
         />
       </Card>
@@ -34,9 +34,9 @@ export default function VehicleCard({ bus, onRegisterPress }: Props) {
   }
 
   const subLine = [
-    bus.registrationNumber || 'No registration',
-    `${bus.seatCapacity || 0} seats`,
-    bus.routeName,
+    vehicle.registrationNumber || 'No registration',
+    `${vehicle.seatCapacity || 0} seats`,
+    vehicle.routeName,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -45,10 +45,10 @@ export default function VehicleCard({ bus, onRegisterPress }: Props) {
     <Card>
       <View style={styles.row}>
         <View style={styles.iconBadge}>
-          <Ionicons name="bus" size={20} color={theme.color.primary[500]} />
+          <Ionicons name="vehicle" size={20} color={theme.color.primary[500]} />
         </View>
         <View style={styles.textBlock}>
-          <AppText variant="body" weight="medium">{bus.busName}</AppText>
+          <AppText variant="body" weight="medium">{vehicle.vehicleName}</AppText>
           <AppText variant="label" color={theme.color.text.muted}>{subLine}</AppText>
         </View>
       </View>

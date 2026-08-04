@@ -37,8 +37,8 @@ describe('AppText', () => {
   });
 
   it('lets a weight prop override the variant default', () => {
-    const { getByText } = render(<AppText variant="body" weight="medium">Save bus</AppText>);
-    const flat = Object.assign({}, ...getByText('Save bus').props.style);
+    const { getByText } = render(<AppText variant="body" weight="medium">Save vehicle</AppText>);
+    const flat = Object.assign({}, ...getByText('Save vehicle').props.style);
     expect(flat.fontFamily).toBe('Inter_500Medium');
   });
 

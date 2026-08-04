@@ -10,8 +10,8 @@ export interface UseTrackingSessionResult {
   // True while `status` is 'tracking' but the socket has dropped — coordinates with
   // useLocationBroadcast (019) and the offline buffer (073) to show "reconnecting, buffering".
   isReconnecting: boolean;
-  start: (busId: string) => Promise<void>;
-  stop: (busId: string) => void;
+  start: (vehicleId: string) => Promise<void>;
+  stop: (vehicleId: string) => void;
 }
 
 export function useTrackingSession(): UseTrackingSessionResult {
@@ -19,7 +19,7 @@ export function useTrackingSession(): UseTrackingSessionResult {
   const [error, setError] = useState<AppError | undefined>(undefined);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const statusRef = useRef<TrackingStatus>('idle');
-  const activeBusIdRef = useRef<string | null>(null);
+  const activeVehicleIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     statusRef.current = status;
@@ -37,21 +37,21 @@ export function useTrackingSession(): UseTrackingSessionResult {
   // Stop cleanly on unmount (covers logout / navigating away mid-session).
   useEffect(() => {
     return () => {
-      if (activeBusIdRef.current) {
-        stopTracking(activeBusIdRef.current);
+      if (activeVehicleIdRef.current) {
+        stopTracking(activeVehicleIdRef.current);
       }
     };
   }, []);
 
-  const start = useCallback(async (busId: string) => {
+  const start = useCallback(async (vehicleId: string) => {
     setStatus('starting');
     setError(undefined);
     setIsReconnecting(false);
 
-    const ack = await startTracking(busId);
+    const ack = await startTracking(vehicleId);
 
     if (ack.success) {
-      activeBusIdRef.current = busId;
+      activeVehicleIdRef.current = vehicleId;
       setStatus('tracking');
     } else {
       setStatus('error');
@@ -59,9 +59,9 @@ export function useTrackingSession(): UseTrackingSessionResult {
     }
   }, []);
 
-  const stop = useCallback((busId: string) => {
-    stopTracking(busId);
-    activeBusIdRef.current = null;
+  const stop = useCallback((vehicleId: string) => {
+    stopTracking(vehicleId);
+    activeVehicleIdRef.current = null;
     setIsReconnecting(false);
     setError(undefined);
     setStatus('idle');

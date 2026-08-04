@@ -17,20 +17,20 @@ import { ONBOARDING_DONE_KEY } from '../components/CustomRouteRecorder';
 const DriverProfileScreen = ({ navigation }) => {
   const { user, authenticatedRequest } = useAuth();
   const logout = useLogout();
-  const [bus, setBus] = useState(null);
-  const [loadingBus, setLoadingBus] = useState(true);
+  const [vehicle, setVehicle] = useState(null);
+  const [loadingVehicle, setLoadingVehicle] = useState(true);
   const [isCustomRoute, setIsCustomRoute] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
-    const loadBusInfo = async () => {
+    const loadVehicleInfo = async () => {
       try {
-        const busData = await authenticatedRequest(api.getMyBus);
-        setBus(busData.data || busData);
+        const vehicleData = await authenticatedRequest(api.getMyVehicle);
+        setVehicle(vehicleData.data || vehicleData);
       } catch (error) {
-        setBus(null);
+        setVehicle(null);
       } finally {
-        setLoadingBus(false);
+        setLoadingVehicle(false);
       }
     };
 
@@ -43,7 +43,7 @@ const DriverProfileScreen = ({ navigation }) => {
       }
     };
 
-    loadBusInfo();
+    loadVehicleInfo();
     loadCustomRouteInfo();
   }, [authenticatedRequest]);
 
@@ -84,12 +84,12 @@ const DriverProfileScreen = ({ navigation }) => {
           <InfoRow label="Phone" value={user?.phone || '-'} last />
         </Card>
 
-        <AppText variant="h2" style={styles.sectionTitle}>Your bus</AppText>
-        {loadingBus ? (
+        <AppText variant="h2" style={styles.sectionTitle}>Your vehicle</AppText>
+        {loadingVehicle ? (
           <Skeleton height={80} radius={theme.radius.card} style={styles.card} />
         ) : (
           <View style={styles.card}>
-            <VehicleCard bus={bus} onRegisterPress={() => navigation.navigate('BusRegistration')} />
+            <VehicleCard vehicle={vehicle} onRegisterPress={() => navigation.navigate('VehicleRegistration')} />
           </View>
         )}
 

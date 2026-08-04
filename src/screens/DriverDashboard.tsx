@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, SafeAreaView, StatusBar, View, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { useMyBusQuery } from '../hooks/bus';
+import { useMyVehicleQuery } from '../hooks/vehicle';
 import { useTrackingSession } from '../hooks/useTrackingSession';
 import { useLocationBroadcast } from '../hooks/useLocationBroadcast';
 import { theme } from '../theme';
@@ -16,12 +16,12 @@ import TripProgressCard from '../features/dashboard/TripProgressCard';
 import { useCustomRouteJourney } from '../features/dashboard/useCustomRouteJourney';
 import { useSocketConnection } from '../features/dashboard/useSocketConnection';
 
-type Bus = {
-  busId?: string;
+type Vehicle = {
+  vehicleId?: string;
   _id?: string;
   routeId?: string;
   assignedRoute?: string;
-  busName?: string;
+  vehicleName?: string;
   registrationNumber?: string;
   seatCapacity?: number;
 };
@@ -37,15 +37,15 @@ type Props = {
 const DriverDashboard = ({ navigation }: Props) => {
   const { user, token } = useAuth() as { user: { name?: string } | null; token: string | null };
 
-  const myBusQuery = useMyBusQuery();
-  const bus = unwrap<Bus>(myBusQuery.data) as Bus | null;
-  const busId = bus?.busId || bus?._id || '';
-  const routeId = bus?.routeId || bus?.assignedRoute || '';
+  const myVehicleQuery = useMyVehicleQuery();
+  const vehicle = unwrap<Vehicle>(myVehicleQuery.data) as Vehicle | null;
+  const vehicleId = vehicle?.vehicleId || vehicle?._id || '';
+  const routeId = vehicle?.routeId || vehicle?.assignedRoute || '';
 
   const session = useTrackingSession();
-  const broadcast = useLocationBroadcast({ active: session.status === 'tracking', busId, routeId });
+  const broadcast = useLocationBroadcast({ active: session.status === 'tracking', vehicleId, routeId });
   const { connecting } = useSocketConnection(token);
-  const journey = useCustomRouteJourney(busId);
+  const journey = useCustomRouteJourney(vehicleId);
 
   const [showEndConfirm, setShowEndConfirm] = useState(false);
 
@@ -54,10 +54,10 @@ const DriverDashboard = ({ navigation }: Props) => {
     if (broadcast.lastFix) journey.recordFix(broadcast.lastFix);
   }, [broadcast.lastFix, journey]);
 
-  const handleStart = () => session.start(busId);
+  const handleStart = () => session.start(vehicleId);
 
   const handleStop = () => {
-    session.stop(busId);
+    session.stop(vehicleId);
     journey.reportCompletedJourney();
     setShowEndConfirm(false);
   };
@@ -70,13 +70,13 @@ const DriverDashboard = ({ navigation }: Props) => {
       <SafeAreaView style={styles.heroSafeArea}>
         <DutyHero
           firstName={firstName}
-          busName={bus?.busName}
+          vehicleName={vehicle?.vehicleName}
           status={session.status}
           isReconnecting={session.isReconnecting}
           connecting={connecting}
           permission={broadcast.permission}
           lastFix={session.status === 'tracking' ? broadcast.lastFix : null}
-          hasBus={!!bus}
+          hasVehicle={!!vehicle}
           onGoPress={handleStart}
           onEndPress={() => setShowEndConfirm(true)}
         />
@@ -88,7 +88,7 @@ const DriverDashboard = ({ navigation }: Props) => {
         contentContainerStyle={styles.scrollContent}
       >
         <AppText variant="h2" style={styles.sectionTitle}>Your vehicle</AppText>
-        <VehicleCard bus={bus} onRegisterPress={() => navigation.navigate('BusRegistration')} />
+        <VehicleCard vehicle={vehicle} onRegisterPress={() => navigation.navigate('VehicleRegistration')} />
 
         <TripProgressCard
           routeId={routeId}
@@ -101,13 +101,13 @@ const DriverDashboard = ({ navigation }: Props) => {
             testID="scan-rider-qr-row"
             icon="qr-code-outline"
             title="Scan rider QR"
-            subtitle={bus ? 'Record boarding or alighting' : 'Register a bus to enable scanning'}
-            onPress={bus ? () => navigation.navigate('QRScanner', { busId }) : undefined}
+            subtitle={vehicle ? 'Record boarding or alighting' : 'Register a vehicle to enable scanning'}
+            onPress={vehicle ? () => navigation.navigate('QRScanner', { vehicleId }) : undefined}
           />
         </Card>
 
         <CustomRouteSection
-          bus={bus}
+          vehicle={vehicle}
           customRoute={journey.customRoute}
           showUpdateRecorder={journey.showUpdateRecorder}
           onShowUpdateRecorder={() => journey.setShowUpdateRecorder(true)}
@@ -121,7 +121,7 @@ const DriverDashboard = ({ navigation }: Props) => {
       <ConfirmSheet
         visible={showEndConfirm}
         title="End this journey?"
-        message="Riders will stop seeing your bus."
+        message="Riders will stop seeing your vehicle."
         confirmLabel="End journey"
         onConfirm={handleStop}
         onCancel={() => setShowEndConfirm(false)}

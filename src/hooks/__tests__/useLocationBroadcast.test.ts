@@ -46,14 +46,14 @@ function fireFix(lat: number, lng: number, accuracy?: number) {
 
 describe('permission', () => {
   it('starts the watcher when permission is granted', async () => {
-    renderHook(() => useLocationBroadcast({ active: true, busId: 'b1', routeId: 'r1' }));
+    renderHook(() => useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' }));
     await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
   });
 
   it('exposes denied and does not watch when permission is denied', async () => {
     mockRequestForegroundPermissionsAsync.mockResolvedValue({ status: 'denied' });
     const { result } = renderHook(() =>
-      useLocationBroadcast({ active: true, busId: 'b1', routeId: 'r1' })
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
     );
 
     await waitFor(() => expect(result.current.permission).toBe('denied'));
@@ -61,7 +61,7 @@ describe('permission', () => {
   });
 
   it('does not request permission or watch while inactive', () => {
-    renderHook(() => useLocationBroadcast({ active: false, busId: 'b1', routeId: 'r1' }));
+    renderHook(() => useLocationBroadcast({ active: false, vehicleId: 'b1', routeId: 'r1' }));
     expect(mockRequestForegroundPermissionsAsync).not.toHaveBeenCalled();
     expect(mockWatchPositionAsync).not.toHaveBeenCalled();
   });
@@ -69,7 +69,7 @@ describe('permission', () => {
 
 describe('throttle', () => {
   it('emits the first fix immediately', async () => {
-    renderHook(() => useLocationBroadcast({ active: true, busId: 'b1', routeId: 'r1' }));
+    renderHook(() => useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' }));
     await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
 
     act(() => fireFix(6.9271, 79.8612));
@@ -80,7 +80,7 @@ describe('throttle', () => {
     jest.useFakeTimers();
     jest.setSystemTime(0);
 
-    renderHook(() => useLocationBroadcast({ active: true, busId: 'b1', routeId: 'r1' }));
+    renderHook(() => useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' }));
     await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
 
     act(() => fireFix(6.9271, 79.8612));
@@ -97,7 +97,7 @@ describe('throttle', () => {
     jest.useFakeTimers();
     jest.setSystemTime(0);
 
-    renderHook(() => useLocationBroadcast({ active: true, busId: 'b1', routeId: 'r1' }));
+    renderHook(() => useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' }));
     await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
 
     act(() => fireFix(6.9271, 79.8612));
@@ -114,7 +114,7 @@ describe('throttle', () => {
 describe('accuracy', () => {
   it('carries the reported accuracy through to lastFix', async () => {
     const { result } = renderHook(() =>
-      useLocationBroadcast({ active: true, busId: 'b1', routeId: 'r1' })
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
     );
     await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
 
@@ -124,7 +124,7 @@ describe('accuracy', () => {
 
   it('leaves accuracy undefined when the platform does not report one', async () => {
     const { result } = renderHook(() =>
-      useLocationBroadcast({ active: true, busId: 'b1', routeId: 'r1' })
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
     );
     await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
 
@@ -137,7 +137,7 @@ describe('offline buffer', () => {
   it('buffers a fix when the socket is disconnected and reports bufferedCount', async () => {
     mockGetConnectionState.mockReturnValue({ status: 'disconnected' });
     const { result } = renderHook(() =>
-      useLocationBroadcast({ active: true, busId: 'b1', routeId: 'r1' })
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
     );
     await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
 
@@ -156,7 +156,7 @@ describe('offline buffer', () => {
     });
 
     const { result } = renderHook(() =>
-      useLocationBroadcast({ active: true, busId: 'b1', routeId: 'r1' })
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
     );
     await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
 
@@ -175,7 +175,7 @@ describe('offline buffer', () => {
 describe('cleanup', () => {
   it('removes the watcher when active becomes false', async () => {
     const { rerender } = renderHook(
-      ({ active }) => useLocationBroadcast({ active, busId: 'b1', routeId: 'r1' }),
+      ({ active }) => useLocationBroadcast({ active, vehicleId: 'b1', routeId: 'r1' }),
       { initialProps: { active: true } }
     );
     await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
@@ -186,7 +186,7 @@ describe('cleanup', () => {
 
   it('removes the watcher on unmount', async () => {
     const { unmount } = renderHook(() =>
-      useLocationBroadcast({ active: true, busId: 'b1', routeId: 'r1' })
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
     );
     await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
 

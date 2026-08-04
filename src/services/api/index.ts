@@ -1,5 +1,5 @@
 import * as auth from './auth';
-import * as bus from './bus';
+import * as vehicle from './vehicle';
 import * as routes from './routes';
 import * as earnings from './earnings';
 import * as customRoutes from './customRoutes';
@@ -12,10 +12,10 @@ const api = {
   refreshToken: auth.refreshToken,
   logout: auth.logout,
 
-  // bus
-  getMyBus: bus.getMyBus,
-  registerBus: bus.registerBus,
-  updateBus: bus.updateBus,
+  // vehicle
+  getMyVehicle: vehicle.getMyVehicle,
+  registerVehicle: vehicle.registerVehicle,
+  updateVehicle: vehicle.updateVehicle,
 
   // routes
   getRoutes: routes.getRoutes,

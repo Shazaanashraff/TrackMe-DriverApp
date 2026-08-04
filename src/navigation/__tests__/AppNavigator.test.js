@@ -13,8 +13,8 @@ jest.mock('../../screens/DriverDashboard', () => {
   return function MockDashboard({ navigation }) {
     return (
       <TouchableOpacity
-        onPress={() => navigation.navigate('BusRegistration')}
-        testID="go-to-bus-registration"
+        onPress={() => navigation.navigate('VehicleRegistration')}
+        testID="go-to-vehicle-registration"
       >
         <Text>Dashboard Screen</Text>
       </TouchableOpacity>
@@ -46,10 +46,10 @@ jest.mock('../../screens/DriverProfileScreen', () => {
     );
   };
 });
-jest.mock('../../screens/BusRegistrationScreen', () => {
+jest.mock('../../screens/VehicleRegistrationScreen', () => {
   const { Text } = require('react-native');
-  return function MockBusRegistration() {
-    return <Text>Bus Registration Screen</Text>;
+  return function MockVehicleRegistration() {
+    return <Text>Vehicle Registration Screen</Text>;
   };
 });
 jest.mock('../../screens/RouteManagementScreen', () => {
@@ -103,10 +103,10 @@ describe('AppNavigator', () => {
     expect(queryByText('Dashboard Screen')).toBeNull();
   });
 
-  it('pushes BusRegistration above the tabs', async () => {
+  it('pushes VehicleRegistration above the tabs', async () => {
     const { getByTestId, findByText } = renderNav();
-    fireEvent.press(getByTestId('go-to-bus-registration'));
-    expect(await findByText('Bus Registration Screen')).toBeTruthy();
+    fireEvent.press(getByTestId('go-to-vehicle-registration'));
+    expect(await findByText('Vehicle Registration Screen')).toBeTruthy();
   });
 
   it('pushes RouteManagement above the tabs', async () => {

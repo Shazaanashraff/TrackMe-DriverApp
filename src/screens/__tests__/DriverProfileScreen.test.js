@@ -8,7 +8,7 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 );
 
 jest.mock('../../services/api', () => ({
-  getMyBus: jest.fn(),
+  getMyVehicle: jest.fn(),
   getMyCustomRoute: jest.fn(),
 }));
 
@@ -31,8 +31,8 @@ const navigation = { navigate: jest.fn(), reset: jest.fn() };
 beforeEach(() => {
   jest.clearAllMocks();
   mockAuthenticatedRequest.mockImplementation((fn, ...args) => fn(...args));
-  api.getMyBus.mockResolvedValue({
-    busName: 'Shuttle 1',
+  api.getMyVehicle.mockResolvedValue({
+    vehicleName: 'Shuttle 1',
     registrationNumber: 'ABC-123',
     seatCapacity: 20,
   });
@@ -57,11 +57,11 @@ describe('DriverProfileScreen', () => {
     expect(navigation.navigate).toHaveBeenCalledWith('RouteManagement');
   });
 
-  it('navigates to Bus registration from the vehicle card CTA when there is no bus', async () => {
-    api.getMyBus.mockRejectedValue(new Error('not found'));
+  it('navigates to Vehicle registration from the vehicle card CTA when there is no vehicle', async () => {
+    api.getMyVehicle.mockRejectedValue(new Error('not found'));
     const { getByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
-    fireEvent.press(await findByText('Add my bus'));
-    expect(navigation.navigate).toHaveBeenCalledWith('BusRegistration');
+    fireEvent.press(await findByText('Add my vehicle'));
+    expect(navigation.navigate).toHaveBeenCalledWith('VehicleRegistration');
   });
 
   it('opens a ConfirmSheet before logging out, and confirming calls the mutation', async () => {

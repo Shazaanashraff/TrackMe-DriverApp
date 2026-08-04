@@ -1,12 +1,12 @@
 import React from 'react';
 import { ViewStyle } from 'react-native';
 
-interface ShiftBusIconProps {
+interface ShiftVehicleIconProps {
   size?: number;
   bodyColor?: string;
   detailColor?: string;
   style?: ViewStyle;
 }
 
-declare const ShiftBusIcon: React.FC<ShiftBusIconProps>;
-export default ShiftBusIcon;
+declare const ShiftVehicleIcon: React.FC<ShiftVehicleIconProps>;
+export default ShiftVehicleIcon;

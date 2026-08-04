@@ -47,7 +47,7 @@ beforeEach(async () => {
 
 describe('useBoardingScan', () => {
   it('starts idle with no pending scans', async () => {
-    const { result } = renderHook(() => useBoardingScan('BUS-1'));
+    const { result } = renderHook(() => useBoardingScan('VEHICLE-1'));
     await waitFor(() => expect(result.current.pendingCount).toBe(0));
     expect(result.current.status).toBe('idle');
     expect(result.current.lastResult).toBeNull();
@@ -60,7 +60,7 @@ describe('useBoardingScan', () => {
       data: { eventId: 'e1', studentName: 'Jane', type: 'BOARD', timestamp: '2026-07-18T10:00:00Z' },
     });
 
-    const { result } = renderHook(() => useBoardingScan('BUS-1'));
+    const { result } = renderHook(() => useBoardingScan('VEHICLE-1'));
 
     await act(async () => {
       await result.current.submitScan('qr-token-1');
@@ -75,7 +75,7 @@ describe('useBoardingScan', () => {
     });
     expect(mockSubmitBoardingScan).toHaveBeenCalledWith('tok', {
       qrToken: 'qr-token-1',
-      busId: 'BUS-1',
+      vehicleId: 'VEHICLE-1',
       type: undefined,
     });
   });
@@ -87,7 +87,7 @@ describe('useBoardingScan', () => {
       data: { eventId: 'e1', type: 'BOARD' },
     });
 
-    const { result } = renderHook(() => useBoardingScan('BUS-1'));
+    const { result } = renderHook(() => useBoardingScan('VEHICLE-1'));
 
     await act(async () => {
       await result.current.submitScan('qr-token-1');
@@ -101,7 +101,7 @@ describe('useBoardingScan', () => {
       new AppError('http', 'Invalid QR token: EXPIRED', { status: 401 })
     );
 
-    const { result } = renderHook(() => useBoardingScan('BUS-1'));
+    const { result } = renderHook(() => useBoardingScan('VEHICLE-1'));
 
     await act(async () => {
       await result.current.submitScan('qr-token-1');
@@ -116,7 +116,7 @@ describe('useBoardingScan', () => {
       new AppError('http', 'QR attendance is not enabled for this route', { status: 403 })
     );
 
-    const { result } = renderHook(() => useBoardingScan('BUS-1'));
+    const { result } = renderHook(() => useBoardingScan('VEHICLE-1'));
 
     await act(async () => {
       await result.current.submitScan('qr-token-1');
@@ -128,12 +128,12 @@ describe('useBoardingScan', () => {
     );
   });
 
-  it('maps a 404 bus-not-found error to a generic message', async () => {
+  it('maps a 404 vehicle-not-found error to a generic message', async () => {
     mockSubmitBoardingScan.mockRejectedValueOnce(
-      new AppError('http', 'Bus not found or not assigned to you', { status: 404 })
+      new AppError('http', 'Vehicle not found or not assigned to you', { status: 404 })
     );
 
-    const { result } = renderHook(() => useBoardingScan('BUS-1'));
+    const { result } = renderHook(() => useBoardingScan('VEHICLE-1'));
 
     await act(async () => {
       await result.current.submitScan('qr-token-1');
@@ -146,7 +146,7 @@ describe('useBoardingScan', () => {
   it('queues the scan in AsyncStorage and increments pendingCount on a network failure', async () => {
     mockSubmitBoardingScan.mockRejectedValueOnce(new AppError('offline', 'No network connection'));
 
-    const { result } = renderHook(() => useBoardingScan('BUS-1'));
+    const { result } = renderHook(() => useBoardingScan('VEHICLE-1'));
 
     await act(async () => {
       await result.current.submitScan('qr-token-offline');
@@ -158,15 +158,15 @@ describe('useBoardingScan', () => {
     const raw = await AsyncStorage.getItem('boarding_scan_queue');
     const queue = JSON.parse(raw as string);
     expect(queue).toHaveLength(1);
-    expect(queue[0]).toMatchObject({ qrToken: 'qr-token-offline', busId: 'BUS-1' });
+    expect(queue[0]).toMatchObject({ qrToken: 'qr-token-offline', vehicleId: 'VEHICLE-1' });
   });
 
   it('replayQueuedScans resubmits queued scans and clears the queue on success', async () => {
     await AsyncStorage.setItem(
       'boarding_scan_queue',
       JSON.stringify([
-        { qrToken: 'queued-1', busId: 'BUS-1', timestamp: 1 },
-        { qrToken: 'queued-2', busId: 'BUS-1', timestamp: 2 },
+        { qrToken: 'queued-1', vehicleId: 'VEHICLE-1', timestamp: 1 },
+        { qrToken: 'queued-2', vehicleId: 'VEHICLE-1', timestamp: 2 },
       ])
     );
 
@@ -174,7 +174,7 @@ describe('useBoardingScan', () => {
       .mockResolvedValueOnce({ success: true, debounced: false, data: { eventId: 'e1' } })
       .mockResolvedValueOnce({ success: true, debounced: false, data: { eventId: 'e2' } });
 
-    const { result } = renderHook(() => useBoardingScan('BUS-1'));
+    const { result } = renderHook(() => useBoardingScan('VEHICLE-1'));
     await waitFor(() => expect(result.current.pendingCount).toBe(2));
 
     await act(async () => {
@@ -190,11 +190,11 @@ describe('useBoardingScan', () => {
   it('replays the queue automatically when the backend comes back online', async () => {
     await AsyncStorage.setItem(
       'boarding_scan_queue',
-      JSON.stringify([{ qrToken: 'queued-1', busId: 'BUS-1', timestamp: 1 }])
+      JSON.stringify([{ qrToken: 'queued-1', vehicleId: 'VEHICLE-1', timestamp: 1 }])
     );
     mockSubmitBoardingScan.mockResolvedValueOnce({ success: true, debounced: false, data: { eventId: 'e1' } });
 
-    const { result } = renderHook(() => useBoardingScan('BUS-1'));
+    const { result } = renderHook(() => useBoardingScan('VEHICLE-1'));
     await waitFor(() => expect(result.current.pendingCount).toBe(1));
 
     await act(async () => {
@@ -204,7 +204,7 @@ describe('useBoardingScan', () => {
     });
 
     await waitFor(() => expect(result.current.pendingCount).toBe(0));
-    expect(mockSubmitBoardingScan).toHaveBeenCalledWith('tok', { qrToken: 'queued-1', busId: 'BUS-1' });
+    expect(mockSubmitBoardingScan).toHaveBeenCalledWith('tok', { qrToken: 'queued-1', vehicleId: 'VEHICLE-1' });
   });
 
   it('ignores a second submitScan call during the cooldown window', async () => {
@@ -214,7 +214,7 @@ describe('useBoardingScan', () => {
       data: { eventId: 'e1' },
     });
 
-    const { result } = renderHook(() => useBoardingScan('BUS-1'));
+    const { result } = renderHook(() => useBoardingScan('VEHICLE-1'));
 
     await act(async () => {
       await result.current.submitScan('qr-token-1');

@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 
 import LoginScreen from '../screens/LoginScreen';
 import DriverDashboard from '../screens/DriverDashboard';
-import BusRegistrationScreen from '../screens/BusRegistrationScreen';
+import VehicleRegistrationScreen from '../screens/VehicleRegistrationScreen';
 import DriverEarningsScreen from '../screens/DriverEarningsScreen';
 import TripHistoryScreen from '../screens/TripHistoryScreen';
 import DriverProfileScreen from '../screens/DriverProfileScreen';
@@ -89,7 +89,7 @@ const AppNavigator = ({ backendOnline }) => {
       ) : (
         <>
           <Stack.Screen name="MainTabs" component={MainTabs} />
-          <Stack.Screen name="BusRegistration" component={BusRegistrationScreen} />
+          <Stack.Screen name="VehicleRegistration" component={VehicleRegistrationScreen} />
           <Stack.Screen name="RouteManagement" component={RouteManagementScreen} />
           <Stack.Screen name="QRScanner" component={QRScannerScreen} />
         </>

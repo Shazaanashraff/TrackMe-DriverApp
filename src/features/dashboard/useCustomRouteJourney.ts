@@ -20,7 +20,7 @@ function unwrap<T>(response: unknown): T {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AuthenticatedRequest = (fn: (...args: any[]) => Promise<unknown>, ...args: unknown[]) => Promise<unknown>;
 
-export function useCustomRouteJourney(busId: string) {
+export function useCustomRouteJourney(vehicleId: string) {
   const { authenticatedRequest } = useAuth() as { authenticatedRequest: AuthenticatedRequest };
   const [customRoute, setCustomRoute] = useState<CustomRoute>(null);
   const [showUpdateRecorder, setShowUpdateRecorder] = useState(false);
@@ -53,7 +53,7 @@ export function useCustomRouteJourney(busId: string) {
     try {
       const res = await authenticatedRequest(api.reportJourney, {
         routeId: customRoute?.routeId,
-        busId,
+        vehicleId,
         breadcrumb: breadcrumbRef.current,
       });
       if (unwrap<{ flagged?: boolean }>(res)?.flagged) {
@@ -64,7 +64,7 @@ export function useCustomRouteJourney(busId: string) {
     } finally {
       breadcrumbRef.current = [];
     }
-  }, [authenticatedRequest, isActive, customRoute, busId, reload]);
+  }, [authenticatedRequest, isActive, customRoute, vehicleId, reload]);
 
   return {
     customRoute,

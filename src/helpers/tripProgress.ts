@@ -1,6 +1,6 @@
 import { haversineMeters } from './geo';
 
-// Computes how far a bus has travelled along its route, from the driver's live GPS
+// Computes how far a vehicle has travelled along its route, from the driver's live GPS
 // fix and the route's ordered stop list. Pure + I/O-free so it is cheap to unit-test.
 //
 // The stop chain is a straight-line (great-circle) approximation of the road, while
@@ -26,7 +26,7 @@ const toRad = (deg: number): number => (deg * Math.PI) / 180;
 
 /**
  * Project point `p` onto segment `a`->`b` using a local equirectangular
- * approximation (accurate enough at bus-route scale). Returns the clamped
+ * approximation (accurate enough at vehicle-route scale). Returns the clamped
  * position along the segment `t` in [0,1] and the perpendicular distance in metres.
  */
 function projectOntoSegment(

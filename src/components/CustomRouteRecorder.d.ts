@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface CustomRouteRecorderProps {
-  bus: unknown;
+  vehicle: unknown;
   routeId?: string;
   mode?: 'initial' | 'update';
   onSubmitted: () => void;

@@ -56,9 +56,9 @@ describe('PrimaryButton', () => {
   it('does not fire onPress when disabled', () => {
     const onPress = jest.fn();
     const { getByText } = render(
-      <PrimaryButton title="Save bus" onPress={onPress} disabled />
+      <PrimaryButton title="Save vehicle" onPress={onPress} disabled />
     );
-    fireEvent.press(getByText('Save bus'));
+    fireEvent.press(getByText('Save vehicle'));
     expect(onPress).not.toHaveBeenCalled();
   });
 

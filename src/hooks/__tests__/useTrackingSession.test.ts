@@ -28,12 +28,12 @@ describe('useTrackingSession', () => {
     const { result } = renderHook(() => useTrackingSession());
 
     act(() => {
-      result.current.start('bus-1');
+      result.current.start('vehicle-1');
     });
     expect(result.current.status).toBe('starting');
 
     await waitFor(() => expect(result.current.status).toBe('tracking'));
-    expect(mockStartTracking).toHaveBeenCalledWith('bus-1');
+    expect(mockStartTracking).toHaveBeenCalledWith('vehicle-1');
     expect(result.current.error).toBeUndefined();
   });
 
@@ -42,7 +42,7 @@ describe('useTrackingSession', () => {
     const { result } = renderHook(() => useTrackingSession());
 
     act(() => {
-      result.current.start('bus-1');
+      result.current.start('vehicle-1');
     });
 
     await waitFor(() => expect(result.current.status).toBe('error'));
@@ -55,15 +55,15 @@ describe('useTrackingSession', () => {
     const { result } = renderHook(() => useTrackingSession());
 
     act(() => {
-      result.current.start('bus-1');
+      result.current.start('vehicle-1');
     });
     await waitFor(() => expect(result.current.status).toBe('tracking'));
 
     act(() => {
-      result.current.stop('bus-1');
+      result.current.stop('vehicle-1');
     });
 
-    expect(mockStopTracking).toHaveBeenCalledWith('bus-1');
+    expect(mockStopTracking).toHaveBeenCalledWith('vehicle-1');
     expect(result.current.status).toBe('idle');
   });
 
@@ -72,12 +72,12 @@ describe('useTrackingSession', () => {
     const { result, unmount } = renderHook(() => useTrackingSession());
 
     act(() => {
-      result.current.start('bus-1');
+      result.current.start('vehicle-1');
     });
     await waitFor(() => expect(result.current.status).toBe('tracking'));
 
     unmount();
-    expect(mockStopTracking).toHaveBeenCalledWith('bus-1');
+    expect(mockStopTracking).toHaveBeenCalledWith('vehicle-1');
   });
 
   it('reflects a connection drop as isReconnecting while tracking', async () => {
@@ -90,7 +90,7 @@ describe('useTrackingSession', () => {
 
     const { result } = renderHook(() => useTrackingSession());
     act(() => {
-      result.current.start('bus-1');
+      result.current.start('vehicle-1');
     });
     await waitFor(() => expect(result.current.status).toBe('tracking'));
 

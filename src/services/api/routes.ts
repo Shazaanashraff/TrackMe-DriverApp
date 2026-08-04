@@ -3,7 +3,7 @@ import { requestJson } from './transport';
 import { authHeaders } from './authHeaders';
 
 export async function getRoutes(token: string) {
-  return requestJson(`${API_URL}/api/bus/routes`, {
+  return requestJson(`${API_URL}/api/vehicle/routes`, {
     headers: authHeaders(token),
   });
 }

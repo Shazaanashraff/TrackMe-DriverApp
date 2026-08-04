@@ -25,7 +25,7 @@ describe('shouldRefetchPlace', () => {
     expect(shouldRefetchPlace(null, 6.9271, 79.8612, 2_000_000)).toBe(true);
   });
 
-  it('does not fetch when the bus has barely moved', () => {
+  it('does not fetch when the vehicle has barely moved', () => {
     // A few metres away, well after the interval.
     expect(shouldRefetchPlace(base, 6.92715, 79.86125, base.ms + MIN_INTERVAL_MS + 1)).toBe(false);
   });

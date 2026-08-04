@@ -10,7 +10,7 @@ import { useBoardingScan } from '../features/boarding/useBoardingScan';
 
 type Props = {
   navigation: { goBack: () => void };
-  route: { params?: { busId?: string } };
+  route: { params?: { vehicleId?: string } };
 };
 
 function CameraPermissionDeniedState({ onOpenSettings }: { onOpenSettings: () => void }) {
@@ -48,9 +48,9 @@ function feedbackFor(status: string, lastResult: ReturnType<typeof useBoardingSc
 }
 
 const QRScannerScreen = ({ navigation, route }: Props) => {
-  const busId = route?.params?.busId || '';
+  const vehicleId = route?.params?.vehicleId || '';
   const [permission, requestPermission] = useCameraPermissions();
-  const { status, lastResult, errorMessage, submitScan } = useBoardingScan(busId);
+  const { status, lastResult, errorMessage, submitScan } = useBoardingScan(vehicleId);
   const scanLockRef = useRef(false);
 
   const [permissionRequested, setPermissionRequested] = useState(false);

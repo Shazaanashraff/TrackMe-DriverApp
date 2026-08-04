@@ -41,7 +41,7 @@ jest.mock('../../components/ui/PrimaryButton', () => {
   );
 });
 
-jest.mock('../../components/ShiftBusIcon', () => () => null);
+jest.mock('../../components/ShiftVehicleIcon', () => () => null);
 
 import { useLogin } from '../../hooks/auth';
 import LoginScreen from '../LoginScreen';

@@ -14,7 +14,7 @@ jest.mock('../../../components/CustomRouteRecorder', () => {
 });
 
 const baseProps = {
-  bus: { busId: 'BUS-1' },
+  vehicle: { vehicleId: 'VEHICLE-1' },
   showUpdateRecorder: false,
   onShowUpdateRecorder: jest.fn(),
   onRecorderSubmitted: jest.fn(),

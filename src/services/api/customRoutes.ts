@@ -10,23 +10,23 @@ export async function getMyCustomRoute(token: string) {
 
 export async function recordCustomRoute(
   token: string,
-  { busId, breadcrumb, stops }: { busId: string; breadcrumb: unknown; stops: unknown }
+  { vehicleId, breadcrumb, stops }: { vehicleId: string; breadcrumb: unknown; stops: unknown }
 ) {
   return requestJson(`${API_URL}/api/driver/custom-routes/record`, {
     method: 'POST',
     headers: authHeaders(token),
-    body: JSON.stringify({ busId, breadcrumb, stops }),
+    body: JSON.stringify({ vehicleId, breadcrumb, stops }),
   });
 }
 
 export async function reportJourney(
   token: string,
-  { routeId, busId, breadcrumb }: { routeId: string; busId: string; breadcrumb: unknown }
+  { routeId, vehicleId, breadcrumb }: { routeId: string; vehicleId: string; breadcrumb: unknown }
 ) {
   return requestJson(`${API_URL}/api/driver/custom-routes/${routeId}/report-journey`, {
     method: 'POST',
     headers: authHeaders(token),
-    body: JSON.stringify({ busId, breadcrumb }),
+    body: JSON.stringify({ vehicleId, breadcrumb }),
   });
 }
 
@@ -34,14 +34,14 @@ export async function recordRouteUpdate(
   token: string,
   {
     routeId,
-    busId,
+    vehicleId,
     breadcrumb,
     stops,
-  }: { routeId: string; busId: string; breadcrumb: unknown; stops: unknown }
+  }: { routeId: string; vehicleId: string; breadcrumb: unknown; stops: unknown }
 ) {
   return requestJson(`${API_URL}/api/driver/custom-routes/${routeId}/record-update`, {
     method: 'POST',
     headers: authHeaders(token),
-    body: JSON.stringify({ busId, breadcrumb, stops }),
+    body: JSON.stringify({ vehicleId, breadcrumb, stops }),
   });
 }

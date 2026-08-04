@@ -1,9 +1,9 @@
 import { qk } from '../queryKeys';
 
-describe('qk.myBus', () => {
+describe('qk.myVehicle', () => {
   it('returns a stable key', () => {
-    expect(qk.myBus()).toEqual(['bus', 'mine']);
-    expect(qk.myBus()).toEqual(qk.myBus());
+    expect(qk.myVehicle()).toEqual(['vehicle', 'mine']);
+    expect(qk.myVehicle()).toEqual(qk.myVehicle());
   });
 });
 

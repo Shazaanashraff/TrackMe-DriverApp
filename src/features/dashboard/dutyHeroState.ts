@@ -19,7 +19,7 @@ export interface DeriveDutyHeroStateInput {
   isReconnecting: boolean;
   connecting: boolean;
   permission: LocationPermissionStatus;
-  hasBus: boolean;
+  hasVehicle: boolean;
   secondsSinceFix: number | null;
 }
 
@@ -28,7 +28,7 @@ export function deriveDutyHeroState({
   isReconnecting,
   connecting,
   permission,
-  hasBus,
+  hasVehicle,
   secondsSinceFix,
 }: DeriveDutyHeroStateInput): DutyHeroState {
   if (status === 'tracking') {
@@ -45,7 +45,7 @@ export function deriveDutyHeroState({
     if (permission === 'denied') {
       return {
         headline: "You're live",
-        subline: 'Allow location so riders can see your bus',
+        subline: 'Allow location so riders can see your vehicle',
         dot: 'warn',
         showAllowLocation: true,
         goDisabled: false,
@@ -56,8 +56,8 @@ export function deriveDutyHeroState({
       headline: "You're live",
       subline:
         secondsSinceFix != null
-          ? `Riders can see your bus · updated ${secondsSinceFix}s ago`
-          : 'Riders can see your bus',
+          ? `Riders can see your vehicle · updated ${secondsSinceFix}s ago`
+          : 'Riders can see your vehicle',
       dot: 'on',
       showAllowLocation: false,
       goDisabled: false,
@@ -70,14 +70,14 @@ export function deriveDutyHeroState({
       subline: 'Hang tight — finding the server',
       dot: 'off',
       showAllowLocation: false,
-      goDisabled: !hasBus,
+      goDisabled: !hasVehicle,
     };
   }
 
-  if (!hasBus) {
+  if (!hasVehicle) {
     return {
       headline: "You're off duty",
-      subline: 'Register your bus to go live',
+      subline: 'Register your vehicle to go live',
       dot: 'off',
       showAllowLocation: false,
       goDisabled: true,
@@ -86,7 +86,7 @@ export function deriveDutyHeroState({
 
   return {
     headline: "You're off duty",
-    subline: "Riders can't see your bus yet",
+    subline: "Riders can't see your vehicle yet",
     dot: 'off',
     showAllowLocation: false,
     goDisabled: false,

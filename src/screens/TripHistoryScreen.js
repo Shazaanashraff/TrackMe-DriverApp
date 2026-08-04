@@ -57,7 +57,7 @@ const TripHistoryScreen = () => {
       <Card style={styles.tripCard}>
         <View style={styles.tripRow}>
           <View style={styles.iconBadge}>
-            <Ionicons name="bus" size={20} color={theme.color.primary[500]} />
+            <Ionicons name="vehicle" size={20} color={theme.color.primary[500]} />
           </View>
           <View style={styles.textBlock}>
             <AppText variant="body" weight="medium" numberOfLines={1}>

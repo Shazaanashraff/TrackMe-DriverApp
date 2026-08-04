@@ -14,8 +14,8 @@ import PrimaryButton from './ui/PrimaryButton';
 
 const MIN_STOP_DISTANCE_METERS = 15;
 const MIN_SUBMIT_POINTS = 2;
-export const bufferKeyFor = (busId, mode = 'initial') =>
-  mode === 'update' ? `active_recording:${busId}:update` : `active_recording:${busId}`;
+export const bufferKeyFor = (vehicleId, mode = 'initial') =>
+  mode === 'update' ? `active_recording:${vehicleId}:update` : `active_recording:${vehicleId}`;
 export const ONBOARDING_DONE_KEY = 'custom_route_onboarding_done';
 
 const WalkthroughableView = walkthroughable(View);
@@ -30,10 +30,10 @@ const WalkthroughableView = walkthroughable(View);
 // review (POST /:routeId/record-update) — used for the "Update Route" flow
 // after an off-route journey is flagged. Onboarding coach-marks only run in
 // "initial" mode since an "update" driver has already recorded before.
-const CustomRouteRecorder = ({ bus, routeId, mode = 'initial', onSubmitted }) => {
+const CustomRouteRecorder = ({ vehicle, routeId, mode = 'initial', onSubmitted }) => {
   const { authenticatedRequest } = useAuth();
   const { start: startCopilotTour, copilotEvents } = useCopilot();
-  const busId = bus?.busId || bus?._id;
+  const vehicleId = vehicle?.vehicleId || vehicle?._id;
   const isUpdateMode = mode === 'update';
 
   const [status, setStatus] = useState('idle'); // idle | recording | submitting
@@ -66,7 +66,7 @@ const CustomRouteRecorder = ({ bus, routeId, mode = 'initial', onSubmitted }) =>
       if (tourTimeoutRef.current) clearTimeout(tourTimeoutRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [busId]);
+  }, [vehicleId]);
 
   useEffect(() => {
     const unsubscribe = copilotEvents?.on?.('stop', () => {
@@ -115,26 +115,26 @@ const CustomRouteRecorder = ({ bus, routeId, mode = 'initial', onSubmitted }) =>
   };
 
   const persistBuffer = useCallback(async () => {
-    if (!busId) return;
+    if (!vehicleId) return;
     try {
       await AsyncStorage.setItem(
-        bufferKeyFor(busId, mode),
-        JSON.stringify({ busId, breadcrumb: breadcrumbRef.current, stops: stopsRef.current, startedAt: startedAtRef.current })
+        bufferKeyFor(vehicleId, mode),
+        JSON.stringify({ vehicleId, breadcrumb: breadcrumbRef.current, stops: stopsRef.current, startedAt: startedAtRef.current })
       );
     } catch (error) {
       console.warn('Failed to persist recording buffer:', error?.message || error);
     }
-  }, [busId]);
+  }, [vehicleId]);
 
   const clearBuffer = useCallback(async () => {
-    if (!busId) return;
-    await AsyncStorage.removeItem(bufferKeyFor(busId, mode));
-  }, [busId]);
+    if (!vehicleId) return;
+    await AsyncStorage.removeItem(bufferKeyFor(vehicleId, mode));
+  }, [vehicleId]);
 
   const checkForResumableRecording = async () => {
-    if (!busId) return;
+    if (!vehicleId) return;
     try {
-      const raw = await AsyncStorage.getItem(bufferKeyFor(busId, mode));
+      const raw = await AsyncStorage.getItem(bufferKeyFor(vehicleId, mode));
       if (!raw) return;
       const buffer = JSON.parse(raw);
       if (!buffer?.breadcrumb?.length) {
@@ -181,7 +181,7 @@ const CustomRouteRecorder = ({ bus, routeId, mode = 'initial', onSubmitted }) =>
       return false;
     }
 
-    await startTrackingSession(busId);
+    await startTrackingSession(vehicleId);
 
     locationSubscription.current = await Location.watchPositionAsync(
       { accuracy: Location.Accuracy.High, timeInterval: 3000, distanceInterval: 3 },
@@ -273,7 +273,7 @@ const CustomRouteRecorder = ({ bus, routeId, mode = 'initial', onSubmitted }) =>
       clearInterval(tickInterval.current);
       tickInterval.current = null;
     }
-    if (busId) stopTracking(busId);
+    if (vehicleId) stopTracking(vehicleId);
   };
 
   const handleCancelRecording = () => {
@@ -293,7 +293,7 @@ const CustomRouteRecorder = ({ bus, routeId, mode = 'initial', onSubmitted }) =>
     setStatus('submitting');
     try {
       const payload = {
-        busId,
+        vehicleId,
         breadcrumb: breadcrumb.map((p) => ({ lat: p.lat, lng: p.lng, t: p.t })),
         stops: stops.map((s) => ({ lat: s.lat, lng: s.lng, stopName: s.stopName }))
       };

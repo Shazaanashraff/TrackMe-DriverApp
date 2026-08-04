@@ -37,11 +37,11 @@ describe('emitLocation', () => {
       (_event: string, _payload: unknown, cb: (r: unknown) => void) => cb({ success: true })
     );
     const callback = jest.fn();
-    emitLocation('bus-1', 'route-1', 6.9, 79.8, callback);
+    emitLocation('vehicle-1', 'route-1', 6.9, 79.8, callback);
 
     expect(mockSocket.emit).toHaveBeenCalledWith(
       'driver:location',
-      { busId: 'bus-1', routeId: 'route-1', lat: 6.9, lng: 79.8 },
+      { vehicleId: 'vehicle-1', routeId: 'route-1', lat: 6.9, lng: 79.8 },
       expect.any(Function)
     );
     expect(callback).toHaveBeenCalledWith({ success: true });
@@ -52,7 +52,7 @@ describe('emitLocation', () => {
     connectSocket('tok');
     mockSocket.connected = false;
 
-    emitLocation('bus-1', 'route-1', 6.9, 79.8, jest.fn());
+    emitLocation('vehicle-1', 'route-1', 6.9, 79.8, jest.fn());
     expect(mockSocket.emit).not.toHaveBeenCalled();
   });
 });
@@ -66,7 +66,7 @@ describe('startTracking', () => {
       (_event: string, _payload: unknown, cb: (r: unknown) => void) => cb({ success: true })
     );
 
-    await expect(startTracking('bus-1')).resolves.toEqual({ success: true });
+    await expect(startTracking('vehicle-1')).resolves.toEqual({ success: true });
   });
 
   it('resolves success:false without emitting when not connected', async () => {
@@ -74,7 +74,7 @@ describe('startTracking', () => {
     connectSocket('tok');
     mockSocket.connected = false;
 
-    await expect(startTracking('bus-1')).resolves.toEqual({
+    await expect(startTracking('vehicle-1')).resolves.toEqual({
       success: false,
       error: 'Socket not connected',
     });
@@ -86,15 +86,15 @@ describe('stopTracking', () => {
   it('emits driver:stop-tracking when connected', () => {
     const { connectSocket, stopTracking } = getModule();
     connectSocket('tok');
-    stopTracking('bus-1');
-    expect(mockSocket.emit).toHaveBeenCalledWith('driver:stop-tracking', { busId: 'bus-1' });
+    stopTracking('vehicle-1');
+    expect(mockSocket.emit).toHaveBeenCalledWith('driver:stop-tracking', { vehicleId: 'vehicle-1' });
   });
 
   it('no-ops when not connected', () => {
     const { connectSocket, stopTracking } = getModule();
     connectSocket('tok');
     mockSocket.connected = false;
-    stopTracking('bus-1');
+    stopTracking('vehicle-1');
     expect(mockSocket.emit).not.toHaveBeenCalled();
   });
 });

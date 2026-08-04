@@ -42,7 +42,7 @@ jest.mock('expo-location', () => ({
   Accuracy: { High: 4 }
 }));
 
-const BUS = { busId: 'BUS-1' };
+const VEHICLE = { vehicleId: 'VEHICLE-1' };
 
 const emitFix = async (lat, lng) => {
   await act(async () => {
@@ -63,12 +63,12 @@ beforeEach(async () => {
 describe('coach-mark first-run gating', () => {
   it('starts the idle-stage tour when onboarding is not yet done', async () => {
     await AsyncStorage.removeItem(ONBOARDING_DONE_KEY);
-    render(<CustomRouteRecorder bus={BUS} />);
+    render(<CustomRouteRecorder vehicle={VEHICLE} />);
     await waitFor(() => expect(mockCopilotStart).toHaveBeenCalledWith('trackRoute'));
   });
 
   it('does not start the tour once onboarding is marked done', async () => {
-    render(<CustomRouteRecorder bus={BUS} />);
+    render(<CustomRouteRecorder vehicle={VEHICLE} />);
     await new Promise((r) => setTimeout(r, 500));
     expect(mockCopilotStart).not.toHaveBeenCalled();
   });
@@ -76,7 +76,7 @@ describe('coach-mark first-run gating', () => {
 
 describe('Track / Add Stop / Complete state machine', () => {
   it('moves from idle to recording when Track Route is pressed', async () => {
-    const { getByTestId, queryByTestId } = render(<CustomRouteRecorder bus={BUS} />);
+    const { getByTestId, queryByTestId } = render(<CustomRouteRecorder vehicle={VEHICLE} />);
     expect(getByTestId('track-route-button')).toBeTruthy();
 
     await act(async () => {
@@ -85,11 +85,11 @@ describe('Track / Add Stop / Complete state machine', () => {
 
     await waitFor(() => expect(getByTestId('add-stop-button')).toBeTruthy());
     expect(queryByTestId('track-route-button')).toBeNull();
-    expect(startTracking).toHaveBeenCalledWith('BUS-1');
+    expect(startTracking).toHaveBeenCalledWith('VEHICLE-1');
   });
 
   it('accumulates breadcrumb points and persists them to AsyncStorage', async () => {
-    const { getByTestId } = render(<CustomRouteRecorder bus={BUS} />);
+    const { getByTestId } = render(<CustomRouteRecorder vehicle={VEHICLE} />);
     await act(async () => fireEvent.press(getByTestId('track-route-button')));
     await waitFor(() => expect(getByTestId('add-stop-button')).toBeTruthy());
 
@@ -97,7 +97,7 @@ describe('Track / Add Stop / Complete state machine', () => {
     await emitFix(6.9371, 79.8612);
 
     await waitFor(async () => {
-      const raw = await AsyncStorage.getItem(bufferKeyFor('BUS-1'));
+      const raw = await AsyncStorage.getItem(bufferKeyFor('VEHICLE-1'));
       expect(raw).toBeTruthy();
       const buffer = JSON.parse(raw);
       expect(buffer.breadcrumb).toHaveLength(2);
@@ -106,7 +106,7 @@ describe('Track / Add Stop / Complete state machine', () => {
   });
 
   it('submits the recorded breadcrumb + stops with the expected payload shape on Complete', async () => {
-    const { getByTestId } = render(<CustomRouteRecorder bus={BUS} />);
+    const { getByTestId } = render(<CustomRouteRecorder vehicle={VEHICLE} />);
     await act(async () => fireEvent.press(getByTestId('track-route-button')));
     await waitFor(() => expect(getByTestId('add-stop-button')).toBeTruthy());
 
@@ -120,17 +120,17 @@ describe('Track / Add Stop / Complete state machine', () => {
 
     await waitFor(() => expect(api.recordCustomRoute).toHaveBeenCalledTimes(1));
     const payload = api.recordCustomRoute.mock.calls[0][1];
-    expect(payload.busId).toBe('BUS-1');
+    expect(payload.vehicleId).toBe('VEHICLE-1');
     expect(payload.breadcrumb).toEqual([
       { lat: 6.9271, lng: 79.8612, t: expect.any(Number) },
       { lat: 6.9371, lng: 79.8612, t: expect.any(Number) }
     ]);
     expect(payload.stops).toEqual([{ lat: 6.9371, lng: 79.8612, stopName: 'Stop 1' }]);
-    expect(stopTracking).toHaveBeenCalledWith('BUS-1');
+    expect(stopTracking).toHaveBeenCalledWith('VEHICLE-1');
   });
 
   it('clears the AsyncStorage buffer after a successful submit', async () => {
-    const { getByTestId } = render(<CustomRouteRecorder bus={BUS} />);
+    const { getByTestId } = render(<CustomRouteRecorder vehicle={VEHICLE} />);
     await act(async () => fireEvent.press(getByTestId('track-route-button')));
     await waitFor(() => expect(getByTestId('add-stop-button')).toBeTruthy());
     await emitFix(6.9271, 79.8612);
@@ -139,7 +139,7 @@ describe('Track / Add Stop / Complete state machine', () => {
     await act(async () => fireEvent.press(getByTestId('complete-button')));
     await waitFor(() => expect(api.recordCustomRoute).toHaveBeenCalledTimes(1));
 
-    const raw = await AsyncStorage.getItem(bufferKeyFor('BUS-1'));
+    const raw = await AsyncStorage.getItem(bufferKeyFor('VEHICLE-1'));
     expect(raw).toBeNull();
   });
 });
@@ -147,7 +147,7 @@ describe('Track / Add Stop / Complete state machine', () => {
 describe('Add Stop guards', () => {
   it('rejects adding a stop before any location update is available', async () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-    const { getByTestId, queryByTestId } = render(<CustomRouteRecorder bus={BUS} />);
+    const { getByTestId, queryByTestId } = render(<CustomRouteRecorder vehicle={VEHICLE} />);
     await act(async () => fireEvent.press(getByTestId('track-route-button')));
     await waitFor(() => expect(getByTestId('add-stop-button')).toBeTruthy());
 
@@ -160,7 +160,7 @@ describe('Add Stop guards', () => {
 
   it('rejects a stop too close to the previously added stop', async () => {
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-    const { getByTestId, queryByTestId } = render(<CustomRouteRecorder bus={BUS} />);
+    const { getByTestId, queryByTestId } = render(<CustomRouteRecorder vehicle={VEHICLE} />);
     await act(async () => fireEvent.press(getByTestId('track-route-button')));
     await waitFor(() => expect(getByTestId('add-stop-button')).toBeTruthy());
 
@@ -179,14 +179,14 @@ describe('Add Stop guards', () => {
 });
 
 describe('crash / background recovery', () => {
-  it('offers resume/submit/discard when a buffer exists for this bus on mount', async () => {
+  it('offers resume/submit/discard when a buffer exists for this vehicle on mount', async () => {
     await AsyncStorage.setItem(
-      bufferKeyFor('BUS-1'),
-      JSON.stringify({ busId: 'BUS-1', breadcrumb: [{ lat: 1, lng: 1, t: 1 }, { lat: 2, lng: 2, t: 2 }], stops: [], startedAt: Date.now() })
+      bufferKeyFor('VEHICLE-1'),
+      JSON.stringify({ vehicleId: 'VEHICLE-1', breadcrumb: [{ lat: 1, lng: 1, t: 1 }, { lat: 2, lng: 2, t: 2 }], stops: [], startedAt: Date.now() })
     );
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
-    render(<CustomRouteRecorder bus={BUS} />);
+    render(<CustomRouteRecorder vehicle={VEHICLE} />);
 
     await waitFor(() => expect(alertSpy).toHaveBeenCalledWith(
       'Resume recording?',
@@ -200,30 +200,30 @@ describe('crash / background recovery', () => {
 
   it('discard clears the persisted buffer', async () => {
     await AsyncStorage.setItem(
-      bufferKeyFor('BUS-1'),
-      JSON.stringify({ busId: 'BUS-1', breadcrumb: [{ lat: 1, lng: 1, t: 1 }, { lat: 2, lng: 2, t: 2 }], stops: [], startedAt: Date.now() })
+      bufferKeyFor('VEHICLE-1'),
+      JSON.stringify({ vehicleId: 'VEHICLE-1', breadcrumb: [{ lat: 1, lng: 1, t: 1 }, { lat: 2, lng: 2, t: 2 }], stops: [], startedAt: Date.now() })
     );
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation((title, msg, buttons) => {
       buttons.find((b) => b.text === 'Discard')?.onPress?.();
     });
 
-    render(<CustomRouteRecorder bus={BUS} />);
+    render(<CustomRouteRecorder vehicle={VEHICLE} />);
 
     await waitFor(async () => {
-      const raw = await AsyncStorage.getItem(bufferKeyFor('BUS-1'));
+      const raw = await AsyncStorage.getItem(bufferKeyFor('VEHICLE-1'));
       expect(raw).toBeNull();
     });
     alertSpy.mockRestore();
   });
 
   it('ignores an empty/degenerate buffer and clears it silently', async () => {
-    await AsyncStorage.setItem(bufferKeyFor('BUS-1'), JSON.stringify({ busId: 'BUS-1', breadcrumb: [], stops: [] }));
+    await AsyncStorage.setItem(bufferKeyFor('VEHICLE-1'), JSON.stringify({ vehicleId: 'VEHICLE-1', breadcrumb: [], stops: [] }));
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
-    render(<CustomRouteRecorder bus={BUS} />);
+    render(<CustomRouteRecorder vehicle={VEHICLE} />);
 
     await waitFor(async () => {
-      const raw = await AsyncStorage.getItem(bufferKeyFor('BUS-1'));
+      const raw = await AsyncStorage.getItem(bufferKeyFor('VEHICLE-1'));
       expect(raw).toBeNull();
     });
     expect(alertSpy).not.toHaveBeenCalledWith('Resume recording?', expect.any(String), expect.any(Array));
@@ -233,20 +233,20 @@ describe('crash / background recovery', () => {
 
 describe('update mode (Phase 2: Update Route after an off-route flag)', () => {
   it('shows update-specific copy instead of the initial-recording copy', () => {
-    const { getByText } = render(<CustomRouteRecorder bus={BUS} routeId="ROUTE-1" mode="update" />);
+    const { getByText } = render(<CustomRouteRecorder vehicle={VEHICLE} routeId="ROUTE-1" mode="update" />);
     expect(getByText('Update Your Route')).toBeTruthy();
   });
 
   it('does not start the onboarding tour in update mode, even if onboarding was never completed', async () => {
     await AsyncStorage.removeItem(ONBOARDING_DONE_KEY);
-    render(<CustomRouteRecorder bus={BUS} routeId="ROUTE-1" mode="update" />);
+    render(<CustomRouteRecorder vehicle={VEHICLE} routeId="ROUTE-1" mode="update" />);
     await new Promise((r) => setTimeout(r, 500));
     expect(mockCopilotStart).not.toHaveBeenCalled();
   });
 
   it('submits via recordRouteUpdate with the routeId instead of recordCustomRoute', async () => {
     const onSubmitted = jest.fn();
-    const { getByTestId } = render(<CustomRouteRecorder bus={BUS} routeId="ROUTE-1" mode="update" onSubmitted={onSubmitted} />);
+    const { getByTestId } = render(<CustomRouteRecorder vehicle={VEHICLE} routeId="ROUTE-1" mode="update" onSubmitted={onSubmitted} />);
 
     await act(async () => fireEvent.press(getByTestId('track-route-button')));
     await waitFor(() => expect(getByTestId('complete-button')).toBeTruthy());
@@ -260,21 +260,21 @@ describe('update mode (Phase 2: Update Route after an off-route flag)', () => {
     expect(api.recordCustomRoute).not.toHaveBeenCalled();
     const payload = api.recordRouteUpdate.mock.calls[0][1];
     expect(payload.routeId).toBe('ROUTE-1');
-    expect(payload.busId).toBe('BUS-1');
+    expect(payload.vehicleId).toBe('VEHICLE-1');
     expect(onSubmitted).toHaveBeenCalled();
   });
 
   it('persists its recording buffer under a mode-specific key', async () => {
-    const { getByTestId } = render(<CustomRouteRecorder bus={BUS} routeId="ROUTE-1" mode="update" />);
+    const { getByTestId } = render(<CustomRouteRecorder vehicle={VEHICLE} routeId="ROUTE-1" mode="update" />);
     await act(async () => fireEvent.press(getByTestId('track-route-button')));
     await waitFor(() => expect(getByTestId('complete-button')).toBeTruthy());
     await emitFix(6.9271, 79.8612);
 
     await waitFor(async () => {
-      const raw = await AsyncStorage.getItem(bufferKeyFor('BUS-1', 'update'));
+      const raw = await AsyncStorage.getItem(bufferKeyFor('VEHICLE-1', 'update'));
       expect(raw).toBeTruthy();
     });
-    const initialModeRaw = await AsyncStorage.getItem(bufferKeyFor('BUS-1'));
+    const initialModeRaw = await AsyncStorage.getItem(bufferKeyFor('VEHICLE-1'));
     expect(initialModeRaw).toBeNull();
   });
 });

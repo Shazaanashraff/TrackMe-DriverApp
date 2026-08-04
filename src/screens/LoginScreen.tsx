@@ -4,7 +4,7 @@ import { useLogin } from '../hooks/auth';
 import { AppError, normalizeError } from '../lib/errors';
 import { theme } from '../theme';
 import AppText from '../components/ui/AppText';
-import ShiftBusIcon from '../components/ShiftBusIcon';
+import ShiftVehicleIcon from '../components/ShiftVehicleIcon';
 import FormInput from '../components/ui/FormInput';
 import PrimaryButton from '../components/ui/PrimaryButton';
 import InlineError from '../components/ui/InlineError';
@@ -47,7 +47,7 @@ const LoginScreen = () => {
       <StatusBar barStyle="light-content" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
-          <ShiftBusIcon size={56} />
+          <ShiftVehicleIcon size={56} />
           <AppText variant="h1" onInk style={styles.appName}>TrackMe</AppText>
           <AppText variant="label" color={theme.color.primary[300]}>Drive. Go live. Get paid.</AppText>
         </View>

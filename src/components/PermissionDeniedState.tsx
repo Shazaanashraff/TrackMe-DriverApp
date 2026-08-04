@@ -10,7 +10,7 @@ export default function PermissionDeniedState() {
     <View style={styles.container}>
       <Ionicons name="location-outline" size={20} color={theme.color.primary[300]} style={styles.icon} />
       <AppText variant="label" color={theme.color.primary[300]} style={styles.message}>
-        Allow location so riders can see your bus
+        Allow location so riders can see your vehicle
       </AppText>
       <PrimaryButton title="Allow location" variant="secondary" onPress={() => Linking.openSettings()} />
     </View>

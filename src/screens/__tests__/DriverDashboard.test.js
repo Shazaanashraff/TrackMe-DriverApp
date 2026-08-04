@@ -11,9 +11,9 @@ jest.mock('../../services/api', () => ({
   reportJourney: jest.fn(() => Promise.resolve({ flagged: false })),
 }));
 
-jest.mock('../../hooks/bus', () => ({
-  useMyBusQuery: () => ({
-    data: { busId: 'BUS-1', busName: 'Shuttle', seatCapacity: 20 },
+jest.mock('../../hooks/vehicle', () => ({
+  useMyVehicleQuery: () => ({
+    data: { vehicleId: 'VEHICLE-1', vehicleName: 'Shuttle', seatCapacity: 20 },
     isLoading: false,
     error: null,
   }),
