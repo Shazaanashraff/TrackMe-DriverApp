@@ -7,7 +7,7 @@
 ## Auth
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
-| api/auth.login + useLogin | int+unit | __integration__/auth.int.test.tsx + hooks/auth/__tests__ | URL/method/body, **driver role-gate**, 401 | login/role changes |
+| api/auth.login + useLogin | int+unit | services/api/__tests__/api.test.ts + hooks/auth/__tests__ | posts `{ identifier, password }` (a driver ID *or* an email) to /api/auth/login; sign-in by driver ID keeps `driverCode` on the saved account; **driver role-gate**; 401 | login identifier shape, role gate, or saved-account fields change |
 | auth.register/refresh/logout | int | __integration__/auth.int.test.tsx | body, expired refresh→logout | auth flow changes |
 | AuthContext | unit | context/__tests__/AuthContext.test.tsx | load/save/logout/401-refresh/role-gate | auth logic changes |
 | Login + role-gate + logout | e2e | .maestro/auth-*.yaml | driver in, non-driver rejected, logout | auth UI changes |
@@ -89,7 +89,7 @@
 | RouteForm (Card + FormInput) | unit | features/route-management/__tests__/RouteForm.test.tsx | field errors, normalized submit payload, form clears after submit, mutation error message | form fields or validation changes |
 | RouteListItem (Card + StatusPill) | unit | features/route-management/__tests__/RouteListItem.test.tsx | route details render, ACTIVE/INACTIVE StatusPill | STYLEGUIDE route-card spec changes |
 | RouteList (EmptyState) | unit | features/route-management/__tests__/RouteList.test.tsx | routes render with count badge, empty state copy, error+retry | list spec or copy changes |
-| LoginScreen (ink hero top 35%) | unit | screens/__tests__/LoginScreen.test.tsx | inputs render, blocked submit + inline errors, valid-credentials mutate call, role-gate error copy, loading state | validation, role gate, or copy changes |
+| LoginScreen (ink hero top 35%) | unit | screens/__tests__/LoginScreen.test.tsx | "Driver ID or email" + password inputs render, blocked submit + inline errors, signs in with either an email or a driver ID, identifier is trimmed, role-gate error copy, loading state | validation, the sign-in identifier, role gate, or copy changes |
 | ShiftBusIcon (recolorable body/detail) | unit | components/__tests__/ShiftBusIcon.test.js | renders at given size, defaults to signal/white, accepts custom colors | mark recoloring changes |
 | lib/errors — INVALID_CREDENTIALS copy | unit | lib/__tests__/errors.test.ts | returns the exact STYLEGUIDE §8 "Wrong email or password. Try again." string | auth error copy changes |
 

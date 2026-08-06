@@ -14,6 +14,9 @@ type DriverUser = {
   _id: string;
   name: string;
   email: string;
+  // The permanent sign-in ID. Absent on accounts created before driver IDs
+  // existed, until the backend backfill runs.
+  driverCode?: string;
   role: string;
 };
 
@@ -21,8 +24,10 @@ export function useLogin() {
   const { login } = useAuth() as AuthCtx;
 
   return useMutation({
-    mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      const response = (await api.login(email, password)) as {
+    // `identifier` is whatever was typed into the sign-in box: a driver ID or
+    // an email.
+    mutationFn: async ({ identifier, password }: { identifier: string; password: string }) => {
+      const response = (await api.login(identifier, password)) as {
         user: DriverUser;
         accessToken: string;
         refreshToken?: string;
@@ -39,7 +44,13 @@ export function useLogin() {
       }
 
       await login(
-        { _id: user._id, name: user.name, email: user.email, role: user.role },
+        {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          driverCode: user.driverCode,
+          role: user.role,
+        },
         accessToken,
         refreshToken
       );

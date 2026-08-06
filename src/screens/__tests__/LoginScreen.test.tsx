@@ -54,10 +54,12 @@ beforeEach(() => {
   mockUseLogin.mockReturnValue({ mutate, isPending: false, isError: false, error: undefined });
 });
 
+const ID_INPUT = 'input-Driver ID or email';
+
 describe('LoginScreen', () => {
-  it('renders the email and password inputs', () => {
+  it('renders the identifier and password inputs', () => {
     const { getByTestId } = render(<LoginScreen />);
-    expect(getByTestId('input-Email')).toBeTruthy();
+    expect(getByTestId(ID_INPUT)).toBeTruthy();
     expect(getByTestId('input-Password')).toBeTruthy();
   });
 
@@ -66,13 +68,13 @@ describe('LoginScreen', () => {
     fireEvent.press(getByTestId('primary-btn'));
 
     expect(mutate).not.toHaveBeenCalled();
-    expect(getByText('Email is required')).toBeTruthy();
+    expect(getByText('Driver ID or email is required')).toBeTruthy();
     expect(getByText('Password is required')).toBeTruthy();
   });
 
   it('blocks submit with an inline error when the password is too short', () => {
     const { getByTestId, getByText } = render(<LoginScreen />);
-    fireEvent.changeText(getByTestId('input-Email'), 'a@b.com');
+    fireEvent.changeText(getByTestId(ID_INPUT), 'a@b.com');
     fireEvent.changeText(getByTestId('input-Password'), '123');
     fireEvent.press(getByTestId('primary-btn'));
 
@@ -80,13 +82,40 @@ describe('LoginScreen', () => {
     expect(getByText('Password must be at least 6 characters')).toBeTruthy();
   });
 
-  it('calls useLogin.mutate with valid credentials', () => {
+  it('signs in with an email', () => {
     const { getByTestId } = render(<LoginScreen />);
-    fireEvent.changeText(getByTestId('input-Email'), 'driver@test.com');
+    fireEvent.changeText(getByTestId(ID_INPUT), 'driver@test.com');
     fireEvent.changeText(getByTestId('input-Password'), 'password123');
     fireEvent.press(getByTestId('primary-btn'));
 
-    expect(mutate).toHaveBeenCalledWith({ email: 'driver@test.com', password: 'password123' });
+    expect(mutate).toHaveBeenCalledWith({
+      identifier: 'driver@test.com',
+      password: 'password123',
+    });
+  });
+
+  it('signs in with a driver ID', () => {
+    const { getByTestId } = render(<LoginScreen />);
+    fireEvent.changeText(getByTestId(ID_INPUT), 'DRV-4K7P-9XQ2');
+    fireEvent.changeText(getByTestId('input-Password'), 'password123');
+    fireEvent.press(getByTestId('primary-btn'));
+
+    expect(mutate).toHaveBeenCalledWith({
+      identifier: 'DRV-4K7P-9XQ2',
+      password: 'password123',
+    });
+  });
+
+  it('trims stray whitespace off the identifier', () => {
+    const { getByTestId } = render(<LoginScreen />);
+    fireEvent.changeText(getByTestId(ID_INPUT), '  DRV-4K7P-9XQ2  ');
+    fireEvent.changeText(getByTestId('input-Password'), 'password123');
+    fireEvent.press(getByTestId('primary-btn'));
+
+    expect(mutate).toHaveBeenCalledWith({
+      identifier: 'DRV-4K7P-9XQ2',
+      password: 'password123',
+    });
   });
 
   it('shows the role-gate error message when a non-driver account is rejected', () => {

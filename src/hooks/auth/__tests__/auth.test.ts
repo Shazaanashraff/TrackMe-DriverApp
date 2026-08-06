@@ -56,13 +56,37 @@ describe('useLogin', () => {
 
     const { result } = renderHook(() => useLogin(), { wrapper: makeWrapper() });
     act(() => {
-      result.current.mutate({ email: 'a@b.com', password: 'pass' });
+      result.current.mutate({ identifier: 'a@b.com', password: 'pass' });
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockApi.login).toHaveBeenCalledWith('a@b.com', 'pass');
     expect(mockLogin).toHaveBeenCalledWith(
       { _id: '1', name: 'Driver One', email: 'a@b.com', role: 'driver' },
+      'tok',
+      'ref'
+    );
+  });
+
+  it('signs in with a driver ID and keeps it on the saved account', async () => {
+    const fakeData = {
+      user: {
+        _id: '3', name: 'Code Driver', email: '', driverCode: 'DRV-4K7P-9XQ2', role: 'driver',
+      },
+      accessToken: 'tok',
+      refreshToken: 'ref',
+    };
+    (mockApi.login as jest.Mock).mockResolvedValueOnce(fakeData);
+
+    const { result } = renderHook(() => useLogin(), { wrapper: makeWrapper() });
+    act(() => {
+      result.current.mutate({ identifier: 'DRV-4K7P-9XQ2', password: 'pass' });
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockApi.login).toHaveBeenCalledWith('DRV-4K7P-9XQ2', 'pass');
+    expect(mockLogin).toHaveBeenCalledWith(
+      { _id: '3', name: 'Code Driver', email: '', driverCode: 'DRV-4K7P-9XQ2', role: 'driver' },
       'tok',
       'ref'
     );
@@ -78,7 +102,7 @@ describe('useLogin', () => {
 
     const { result } = renderHook(() => useLogin(), { wrapper: makeWrapper() });
     act(() => {
-      result.current.mutate({ email: 'p@b.com', password: 'pass' });
+      result.current.mutate({ identifier: 'p@b.com', password: 'pass' });
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -91,7 +115,7 @@ describe('useLogin', () => {
 
     const { result } = renderHook(() => useLogin(), { wrapper: makeWrapper() });
     act(() => {
-      result.current.mutate({ email: 'a@b.com', password: 'wrong' });
+      result.current.mutate({ identifier: 'a@b.com', password: 'wrong' });
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
