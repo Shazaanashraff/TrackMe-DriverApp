@@ -6,10 +6,11 @@ import AppText from '../../components/ui/AppText';
 import Card from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
 
+// Only what the card puts on screen. The API payload carries more (registration
+// number, seat capacity); a driver already knows their own vehicle, so neither
+// earns a place here.
 type Vehicle = {
   vehicleName?: string;
-  registrationNumber?: string;
-  seatCapacity?: number;
   routeName?: string;
 };
 
@@ -33,23 +34,21 @@ export default function VehicleCard({ vehicle, onRegisterPress }: Props) {
     );
   }
 
-  const subLine = [
-    vehicle.registrationNumber || 'No registration',
-    `${vehicle.seatCapacity || 0} seats`,
-    vehicle.routeName,
-  ]
-    .filter(Boolean)
-    .join(' · ');
-
   return (
     <Card>
       <View style={styles.row}>
         <View style={styles.iconBadge}>
-          <Ionicons name="vehicle" size={20} color={theme.color.primary[500]} />
+          {/* "vehicle" is not an Ionicons glyph, so this badge was rendering the
+              missing-icon "?" placeholder. The set calls it "bus". */}
+          <Ionicons name="bus" size={20} color={theme.color.primary[500]} />
         </View>
         <View style={styles.textBlock}>
           <AppText variant="body" weight="medium">{vehicle.vehicleName}</AppText>
-          <AppText variant="label" color={theme.color.text.muted}>{subLine}</AppText>
+          {/* The route is the only sub-line worth showing, and plenty of
+              vehicles have none — so it renders or it is absent, never blank. */}
+          {vehicle.routeName ? (
+            <AppText variant="label" color={theme.color.text.muted}>{vehicle.routeName}</AppText>
+          ) : null}
         </View>
       </View>
     </Card>

@@ -47,15 +47,16 @@ describe('VehicleRegistrationScreen', () => {
     fireEvent.changeText(getByPlaceholderText('e.g. VEHICLE-102'), 'vehicle-1');
     fireEvent.changeText(getByPlaceholderText('e.g. Silver Express'), 'Silver Express');
     fireEvent.changeText(getByPlaceholderText('e.g. ABC-1234'), 'abc-1234');
-    fireEvent.changeText(getByPlaceholderText('50'), '40');
 
     await act(async () => {
       fireEvent.press(getByText('Save vehicle'));
     });
 
     expect(api.registerVehicle).toHaveBeenCalledWith(
-      expect.objectContaining({ vehicleId: 'VEHICLE-1', vehicleName: 'Silver Express', registrationNumber: 'ABC-1234', seatCapacity: 40 }),
+      expect.objectContaining({ vehicleId: 'VEHICLE-1', vehicleName: 'Silver Express', registrationNumber: 'ABC-1234' }),
     );
+    // Drivers are no longer asked for a seat count, so none is sent.
+    expect(api.registerVehicle.mock.calls[0][0]).not.toHaveProperty('seatCapacity');
     expect(getByText('Saved')).toBeTruthy();
 
     act(() => {
@@ -71,7 +72,6 @@ describe('VehicleRegistrationScreen', () => {
     fireEvent.changeText(getByPlaceholderText('e.g. VEHICLE-102'), 'VEHICLE-1');
     fireEvent.changeText(getByPlaceholderText('e.g. Silver Express'), 'Silver Express');
     fireEvent.changeText(getByPlaceholderText('e.g. ABC-1234'), 'ABC-1234');
-    fireEvent.changeText(getByPlaceholderText('50'), '40');
 
     await act(async () => {
       fireEvent.press(getByText('Save vehicle'));

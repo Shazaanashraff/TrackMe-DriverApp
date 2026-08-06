@@ -23,7 +23,6 @@ type Vehicle = {
   assignedRoute?: string;
   vehicleName?: string;
   registrationNumber?: string;
-  seatCapacity?: number;
 };
 
 function unwrap<T>(response: unknown): T {

@@ -1,34 +1,37 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { Ionicons } from '@expo/vector-icons';
 import VehicleCard from '../VehicleCard';
 
 describe('VehicleCard', () => {
-  it('renders vehicle details when a vehicle is assigned', () => {
-    const { getByText } = render(
+  it('names the vehicle without its internal ID or a seat count', () => {
+    const { getByText, queryByText } = render(
       <VehicleCard
-        vehicle={{ vehicleName: 'Shuttle 1', registrationNumber: 'ABC-123', seatCapacity: 20 }}
+        vehicle={{ vehicleName: 'Shuttle 1' }}
         onRegisterPress={jest.fn()}
       />
     );
     expect(getByText('Shuttle 1')).toBeTruthy();
-    expect(getByText('ABC-123 · 20 seats')).toBeTruthy();
+    expect(queryByText(/seats/i)).toBeNull();
+    expect(queryByText(/ABC-123/)).toBeNull();
   });
 
-  it('includes the route name in the sub-line when present', () => {
+  it('shows the route as the sub-line when there is one', () => {
     const { getByText } = render(
       <VehicleCard
-        vehicle={{ vehicleName: 'Shuttle 1', registrationNumber: 'ABC-123', seatCapacity: 20, routeName: 'Campus Loop' }}
+        vehicle={{ vehicleName: 'Shuttle 1', routeName: 'Campus Loop' }}
         onRegisterPress={jest.fn()}
       />
     );
-    expect(getByText('ABC-123 · 20 seats · Campus Loop')).toBeTruthy();
+    expect(getByText('Campus Loop')).toBeTruthy();
   });
 
-  it('shows a fallback registration label when missing', () => {
-    const { getByText } = render(
+  it('renders a real bus glyph rather than the missing-icon placeholder', () => {
+    const { UNSAFE_getByType } = render(
       <VehicleCard vehicle={{ vehicleName: 'Shuttle 1' }} onRegisterPress={jest.fn()} />
     );
-    expect(getByText('No registration · 0 seats')).toBeTruthy();
+    // "vehicle" is not an Ionicons name and silently rendered "?" on screen.
+    expect(UNSAFE_getByType(Ionicons).props.name).toBe('bus');
   });
 
   it('renders the no-vehicle EmptyState and fires onRegisterPress from its action', () => {

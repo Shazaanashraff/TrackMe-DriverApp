@@ -32,7 +32,6 @@ const VehicleRegistrationScreen = ({ navigation }) => {
     vehicleId: '',
     vehicleName: '',
     registrationNumber: '',
-    seatCapacity: '',
     vehicleType: 'AC',
     serviceType: 'PUBLIC',
     bookingEnabled: true,
@@ -45,11 +44,6 @@ const VehicleRegistrationScreen = ({ navigation }) => {
     if (!formData.vehicleId.trim()) newErrors.vehicleId = 'Vehicle ID is required';
     if (!formData.vehicleName.trim()) newErrors.vehicleName = 'Vehicle name is required';
     if (!formData.registrationNumber.trim()) newErrors.registrationNumber = 'Registration number is required';
-    if (!formData.seatCapacity.trim()) {
-      newErrors.seatCapacity = 'Seat count is required';
-    } else if (isNaN(formData.seatCapacity) || parseInt(formData.seatCapacity) < 1) {
-      newErrors.seatCapacity = 'Enter a valid seat count';
-    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -66,7 +60,6 @@ const VehicleRegistrationScreen = ({ navigation }) => {
         vehicleId: formData.vehicleId.toUpperCase().trim(),
         vehicleName: formData.vehicleName.trim(),
         registrationNumber: formData.registrationNumber.toUpperCase().trim(),
-        seatCapacity: parseInt(formData.seatCapacity),
         vehicleType: formData.vehicleType,
         serviceType: formData.serviceType,
         bookingEnabled: formData.bookingEnabled,
@@ -135,7 +128,7 @@ const VehicleRegistrationScreen = ({ navigation }) => {
             />
             <FormInput
               label="Vehicle name"
-              icon="vehicle"
+              icon="bus"
               value={formData.vehicleName}
               onChangeText={(v) => handleInputChange('vehicleName', v)}
               placeholder="e.g. Silver Express"
@@ -149,14 +142,6 @@ const VehicleRegistrationScreen = ({ navigation }) => {
               placeholder="e.g. ABC-1234"
               autoCapitalize="characters"
               error={errors.registrationNumber}
-            />
-            <FormInput
-              label="Seats"
-              value={formData.seatCapacity}
-              onChangeText={(v) => handleInputChange('seatCapacity', v)}
-              placeholder="50"
-              keyboardType="numeric"
-              error={errors.seatCapacity}
             />
 
             <View style={styles.specGroup}>
