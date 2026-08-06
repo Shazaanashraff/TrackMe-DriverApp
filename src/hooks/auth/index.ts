@@ -34,7 +34,7 @@ export function useLogin() {
       };
       const { user, accessToken, refreshToken } = response;
 
-      // Driver role-gate: mirrors the current LoginScreen — reject and do not save
+      // Driver role-gate: mirrors the current LoginScreen: reject and do not save
       // auth for non-driver accounts.
       if (user.role !== 'driver') {
         throw new AppError('http', 'This app is for drivers only', {

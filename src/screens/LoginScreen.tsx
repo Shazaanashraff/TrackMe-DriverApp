@@ -16,7 +16,7 @@ function asAppError(error: unknown): AppError {
 
 const LoginScreen = () => {
   // Drivers sign in with the ID on their slip or, if they were given one, an
-  // email — so the field takes either.
+  // email, so the field takes either.
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [identifierError, setIdentifierError] = useState<string | null>(null);

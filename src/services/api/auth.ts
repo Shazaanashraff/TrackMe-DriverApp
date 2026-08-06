@@ -4,7 +4,7 @@ import { authHeaders } from './authHeaders';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
-// `identifier` is a driver ID or an email — a driver created without an email
+// `identifier` is a driver ID or an email. A driver created without an email
 // has only the ID. The field is still named `email` on the wire for older
 // callers, but the server treats either shape.
 export async function login(identifier: string, password: string) {
