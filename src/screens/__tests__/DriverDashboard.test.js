@@ -55,10 +55,6 @@ jest.mock('../../context/AuthContext', () => ({
   }),
 }));
 
-jest.mock('react-native-copilot', () => ({
-  CopilotProvider: ({ children }) => children,
-}));
-
 
 beforeEach(() => {
   jest.clearAllMocks();
