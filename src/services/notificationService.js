@@ -9,7 +9,7 @@ export function showLocalNotification(title, body, data = {}, priority = 'defaul
   // console.log(`[Notification] ${title}: ${body}`);
 }
 
-export function setupSocketNotificationListeners(socket, onBookingUpdate, onRouteUpdate, onEarnings) {
+export function setupSocketNotificationListeners(socket, onBookingUpdate, onRouteUpdate) {
   // New booking notification
   socket.on('booking:new', (data) => {
     onBookingUpdate?.(data);
@@ -18,11 +18,6 @@ export function setupSocketNotificationListeners(socket, onBookingUpdate, onRout
   // Route assignment notification
   socket.on('route:assigned', (data) => {
     onRouteUpdate?.(data);
-  });
-
-  // Earnings update notification
-  socket.on('earnings:update', (data) => {
-    onEarnings?.(data);
   });
 
   // Route cancelled notification
@@ -40,7 +35,6 @@ export function setupSocketNotificationListeners(socket, onBookingUpdate, onRout
     cleanup: () => {
       socket.off('booking:new');
       socket.off('route:assigned');
-      socket.off('earnings:update');
       socket.off('route:cancelled');
       socket.off('maintenance:alert');
       socket.off('payment:processed');

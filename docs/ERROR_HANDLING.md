@@ -22,7 +22,7 @@ Loading → skeleton/`LoadingScreen`; Empty → `EmptyState`; Error → `ErrorSt
 Offline → `OfflineBanner` + cached data. Reviewers reject screens handling only loading+success.
 
 ## Components to build (`components/ui/`)
-- `InlineError` — under form fields (login, bus registration, route form, payout).
+- `InlineError` — under form fields (login, bus registration, route form).
 - `ErrorState` — full/compact error block with Retry (uses `userMessage`).
 - `OfflineBanner` — driven by `subscribeBackendStatus`.
 - `ErrorBoundary` — navigator-root crash fallback + Reload.
@@ -44,7 +44,7 @@ form-level `ErrorState compact`. Submit buttons use mutation `isPending`.
 
 ## Global safety net
 `ErrorBoundary` at root; toast utility for mutation success/failure (bus registered, route
-created, payout requested, "couldn't start tracking — retry").
+created, "couldn't start tracking — retry").
 
 ## Logging hygiene (production)
 Today both `AuthContext` and `socket.js` log via `console.log` (incl. socket state, ids).

@@ -3,7 +3,5 @@ export const qk = {
   routes: () => ['routes'] as const,
   routesManagement: () => ['routes', 'management'] as const,
   route: (routeId: string) => ['routes', 'detail', routeId] as const,
-  earningsStats: () => ['earnings', 'stats'] as const,
-  earningsHistory: (page: number) => ['earnings', 'history', page] as const,
-  dailyBreakdown: () => ['earnings', 'daily'] as const,
+  trips: (page: number) => ['trips', 'history', page] as const,
 };

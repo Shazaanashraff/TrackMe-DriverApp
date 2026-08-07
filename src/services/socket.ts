@@ -82,9 +82,6 @@ export const connectSocket = (token: string): Socket => {
         },
         (routeData: unknown) => {
           if (__DEV__) console.log('Route update:', routeData);
-        },
-        (earningsData: unknown) => {
-          if (__DEV__) console.log('Earnings:', earningsData);
         }
       );
     });

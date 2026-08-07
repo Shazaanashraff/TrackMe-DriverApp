@@ -86,7 +86,6 @@ const CODE_MESSAGES: Record<string, string> = {
   DUPLICATE_PLATE: 'A vehicle with that number plate is already registered.',
   INVALID_CREDENTIALS: 'Wrong email or password. Try again.',
   NOT_A_DRIVER: 'This account is not registered as a driver.',
-  PAYOUT_PENDING: 'A payout request is already pending.',
 };
 
 const KIND_MESSAGES: Record<AppErrorKind, string> = {

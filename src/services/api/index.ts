@@ -1,7 +1,7 @@
 import * as auth from './auth';
 import * as vehicle from './vehicle';
 import * as routes from './routes';
-import * as earnings from './earnings';
+import * as trips from './trips';
 import * as customRoutes from './customRoutes';
 import * as boarding from './boarding';
 
@@ -23,11 +23,9 @@ const api = {
   getRouteById: routes.getRouteById,
   createRoute: routes.createRoute,
 
-  // earnings
-  getDriverEarningsStats: earnings.getDriverEarningsStats,
-  getDriverEarningsHistory: earnings.getDriverEarningsHistory,
-  getDriverDailyBreakdown: earnings.getDriverDailyBreakdown,
-  requestDriverPayout: earnings.requestDriverPayout,
+  // trips
+  getDriverTrips: trips.getDriverTrips,
+  getDriverTripDetails: trips.getDriverTripDetails,
 
   // custom routes
   getMyCustomRoute: customRoutes.getMyCustomRoute,

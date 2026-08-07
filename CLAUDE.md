@@ -25,7 +25,6 @@ src/
     dashboard/        # DutyHero, GoButton, StatChip, VehicleCard, CustomRouteSection,
                        # dutyHeroState.ts (pure headline/subline/dot state machine),
                        # useCustomRouteJourney, useSocketConnection
-    earnings/          # EarningsSummary, EarningsHistoryList, DailyBreakdownChart, PayoutRequestForm
     route-management/  # RouteForm, RouteList, RouteListItem
   helpers/
     formatters.js     # formatCurrency(), formatDate(), formatTime(), formatDateTime()
@@ -57,14 +56,13 @@ App.js
     └── [logged in]    → MainTabs (bottom tabs) + BusRegistration + RouteManagement
                            MainTabs:
                            ├── Dashboard      ("Home" tab — DutyHero + VehicleCard + custom-route section)
-                           ├── DriverEarnings ("Earnings" tab)
                            ├── TripHistory    ("Trips" tab)
                            └── DriverProfile  ("Profile" tab)
 ```
 
 `AppNavigator` receives `backendOnline` prop from `App.js`.
 Only `driver` role users may log in (enforced in `LoginScreen`).
-Screen names inside `MainTabs` stay `Dashboard`/`DriverEarnings`/`TripHistory`/`DriverProfile` so
+Screen names inside `MainTabs` stay `Dashboard`/`TripHistory`/`DriverProfile` so
 existing `navigation.navigate('…')` call sites keep working; `BusRegistration` and
 `RouteManagement` are pushed screens registered on the root stack above the tabs — calling
 `navigation.navigate('BusRegistration')` from a tab screen bubbles up automatically.
@@ -136,7 +134,8 @@ All primitives read colors/type/spacing from `src/theme/` only (no hardcoded hex
 | `formatTime(dateString)` | `"02:30 PM"` format |
 | `formatDateTime(dateString)` | date + time combined |
 
-Used across `DriverEarningsScreen` and `TripHistoryScreen`.
+Used across `TripHistoryScreen` and `DriverProfileScreen`. `formatCurrency` is retained for
+future use; the driver app no longer displays money anywhere (earnings removed 2026-08-07).
 
 ---
 

@@ -20,25 +20,13 @@ describe('qk.routesManagement', () => {
   });
 });
 
-describe('qk.earningsStats', () => {
-  it('returns a stable key', () => {
-    expect(qk.earningsStats()).toEqual(['earnings', 'stats']);
-  });
-});
-
-describe('qk.earningsHistory', () => {
+describe('qk.trips', () => {
   it('includes page in the key', () => {
-    expect(qk.earningsHistory(1)).toEqual(['earnings', 'history', 1]);
-    expect(qk.earningsHistory(2)).toEqual(['earnings', 'history', 2]);
+    expect(qk.trips(1)).toEqual(['trips', 'history', 1]);
+    expect(qk.trips(2)).toEqual(['trips', 'history', 2]);
   });
 
   it('produces distinct keys for distinct pages', () => {
-    expect(qk.earningsHistory(1)).not.toEqual(qk.earningsHistory(2));
-  });
-});
-
-describe('qk.dailyBreakdown', () => {
-  it('returns a stable key', () => {
-    expect(qk.dailyBreakdown()).toEqual(['earnings', 'daily']);
+    expect(qk.trips(1)).not.toEqual(qk.trips(2));
   });
 });

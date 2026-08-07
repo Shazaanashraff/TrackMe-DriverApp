@@ -7,7 +7,6 @@ import { useAuth } from '../context/AuthContext';
 import LoginScreen from '../screens/LoginScreen';
 import DriverDashboard from '../screens/DriverDashboard';
 import VehicleRegistrationScreen from '../screens/VehicleRegistrationScreen';
-import DriverEarningsScreen from '../screens/DriverEarningsScreen';
 import TripHistoryScreen from '../screens/TripHistoryScreen';
 import DriverProfileScreen from '../screens/DriverProfileScreen';
 import RouteManagementScreen from '../screens/RouteManagementScreen';
@@ -21,14 +20,12 @@ const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
   Dashboard: { outline: 'home-outline', filled: 'home' },
-  DriverEarnings: { outline: 'wallet-outline', filled: 'wallet' },
   TripHistory: { outline: 'time-outline', filled: 'time' },
   DriverProfile: { outline: 'person-outline', filled: 'person' },
 };
 
 const TAB_LABELS = {
   Dashboard: 'Home',
-  DriverEarnings: 'Earnings',
   TripHistory: 'Trips',
   DriverProfile: 'Profile',
 };
@@ -58,7 +55,6 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Dashboard" component={DriverDashboard} />
-      <Tab.Screen name="DriverEarnings" component={DriverEarningsScreen} />
       <Tab.Screen name="TripHistory" component={TripHistoryScreen} />
       <Tab.Screen name="DriverProfile" component={DriverProfileScreen} />
     </Tab.Navigator>

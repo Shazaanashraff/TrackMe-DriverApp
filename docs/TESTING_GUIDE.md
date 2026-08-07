@@ -29,12 +29,6 @@
 | tracking socket contract | int | __integration__/tracking.int.test.tsx | start/location/stop payloads, ack, reconnect replay | contract changes |
 | Start→broadcast→stop, permission, offline | e2e | .maestro/tracking-*.yaml | core lifecycle + permission + offline | tracking UI changes |
 
-## Earnings
-| Item | Type | Test file | Cases | Update when |
-|---|---|---|---|---|
-| earnings hooks (stats/history/daily/payout) | unit+int | hooks/earnings/__tests__ + __integration__/earnings.int.test.tsx | pagination, payout 409, invalidation | earnings schema changes |
-| Earnings view / payout | e2e | .maestro/earnings.yaml | stats+history, request payout | earnings UI changes |
-
 ## Theme (Signal Ink redesign)
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
@@ -71,15 +65,10 @@
 | useLocationBroadcast — accuracy passthrough | unit | hooks/__tests__/useLocationBroadcast.test.ts | accuracy carried onto lastFix when reported, undefined when not (UI-only; never sent over the wire) | GPS stat chip data source changes |
 | AppNavigator (MainTabs + root stack) | unit | navigation/__tests__/AppNavigator.test.js | 4 tabs render with Home active by default, tab switch, BusRegistration/RouteManagement push above tabs, login/loading gates | navigation structure changes |
 
-## Earnings / Trips tabs (Signal Ink)
+## Trips tab (Signal Ink)
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
-| DriverEarningsScreen (segmented Summary/History, no ink) | unit | screens/__tests__/DriverEarningsScreen.test.tsx | balance card + Summary content by default, segment switch to History, end-to-end payout flow (open sheet → fill fields → submit → mutate called) | segment layout or payout wiring changes |
-| EarningsSummary (2-up grid) | unit | features/earnings/__tests__/EarningsSummary.test.tsx | today/week/month/pending amounts+trip counts, null-stats zeroing, loading skeletons replace amounts | STYLEGUIDE stat-card spec changes |
-| DailyBreakdownChart (folded into Summary) | unit | features/earnings/__tests__/DailyBreakdownChart.test.tsx | row render, empty state, loading skeletons, error+retry | chart spec or copy changes |
-| EarningsHistoryList (ListRow-style cards + StatusPill) | unit | features/earnings/__tests__/EarningsHistoryList.test.tsx | item render + StatusPill, payout link fires only for PENDING, empty state, loading skeletons, error+retry | history card spec changes |
-| PayoutRequestForm (bottom-sheet style) | unit | features/earnings/__tests__/PayoutRequestForm.test.tsx | field validation, trimmed submit payload, loading spinner replaces Submit label, cancel callback | form fields or sheet styling changes |
-| TripHistoryScreen (Card+ListRow pattern) | unit | screens/__tests__/TripHistoryScreen.test.js | header copy, row render (route/date/amount/StatusPill), empty state (incl. on fetch failure), pull-to-refresh reload | STYLEGUIDE §7.2 Trips spec or copy changes |
+| TripHistoryScreen (Card+ListRow pattern) | unit | screens/__tests__/TripHistoryScreen.test.js | header copy, row render (route/date/start time), no money or payment status rendered even for legacy records, empty state (incl. on fetch failure), pull-to-refresh reload | STYLEGUIDE §7.2 Trips spec or copy changes |
 
 ## Profile / Bus registration / My routes / Login (Signal Ink)
 | Item | Type | Test file | Cases | Update when |

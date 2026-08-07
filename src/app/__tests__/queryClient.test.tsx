@@ -51,9 +51,9 @@ describe('persistOptions', () => {
     expect(shouldDehydrateQuery({ queryKey: ['routes'] })).toBe(true);
   });
 
-  it('persists earnings prefix', () => {
+  it('persists trips prefix', () => {
     const { shouldDehydrateQuery } = persistOptions.dehydrateOptions;
-    expect(shouldDehydrateQuery({ queryKey: ['earnings', 'stats'] })).toBe(true);
+    expect(shouldDehydrateQuery({ queryKey: ['trips', 'history', 1] })).toBe(true);
   });
 
   it('does not persist an unrelated prefix', () => {

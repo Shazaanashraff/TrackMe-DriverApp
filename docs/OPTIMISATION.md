@@ -7,7 +7,7 @@
 ## Targets
 - GPS broadcast continues reliably for a full shift without draining the battery.
 - No dropped location data across brief network blips (buffer + replay).
-- Lists (earnings, trip history) scroll smoothly.
+- Lists (trip history) scroll smoothly.
 - Cold start < 3s; tracking starts within ~2s of tapping start.
 
 ## 1. Location batching & battery (the big one — TODO 071)
@@ -27,7 +27,7 @@
 - Ring buffer (e.g. 500 fixes) in memory + optional AsyncStorage spill; replay in timestamp
   order on reconnect; backend dedupes. Show "buffering — N queued".
 
-## 4. Lists (earnings history, trip history — TODO 070)
+## 4. Lists (trip history — TODO 070)
 - `FlatList` with `keyExtractor`, `getItemLayout`, `windowSize`, `removeClippedSubviews`,
   `maxToRenderPerBatch`; memoized rows + stable callbacks; pull-to-refresh → `refetch`.
 
@@ -37,12 +37,12 @@
 - TanStack Query `select` to subscribe to slices.
 
 ## 6. Bundle & startup
-- Verify **Hermes** (SDK 54 default). Lazy-load heavy screens (Earnings charts). Defer
+- Verify **Hermes** (SDK 54 default). Lazy-load heavy screens. Defer
   post-navigation work with `InteractionManager.runAfterInteractions`. Audit fonts/deps on the
   critical path (UberMove loads at splash — keep it lean).
 
 ## 7. Network
-- Caching per DATA_LAYER.md (bus/routes/earnings persisted). Pagination + `keepPreviousData`
+- Caching per DATA_LAYER.md (bus/routes/trips persisted). Pagination + `keepPreviousData`
   on history to avoid flicker.
 
 ## Verification

@@ -24,7 +24,7 @@ Senior-architect docs that the execution TODOs (`../todos/`) cite. Read top-to-b
 - **OPTIMISATION.md** — battery/location batching, background tracking, offline GPS buffer,
   lists, bundle.
 - **UX_GUIDELINES.md** — driver UX: big tracking control, unambiguous status, permissions,
-  earnings clarity, accessibility.
+  accessibility.
 
 ## Status
 - **PROGRESS.md** — phase rollup (driver-app only).

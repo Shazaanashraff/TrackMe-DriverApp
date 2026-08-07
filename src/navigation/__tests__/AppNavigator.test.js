@@ -21,12 +21,6 @@ jest.mock('../../screens/DriverDashboard', () => {
     );
   };
 });
-jest.mock('../../screens/DriverEarningsScreen', () => {
-  const { Text } = require('react-native');
-  return function MockEarnings() {
-    return <Text>Earnings Screen</Text>;
-  };
-});
 jest.mock('../../screens/TripHistoryScreen', () => {
   const { Text } = require('react-native');
   return function MockTrips() {
@@ -87,19 +81,19 @@ describe('AppNavigator', () => {
     useAuth.mockReturnValue({ user: { name: 'Driver' }, loading: false });
   });
 
-  it('renders all four tab labels with Home active by default', () => {
-    const { getByText } = renderNav();
+  it('renders all three tab labels with Home active by default', () => {
+    const { getByText, queryByText } = renderNav();
     expect(getByText('Dashboard Screen')).toBeTruthy();
     expect(getByText('Home')).toBeTruthy();
-    expect(getByText('Earnings')).toBeTruthy();
     expect(getByText('Trips')).toBeTruthy();
     expect(getByText('Profile')).toBeTruthy();
+    expect(queryByText('Earnings')).toBeNull();
   });
 
   it('switches tabs on tap', () => {
     const { getByText, queryByText } = renderNav();
-    fireEvent.press(getByText('Earnings'));
-    expect(getByText('Earnings Screen')).toBeTruthy();
+    fireEvent.press(getByText('Trips'));
+    expect(getByText('Trips Screen')).toBeTruthy();
     expect(queryByText('Dashboard Screen')).toBeNull();
   });
 
