@@ -4,7 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../theme';
 import AppText from './AppText';
 
-const ScreenHeader = ({ title, onBack, rightElement, style }) => (
+// `onInk` for screens on the dark ink background. text.primary is the same navy as
+// ink.base, so the default chevron and title would be invisible there.
+const ScreenHeader = ({ title, onBack, rightElement, style, onInk = false }) => (
   <View style={[styles.header, style]}>
     {onBack ? (
       <TouchableOpacity
@@ -14,12 +16,16 @@ const ScreenHeader = ({ title, onBack, rightElement, style }) => (
         accessibilityLabel="Go back"
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Ionicons name="chevron-back" size={24} color={theme.color.text.primary} />
+        <Ionicons
+          name="chevron-back"
+          size={24}
+          color={onInk ? theme.color.white : theme.color.text.primary}
+        />
       </TouchableOpacity>
     ) : (
       <View style={styles.placeholder} />
     )}
-    <AppText variant="h1" style={styles.title} numberOfLines={1}>{title}</AppText>
+    <AppText variant="h1" onInk={onInk} style={styles.title} numberOfLines={1}>{title}</AppText>
     {rightElement ? <View style={styles.right}>{rightElement}</View> : <View style={styles.placeholder} />}
   </View>
 );

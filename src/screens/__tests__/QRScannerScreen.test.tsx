@@ -1,5 +1,7 @@
 import React from 'react';
-import { render, act } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { render, act, fireEvent } from '@testing-library/react-native';
+import { theme } from '../../theme';
 import QRScannerScreen from '../QRScannerScreen';
 
 let capturedOnBarcodeScanned: ((event: { data: string }) => void) | undefined;
@@ -59,6 +61,85 @@ describe('QRScannerScreen', () => {
 
     expect(getByText('Camera access needed')).toBeTruthy();
     expect(queryByTestId('mock-camera-view')).toBeNull();
+  });
+
+  // The header back control must stay legible against the dark ink background, since
+  // it is the escape hatch when the driver cannot grant camera access.
+  it('leaves a working, visible back control on the permission-denied state', () => {
+    mockUseCameraPermissions.mockReturnValue([{ granted: false }, mockRequestPermission]);
+
+    const { getByText, getByLabelText } = render(
+      <QRScannerScreen navigation={navigation} route={route} />
+    );
+
+    fireEvent.press(getByLabelText('Go back'));
+    expect(navigation.goBack).toHaveBeenCalled();
+
+    expect(StyleSheet.flatten(getByText('Scan rider QR').props.style).color)
+      .toBe(theme.color.white);
+  });
+
+  it('offers an in-app retry when the OS will still prompt', () => {
+    mockUseCameraPermissions.mockReturnValue([
+      { granted: false, canAskAgain: true },
+      mockRequestPermission,
+    ]);
+
+    const { getByText, queryByTestId } = render(
+      <QRScannerScreen navigation={navigation} route={route} />
+    );
+
+    fireEvent.press(getByText('Allow camera'));
+    expect(mockRequestPermission).toHaveBeenCalled();
+    // The settings walkthrough is noise while the OS prompt is still available.
+    expect(queryByTestId('permission-steps')).toBeNull();
+  });
+
+  it('falls back to settings guidance once the OS will no longer prompt', () => {
+    mockUseCameraPermissions.mockReturnValue([
+      { granted: false, canAskAgain: false },
+      mockRequestPermission,
+    ]);
+
+    const { getByText, getByTestId } = render(
+      <QRScannerScreen navigation={navigation} route={route} />
+    );
+
+    expect(getByTestId('permission-steps')).toBeTruthy();
+    expect(getByText('Turn on Camera')).toBeTruthy();
+
+    fireEvent.press(getByText('Go back'));
+    expect(navigation.goBack).toHaveBeenCalled();
+  });
+
+  it('shows a resolving state instead of flashing "access needed" before permission loads', () => {
+    mockUseCameraPermissions.mockReturnValue([null, mockRequestPermission]);
+
+    const { queryByText, getByTestId } = render(
+      <QRScannerScreen navigation={navigation} route={route} />
+    );
+
+    expect(getByTestId('permission-resolving')).toBeTruthy();
+    expect(queryByText('Camera access needed')).toBeNull();
+  });
+
+  it('keeps the permission copy legible on the ink background', () => {
+    mockUseCameraPermissions.mockReturnValue([
+      { granted: false, canAskAgain: true },
+      mockRequestPermission,
+    ]);
+
+    const { getByText } = render(<QRScannerScreen navigation={navigation} route={route} />);
+
+    // text.secondary is the old value here and is near-invisible on ink.base.
+    const subtitleColor = StyleSheet.flatten(
+      getByText('TrackMe uses the camera to read rider QR passes. Nothing is recorded.').props.style
+    ).color;
+    expect(subtitleColor).toBe(theme.color.primary[300]);
+    expect(subtitleColor).not.toBe(theme.color.text.secondary);
+
+    expect(StyleSheet.flatten(getByText('Camera access needed').props.style).color)
+      .toBe(theme.color.white);
   });
 
   it('renders the camera view when permission is granted', () => {
