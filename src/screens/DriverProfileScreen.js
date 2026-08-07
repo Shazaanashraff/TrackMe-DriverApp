@@ -104,12 +104,6 @@ const DriverProfileScreen = ({ navigation }) => {
             />
           ) : null}
           <ListRow
-            icon="map-outline"
-            title="My routes"
-            onPress={() => navigation.navigate('RouteManagement')}
-            divider
-          />
-          <ListRow
             icon="log-out-outline"
             title="Log out"
             destructive

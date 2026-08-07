@@ -72,14 +72,23 @@ beforeEach(() => {
 });
 
 describe('DriverDashboard — quick actions', () => {
-  it('offers My routes on Home so the route list is not buried under Profile', async () => {
+  it('no longer offers My routes', async () => {
+    api.getMyCustomRoute.mockResolvedValue({ data: { isCustomRoute: false } });
+    const navigate = jest.fn();
+    const { queryByTestId, queryByText } = render(<DriverDashboard navigation={{ navigate }} />);
+
+    await waitFor(() => expect(api.getMyCustomRoute).toHaveBeenCalled());
+    expect(queryByTestId('my-routes-row')).toBeNull();
+    expect(queryByText('My routes')).toBeNull();
+  });
+
+  it('still offers the QR scanner', async () => {
     api.getMyCustomRoute.mockResolvedValue({ data: { isCustomRoute: false } });
     const navigate = jest.fn();
     const { getByTestId } = render(<DriverDashboard navigation={{ navigate }} />);
 
     await waitFor(() => expect(api.getMyCustomRoute).toHaveBeenCalled());
-    fireEvent.press(getByTestId('my-routes-row'));
-    expect(navigate).toHaveBeenCalledWith('RouteManagement');
+    expect(getByTestId('scan-rider-qr-row')).toBeTruthy();
   });
 });
 

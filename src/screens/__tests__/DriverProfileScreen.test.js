@@ -50,11 +50,10 @@ describe('DriverProfileScreen', () => {
     expect(await findByText('Shuttle 1')).toBeTruthy();
   });
 
-  it('navigates to My routes', async () => {
-    const { getByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
+  it('no longer lists My routes', async () => {
+    const { queryByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
     await findByText('Shuttle 1');
-    fireEvent.press(getByText('My routes'));
-    expect(navigation.navigate).toHaveBeenCalledWith('RouteManagement');
+    expect(queryByText('My routes')).toBeNull();
   });
 
   it('navigates to Vehicle registration from the vehicle card CTA when there is no vehicle', async () => {

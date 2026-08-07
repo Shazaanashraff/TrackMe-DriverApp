@@ -7,19 +7,6 @@ describe('qk.myVehicle', () => {
   });
 });
 
-describe('qk.routes', () => {
-  it('returns a stable key', () => {
-    expect(qk.routes()).toEqual(['routes']);
-  });
-});
-
-describe('qk.routesManagement', () => {
-  it('returns a stable key distinct from qk.routes', () => {
-    expect(qk.routesManagement()).toEqual(['routes', 'management']);
-    expect(qk.routesManagement()).not.toEqual(qk.routes());
-  });
-});
-
 describe('qk.trips', () => {
   it('includes page in the key', () => {
     expect(qk.trips(1)).toEqual(['trips', 'history', 1]);

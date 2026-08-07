@@ -28,28 +28,15 @@ jest.mock('../../screens/TripHistoryScreen', () => {
   };
 });
 jest.mock('../../screens/DriverProfileScreen', () => {
-  const { Text, TouchableOpacity } = require('react-native');
-  return function MockProfile({ navigation }) {
-    return (
-      <TouchableOpacity
-        onPress={() => navigation.navigate('RouteManagement')}
-        testID="go-to-route-management"
-      >
-        <Text>Profile Screen</Text>
-      </TouchableOpacity>
-    );
+  const { Text } = require('react-native');
+  return function MockProfile() {
+    return <Text>Profile Screen</Text>;
   };
 });
 jest.mock('../../screens/VehicleRegistrationScreen', () => {
   const { Text } = require('react-native');
   return function MockVehicleRegistration() {
     return <Text>Vehicle Registration Screen</Text>;
-  };
-});
-jest.mock('../../screens/RouteManagementScreen', () => {
-  const { Text } = require('react-native');
-  return function MockRouteManagement() {
-    return <Text>Route Management Screen</Text>;
   };
 });
 jest.mock('../../screens/LoginScreen', () => {
@@ -101,13 +88,6 @@ describe('AppNavigator', () => {
     const { getByTestId, findByText } = renderNav();
     fireEvent.press(getByTestId('go-to-vehicle-registration'));
     expect(await findByText('Vehicle Registration Screen')).toBeTruthy();
-  });
-
-  it('pushes RouteManagement above the tabs', async () => {
-    const { getByText, getByTestId, findByText } = renderNav();
-    fireEvent.press(getByText('Profile'));
-    fireEvent.press(getByTestId('go-to-route-management'));
-    expect(await findByText('Route Management Screen')).toBeTruthy();
   });
 
   it('shows the login screen when logged out', () => {

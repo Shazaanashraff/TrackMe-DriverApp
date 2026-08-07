@@ -18,10 +18,7 @@ const api = {
   updateVehicle: vehicle.updateVehicle,
 
   // routes
-  getRoutes: routes.getRoutes,
-  getRoutesManagementList: routes.getRoutesManagementList,
   getRouteById: routes.getRouteById,
-  createRoute: routes.createRoute,
 
   // trips
   getDriverTrips: trips.getDriverTrips,

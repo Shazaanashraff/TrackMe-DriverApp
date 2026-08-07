@@ -106,16 +106,7 @@ const DriverDashboard = ({ navigation }: Props) => {
             icon="qr-code-outline"
             title="Scan rider QR"
             subtitle={vehicle ? 'Record boarding or alighting' : 'Register a vehicle to enable scanning'}
-            divider
             onPress={vehicle ? () => navigation.navigate('QRScanner', { vehicleId }) : undefined}
-          />
-          {/* Drivers need their route list before a shift, not buried under Profile. */}
-          <ListRow
-            testID="my-routes-row"
-            icon="map-outline"
-            title="My routes"
-            subtitle="View and record your routes"
-            onPress={() => navigation.navigate('RouteManagement')}
           />
         </Card>
 
