@@ -23,7 +23,7 @@ The driver is often **not technical**, is **outdoors in sunlight**, and checks t
    Everything else is quiet (white card, ink text).
 3. **Plain language.** No jargon, ever. "Socket connected" → "Connected". "GPS fixes" →
    "updates". "Session" → "journey". See the copy table in §8.
-4. **Huge tap targets.** Primary action ≥ 72 dp (the GO button is 86 dp). Everything
+4. **Huge tap targets.** Primary action ≥ 72 dp (the GO button is 112 dp). Everything
    interactive ≥ 48 dp. Drivers wear gloves, phones are mounted.
 5. **Same family as the passenger app.** We reuse the user-app's exact token values so the two
    apps read as siblings and future re-themes propagate to both.
@@ -158,17 +158,23 @@ Respect reduce-motion: check `AccessibilityInfo.isReduceMotionEnabled()` and ski
 - Full-bleed `ink.base` surface from the top of the screen (paint the safe area ink too),
   bottom corners radius 24, padding 20, bottom padding 24.
 - Row 1: `label` in `signal[300]`: "Hi {firstName} · {busName}" (bus name omitted when none).
-- Row 2 (16 above): left — status headline `display` white ("You're off duty" / "You're live" /
-  "Reconnecting…") + sub-line `label` `signal[300]` with an 8dp `LiveDot`; right — `GoButton`.
-- Row 3 (18 above, only while live): three `StatChip`s.
+- Row 2 (12 above): status headline `display` white ("You're off duty" / "You're live" /
+  "Reconnecting…") on a full-width line of its own. It shared a row with `GoButton` until
+  2026-08-07; at 112dp the button pushed the display type into a mid-phrase wrap on a 390dp
+  screen, so the headline now owns its line.
+- Row 3 (12 above, vertically centred): left — sub-line `label` `signal[300]` with an 8dp
+  `LiveDot`; right — `GoButton`.
+- Row 4 (20 above, only while live): three `StatChip`s.
 - States: off duty · live · reconnecting (headline "Reconnecting…", dot `duty.warn`, GoButton
   shows END, disabled=false) · permission denied (sub-line swaps for "Location is off" + a
   secondary Button "Allow location") · no bus (GoButton disabled at 40% opacity, sub-line
   "Register your bus to go live").
 
 **`GoButton`**
-- 86dp circle. Off duty: bg `signal[500]`, 4dp ring `signal[600]`, white "GO" caption-medium
-  letter-spacing 1 under a play icon (20), soft pulse ring. Live: bg `duty.stop` red, "END" +
+- 112dp circle (was 86dp until 2026-08-07; going on duty is the one thing the app exists to
+  do and the control read as a chip beside the headline). Off duty: bg `signal[500]`, 4dp ring
+  `signal[600]`, white "GO" label-medium letter-spacing 1.5 under a play icon (26), soft pulse
+  ring. Live: bg `duty.stop` red, "END" +
   stop icon, no pulse. Disabled: bg `ink.raised`, ring `ink.line`, 40% content opacity.
 - Press = scale 0.96 over `fastMs`. Tapping END opens `ConfirmSheet` (never ends instantly).
 

@@ -5,6 +5,7 @@ import { theme } from '../../theme';
 import AppText from '../../components/ui/AppText';
 import Card from '../../components/ui/Card';
 import EmptyState from '../../components/ui/EmptyState';
+import StatusPill from '../../components/ui/StatusPill';
 
 // Only what the card puts on screen. The API payload carries more (registration
 // number, seat capacity); a driver already knows their own vehicle, so neither
@@ -16,10 +17,11 @@ type Vehicle = {
 
 type Props = {
   vehicle: Vehicle | null;
+  isLive?: boolean;
   onRegisterPress: () => void;
 };
 
-export default function VehicleCard({ vehicle, onRegisterPress }: Props) {
+export default function VehicleCard({ vehicle, isLive = false, onRegisterPress }: Props) {
   if (!vehicle) {
     return (
       <Card>
@@ -50,6 +52,13 @@ export default function VehicleCard({ vehicle, onRegisterPress }: Props) {
             <AppText variant="label" color={theme.color.text.muted}>{vehicle.routeName}</AppText>
           ) : null}
         </View>
+        {/* Whether riders can currently see this vehicle is the one fact about it that
+            changes, so it earns the otherwise-empty right edge of the card. */}
+        <StatusPill
+          testID="vehicle-visibility-pill"
+          label={isLive ? 'Visible' : 'Hidden'}
+          variant={isLive ? 'live' : 'neutral'}
+        />
       </View>
     </Card>
   );

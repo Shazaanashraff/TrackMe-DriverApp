@@ -120,9 +120,12 @@ export default function DutyHero({
     <View style={styles.hero}>
       <AppText variant="label" color={theme.color.primary[300]}>{greeting}</AppText>
 
+      {/* The headline owns a full-width line of its own. Sharing a row with the GO
+          control wrapped the display type mid-phrase on a 390dp screen. */}
+      <AppText variant="display" onInk style={styles.headline}>{state.headline}</AppText>
+
       <View style={styles.mainRow}>
         <View style={styles.statusColumn}>
-          <AppText variant="display" onInk>{state.headline}</AppText>
           <View style={styles.sublineRow}>
             <LiveDot color={dotColor} pulsing={state.dot === 'on'} />
             {!state.showAllowLocation ? (
@@ -161,12 +164,15 @@ const styles = StyleSheet.create({
     paddingTop: theme.space[5],
     paddingBottom: theme.space[6],
   },
+  headline: {
+    marginTop: theme.space[3],
+  },
   mainRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: theme.space[4],
-    gap: theme.space[3],
+    marginTop: theme.space[3],
+    gap: theme.space[4],
   },
   statusColumn: {
     flex: 1,
@@ -174,7 +180,6 @@ const styles = StyleSheet.create({
   sublineRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: theme.space[2],
     gap: theme.space[2],
   },
   dot: {

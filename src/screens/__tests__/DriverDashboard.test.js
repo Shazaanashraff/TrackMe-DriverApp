@@ -71,6 +71,18 @@ beforeEach(() => {
   jest.clearAllMocks();
 });
 
+describe('DriverDashboard — quick actions', () => {
+  it('offers My routes on Home so the route list is not buried under Profile', async () => {
+    api.getMyCustomRoute.mockResolvedValue({ data: { isCustomRoute: false } });
+    const navigate = jest.fn();
+    const { getByTestId } = render(<DriverDashboard navigation={{ navigate }} />);
+
+    await waitFor(() => expect(api.getMyCustomRoute).toHaveBeenCalled());
+    fireEvent.press(getByTestId('my-routes-row'));
+    expect(navigate).toHaveBeenCalledWith('RouteManagement');
+  });
+});
+
 describe('DriverDashboard — Update Route banner (Phase 2)', () => {
   it('does not show the banner for a normal (non-custom) route', async () => {
     api.getMyCustomRoute.mockResolvedValue({ data: { isCustomRoute: false } });

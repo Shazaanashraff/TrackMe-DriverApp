@@ -33,7 +33,7 @@ describe('DutyHero', () => {
         <DutyHero {...baseProps} onGoPress={onGoPress} />
       );
       expect(getByText("You're off duty")).toBeTruthy();
-      expect(getByText("Riders can't see your vehicle yet")).toBeTruthy();
+      expect(getByText("Riders can't see you yet")).toBeTruthy();
       fireEvent.press(getByLabelText('Go online'));
       expect(onGoPress).toHaveBeenCalledTimes(1);
     });
@@ -116,7 +116,7 @@ describe('DutyHero', () => {
         <DutyHero {...baseProps} status="tracking" isReconnecting />
       );
       expect(getByText('Reconnecting…')).toBeTruthy();
-      expect(getByText('Hang tight — finding the server')).toBeTruthy();
+      expect(getByText('Hang tight, finding the server')).toBeTruthy();
     });
   });
 

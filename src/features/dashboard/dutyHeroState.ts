@@ -35,7 +35,7 @@ export function deriveDutyHeroState({
     if (isReconnecting) {
       return {
         headline: 'Reconnecting…',
-        subline: 'Hang tight — finding the server',
+        subline: 'Hang tight, finding the server',
         dot: 'warn',
         showAllowLocation: false,
         goDisabled: false,
@@ -67,7 +67,7 @@ export function deriveDutyHeroState({
   if (connecting) {
     return {
       headline: "You're off duty",
-      subline: 'Hang tight — finding the server',
+      subline: 'Hang tight, finding the server',
       dot: 'off',
       showAllowLocation: false,
       goDisabled: !hasVehicle,
@@ -86,7 +86,7 @@ export function deriveDutyHeroState({
 
   return {
     headline: "You're off duty",
-    subline: "Riders can't see your vehicle yet",
+    subline: "Riders can't see you yet",
     dot: 'off',
     showAllowLocation: false,
     goDisabled: false,

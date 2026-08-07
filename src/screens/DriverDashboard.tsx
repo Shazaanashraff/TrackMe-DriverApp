@@ -87,7 +87,11 @@ const DriverDashboard = ({ navigation }: Props) => {
         contentContainerStyle={styles.scrollContent}
       >
         <AppText variant="h2" style={styles.sectionTitle}>Your vehicle</AppText>
-        <VehicleCard vehicle={vehicle} onRegisterPress={() => navigation.navigate('VehicleRegistration')} />
+        <VehicleCard
+          vehicle={vehicle}
+          isLive={session.status === 'tracking'}
+          onRegisterPress={() => navigation.navigate('VehicleRegistration')}
+        />
 
         <TripProgressCard
           routeId={routeId}
@@ -95,13 +99,23 @@ const DriverDashboard = ({ navigation }: Props) => {
           isTracking={session.status === 'tracking'}
         />
 
+        <AppText variant="h2" style={styles.sectionTitleSpaced}>Quick actions</AppText>
         <Card style={styles.scanCard} padding={0}>
           <ListRow
             testID="scan-rider-qr-row"
             icon="qr-code-outline"
             title="Scan rider QR"
             subtitle={vehicle ? 'Record boarding or alighting' : 'Register a vehicle to enable scanning'}
+            divider
             onPress={vehicle ? () => navigation.navigate('QRScanner', { vehicleId }) : undefined}
+          />
+          {/* Drivers need their route list before a shift, not buried under Profile. */}
+          <ListRow
+            testID="my-routes-row"
+            icon="map-outline"
+            title="My routes"
+            subtitle="View and record your routes"
+            onPress={() => navigation.navigate('RouteManagement')}
           />
         </Card>
 
@@ -147,8 +161,11 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginBottom: theme.space[3],
   },
+  sectionTitleSpaced: {
+    marginTop: theme.space[6],
+    marginBottom: theme.space[3],
+  },
   scanCard: {
-    marginTop: theme.space[4],
     paddingHorizontal: theme.space[4],
   },
 });

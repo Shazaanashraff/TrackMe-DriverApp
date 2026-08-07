@@ -5,8 +5,11 @@ import { theme } from '../../theme';
 import AppText from './AppText';
 import PrimaryButton from './PrimaryButton';
 
-const EmptyState = ({ icon = 'alert-circle-outline', title, subtitle, actionLabel, onAction, style }) => (
-  <View style={[styles.container, style]}>
+// `fill` makes the state expand and centre itself in whatever space is left, so an
+// empty list reads as composed rather than as content stranded at the top of a blank
+// screen. Requires the parent to give it room (e.g. contentContainerStyle flexGrow: 1).
+const EmptyState = ({ icon = 'alert-circle-outline', title, subtitle, actionLabel, onAction, fill = false, testID, style }) => (
+  <View testID={testID} style={[styles.container, fill && styles.fill, style]}>
     <View style={styles.iconCircle}>
       <Ionicons name={icon} size={48} color={theme.color.primary[500]} />
     </View>
@@ -26,6 +29,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: theme.space[8],
     paddingHorizontal: theme.space[5],
+  },
+  fill: {
+    flex: 1,
+    // Sits a touch above true centre; dead-centre reads as low on a tall phone.
+    paddingBottom: theme.space[8],
   },
   iconCircle: {
     width: 96,

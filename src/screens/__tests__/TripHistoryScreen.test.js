@@ -66,7 +66,7 @@ describe('TripHistoryScreen', () => {
     api.getDriverTrips.mockResolvedValue({ trips: [] });
     const { findByText } = render(<TripHistoryScreen />);
     expect(await findByText('No trips yet')).toBeTruthy();
-    expect(await findByText('Your completed journeys will show up here.')).toBeTruthy();
+    expect(await findByText('Finish a journey and it will show up here.')).toBeTruthy();
   });
 
   it('shows the empty state when the fetch fails', async () => {

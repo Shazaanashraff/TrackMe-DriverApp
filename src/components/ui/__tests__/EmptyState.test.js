@@ -24,4 +24,17 @@ describe('EmptyState', () => {
     const { queryByText } = render(<EmptyState title="No trips yet" />);
     expect(queryByText('Add my vehicle')).toBeNull();
   });
+
+  // `fill` is what stops an empty list stranding its message at the top of a blank
+  // screen; without flex:1 the container only ever wraps its own content.
+  it('claims the remaining space only when fill is set', () => {
+    const flatten = (s) =>
+      Array.isArray(s) ? Object.assign({}, ...s.flat(Infinity).filter(Boolean)) : s || {};
+
+    const plain = render(<EmptyState testID="es" title="No trips yet" />);
+    expect(flatten(plain.getByTestId('es').props.style).flex).toBeUndefined();
+
+    const filled = render(<EmptyState testID="es" fill title="No trips yet" />);
+    expect(flatten(filled.getByTestId('es').props.style).flex).toBe(1);
+  });
 });

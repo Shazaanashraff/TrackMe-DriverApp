@@ -34,6 +34,23 @@ describe('VehicleCard', () => {
     expect(UNSAFE_getByType(Ionicons).props.name).toBe('bus');
   });
 
+  it('reads Hidden while off duty and Visible while broadcasting', () => {
+    const off = render(<VehicleCard vehicle={{ vehicleName: 'Shuttle 1' }} onRegisterPress={jest.fn()} />);
+    expect(off.getByText('Hidden')).toBeTruthy();
+    expect(off.queryByText('Visible')).toBeNull();
+
+    const live = render(
+      <VehicleCard vehicle={{ vehicleName: 'Shuttle 1' }} isLive onRegisterPress={jest.fn()} />
+    );
+    expect(live.getByText('Visible')).toBeTruthy();
+    expect(live.queryByText('Hidden')).toBeNull();
+  });
+
+  it('shows no visibility pill when there is no vehicle to be visible', () => {
+    const { queryByTestId } = render(<VehicleCard vehicle={null} onRegisterPress={jest.fn()} />);
+    expect(queryByTestId('vehicle-visibility-pill')).toBeNull();
+  });
+
   it('renders the no-vehicle EmptyState and fires onRegisterPress from its action', () => {
     const onRegisterPress = jest.fn();
     const { getByText } = render(<VehicleCard vehicle={null} onRegisterPress={onRegisterPress} />);

@@ -88,9 +88,10 @@ const TripHistoryScreen = () => {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <EmptyState
+              fill
               icon="receipt-outline"
               title="No trips yet"
-              subtitle="Your completed journeys will show up here."
+              subtitle="Finish a journey and it will show up here."
             />
           }
           refreshControl={
@@ -115,6 +116,9 @@ const styles = StyleSheet.create({
     padding: theme.space[5],
     paddingTop: 0,
     paddingBottom: theme.space[8],
+    // Lets the empty state claim the full remaining height instead of stranding
+    // itself under the header.
+    flexGrow: 1,
   },
   skeletonRow: {
     marginBottom: theme.space[3],

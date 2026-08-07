@@ -14,7 +14,7 @@ describe('deriveDutyHeroState', () => {
     const state = deriveDutyHeroState(base);
     expect(state).toEqual({
       headline: "You're off duty",
-      subline: "Riders can't see your vehicle yet",
+      subline: "Riders can't see you yet",
       dot: 'off',
       showAllowLocation: false,
       goDisabled: false,
@@ -30,7 +30,7 @@ describe('deriveDutyHeroState', () => {
   it('off duty while the socket is still connecting', () => {
     const state = deriveDutyHeroState({ ...base, connecting: true });
     expect(state.headline).toBe("You're off duty");
-    expect(state.subline).toBe('Hang tight — finding the server');
+    expect(state.subline).toBe('Hang tight, finding the server');
   });
 
   it('live and broadcasting', () => {
@@ -61,7 +61,7 @@ describe('deriveDutyHeroState', () => {
     });
     expect(state).toEqual({
       headline: 'Reconnecting…',
-      subline: 'Hang tight — finding the server',
+      subline: 'Hang tight, finding the server',
       dot: 'warn',
       showAllowLocation: false,
       goDisabled: false,
