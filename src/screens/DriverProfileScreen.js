@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, SafeAreaView, StatusBar, ScrollView, Alert, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, SafeAreaView, StatusBar, ScrollView, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useLogout } from '../hooks/auth';
 import api from '../services/api';
@@ -12,14 +11,12 @@ import ListRow from '../components/ui/ListRow';
 import ConfirmSheet from '../components/ui/ConfirmSheet';
 import Skeleton from '../components/ui/Skeleton';
 import VehicleCard from '../features/dashboard/VehicleCard';
-import { ONBOARDING_DONE_KEY } from '../components/CustomRouteRecorder';
 
 const DriverProfileScreen = ({ navigation }) => {
   const { user, authenticatedRequest } = useAuth();
   const logout = useLogout();
   const [vehicle, setVehicle] = useState(null);
   const [loadingVehicle, setLoadingVehicle] = useState(true);
-  const [isCustomRoute, setIsCustomRoute] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
@@ -34,23 +31,8 @@ const DriverProfileScreen = ({ navigation }) => {
       }
     };
 
-    const loadCustomRouteInfo = async () => {
-      try {
-        const res = await authenticatedRequest(api.getMyCustomRoute);
-        setIsCustomRoute(Boolean((res.data || res)?.isCustomRoute));
-      } catch (error) {
-        setIsCustomRoute(false);
-      }
-    };
-
     loadVehicleInfo();
-    loadCustomRouteInfo();
   }, [authenticatedRequest]);
-
-  const handleReplayTutorial = async () => {
-    await AsyncStorage.removeItem(ONBOARDING_DONE_KEY);
-    Alert.alert('Tutorial reset', 'The route-recording tutorial will show again next time you open your dashboard.');
-  };
 
   const handleLogout = () => {
     logout.mutate(undefined, {
@@ -94,15 +76,6 @@ const DriverProfileScreen = ({ navigation }) => {
         )}
 
         <Card style={styles.card}>
-          {isCustomRoute ? (
-            <ListRow
-              icon="play-circle-outline"
-              title="Replay tutorial"
-              onPress={handleReplayTutorial}
-              divider
-              testID="replay-tutorial-row"
-            />
-          ) : null}
           <ListRow
             icon="log-out-outline"
             title="Log out"

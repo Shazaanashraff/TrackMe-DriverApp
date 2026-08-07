@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ScrollView, SafeAreaView, StatusBar, View, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useMyVehicleQuery } from '../hooks/vehicle';
@@ -11,9 +11,7 @@ import ListRow from '../components/ui/ListRow';
 import ConfirmSheet from '../components/ui/ConfirmSheet';
 import DutyHero from '../features/dashboard/DutyHero';
 import VehicleCard from '../features/dashboard/VehicleCard';
-import CustomRouteSection from '../features/dashboard/CustomRouteSection';
 import TripProgressCard from '../features/dashboard/TripProgressCard';
-import { useCustomRouteJourney } from '../features/dashboard/useCustomRouteJourney';
 import { useSocketConnection } from '../features/dashboard/useSocketConnection';
 
 type Vehicle = {
@@ -44,20 +42,13 @@ const DriverDashboard = ({ navigation }: Props) => {
   const session = useTrackingSession();
   const broadcast = useLocationBroadcast({ active: session.status === 'tracking', vehicleId, routeId });
   const { connecting } = useSocketConnection(token);
-  const journey = useCustomRouteJourney(vehicleId);
 
   const [showEndConfirm, setShowEndConfirm] = useState(false);
-
-  // Record every broadcast fix as a breadcrumb point while on an active custom route.
-  useEffect(() => {
-    if (broadcast.lastFix) journey.recordFix(broadcast.lastFix);
-  }, [broadcast.lastFix, journey]);
 
   const handleStart = () => session.start(vehicleId);
 
   const handleStop = () => {
     session.stop(vehicleId);
-    journey.reportCompletedJourney();
     setShowEndConfirm(false);
   };
 
@@ -109,17 +100,6 @@ const DriverDashboard = ({ navigation }: Props) => {
             onPress={vehicle ? () => navigation.navigate('QRScanner', { vehicleId }) : undefined}
           />
         </Card>
-
-        <CustomRouteSection
-          vehicle={vehicle}
-          customRoute={journey.customRoute}
-          showUpdateRecorder={journey.showUpdateRecorder}
-          onShowUpdateRecorder={() => journey.setShowUpdateRecorder(true)}
-          onRecorderSubmitted={() => {
-            journey.setShowUpdateRecorder(false);
-            journey.reload();
-          }}
-        />
       </ScrollView>
 
       <ConfirmSheet

@@ -2,7 +2,6 @@ import * as auth from './auth';
 import * as vehicle from './vehicle';
 import * as routes from './routes';
 import * as trips from './trips';
-import * as customRoutes from './customRoutes';
 import * as boarding from './boarding';
 
 const api = {
@@ -23,12 +22,6 @@ const api = {
   // trips
   getDriverTrips: trips.getDriverTrips,
   getDriverTripDetails: trips.getDriverTripDetails,
-
-  // custom routes
-  getMyCustomRoute: customRoutes.getMyCustomRoute,
-  recordCustomRoute: customRoutes.recordCustomRoute,
-  reportJourney: customRoutes.reportJourney,
-  recordRouteUpdate: customRoutes.recordRouteUpdate,
 
   // boarding
   submitBoardingScan: boarding.submitBoardingScan,

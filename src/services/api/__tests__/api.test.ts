@@ -12,23 +12,25 @@ describe('api surface stability', () => {
     'getRouteById',
     'getDriverTrips',
     'getDriverTripDetails',
-    'getMyCustomRoute',
-    'recordCustomRoute',
-    'reportJourney',
-    'recordRouteUpdate',
   ];
 
   it.each(expectedMethods)('exports %s as a function', (method) => {
     expect(typeof (api as Record<string, unknown>)[method]).toBe('function');
   });
 
-  // My Routes was removed. getRouteById stays because the trip-progress card uses it.
-  it.each(['getRoutes', 'getRoutesManagementList', 'createRoute'])(
-    'no longer exports %s',
-    (method) => {
-      expect((api as Record<string, unknown>)[method]).toBeUndefined();
-    }
-  );
+  // My Routes and custom-route recording were removed. getRouteById stays because
+  // the trip-progress card uses it.
+  it.each([
+    'getRoutes',
+    'getRoutesManagementList',
+    'createRoute',
+    'getMyCustomRoute',
+    'recordCustomRoute',
+    'reportJourney',
+    'recordRouteUpdate',
+  ])('no longer exports %s', (method) => {
+    expect((api as Record<string, unknown>)[method]).toBeUndefined();
+  });
 });
 
 describe('api.login', () => {

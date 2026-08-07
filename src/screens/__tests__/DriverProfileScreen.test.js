@@ -9,7 +9,6 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 
 jest.mock('../../services/api', () => ({
   getMyVehicle: jest.fn(),
-  getMyCustomRoute: jest.fn(),
 }));
 
 const mockAuthenticatedRequest = jest.fn((fn, ...args) => fn(...args));
@@ -36,7 +35,6 @@ beforeEach(() => {
     registrationNumber: 'ABC-123',
     seatCapacity: 20,
   });
-  api.getMyCustomRoute.mockResolvedValue({ isCustomRoute: false });
 });
 
 describe('DriverProfileScreen', () => {
@@ -76,15 +74,10 @@ describe('DriverProfileScreen', () => {
     expect(mockLogoutMutate).toHaveBeenCalledTimes(1);
   });
 
-  it('does not show "Replay tutorial" when the driver has no custom route', async () => {
+  // The tutorial only ever reset the route-recording walkthrough, which is gone.
+  it('no longer shows "Replay tutorial"', async () => {
     const { queryByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
     await findByText('Shuttle 1');
     expect(queryByText('Replay tutorial')).toBeNull();
-  });
-
-  it('shows "Replay tutorial" when the driver has a custom route', async () => {
-    api.getMyCustomRoute.mockResolvedValue({ isCustomRoute: true });
-    const { findByText } = render(<DriverProfileScreen navigation={navigation} />);
-    expect(await findByText('Replay tutorial')).toBeTruthy();
   });
 });
