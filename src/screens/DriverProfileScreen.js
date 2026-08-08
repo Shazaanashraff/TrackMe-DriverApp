@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, SafeAreaView, StatusBar, ScrollView, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
-import { useLogout, useMeQuery } from '../hooks/auth';
+import { useLogout, useMeQuery, useMyEnrollmentKeyQuery } from '../hooks/auth';
+import EnrollmentKeyCard from '../features/profile/EnrollmentKeyCard';
 import api from '../services/api';
 import { theme } from '../theme';
 import AppText from '../components/ui/AppText';
@@ -19,6 +20,8 @@ const DriverProfileScreen = ({ navigation }) => {
   // the screen populated on a cold or offline start rather than blanking it.
   const meQuery = useMeQuery();
   const profile = { ...(user || {}), ...(meQuery.data?.user || {}) };
+  const keyQuery = useMyEnrollmentKeyQuery();
+  const keyData = keyQuery.data?.data;
   const [vehicle, setVehicle] = useState(null);
   const [loadingVehicle, setLoadingVehicle] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
@@ -71,6 +74,16 @@ const DriverProfileScreen = ({ navigation }) => {
               this row read "-" for every driver no matter what was on file. */}
           <InfoRow label="Phone" value={profile.phoneNumber || '-'} last />
         </Card>
+
+        <View style={styles.card}>
+          <EnrollmentKeyCard
+            enrollmentKey={keyData?.enrollmentKey}
+            isPrivate={keyData?.isPrivate}
+            loading={keyQuery.isPending}
+            error={keyQuery.isError}
+            onRetry={keyQuery.refetch}
+          />
+        </View>
 
         <AppText variant="h2" style={styles.sectionTitle}>Your vehicle</AppText>
         {loadingVehicle ? (

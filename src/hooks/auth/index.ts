@@ -39,6 +39,21 @@ export function useMeQuery() {
   });
 }
 
+// The manager can rotate this key, which silently invalidates the old one, so a
+// driver reading a stale card would be handing out a code that no longer works.
+// Same revalidation as useMeQuery, and note the `me` prefix keeps it out of the
+// persisted cache (see app/queryClient) — a bearer credential stays in memory.
+export function useMyEnrollmentKeyQuery() {
+  const { token } = useAuth() as AuthCtx;
+  return useQuery({
+    queryKey: qk.myEnrollmentKey(),
+    queryFn: () => api.getMyEnrollmentKey(token!),
+    enabled: !!token,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  });
+}
+
 export function useLogin() {
   const { login } = useAuth() as AuthCtx;
 

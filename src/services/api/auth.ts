@@ -23,6 +23,14 @@ export async function getMe(token: string) {
   });
 }
 
+// The driver's own enrollment key. Managers can rotate it, so it is read back
+// rather than remembered.
+export async function getMyEnrollmentKey(token: string) {
+  return requestJson(`${API_URL}/api/driver/enrollment-key`, {
+    headers: authHeaders(token),
+  });
+}
+
 export async function register(
   name: string,
   email: string,

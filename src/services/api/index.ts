@@ -9,6 +9,7 @@ const api = {
   login: auth.login,
   register: auth.register,
   getMe: auth.getMe,
+  getMyEnrollmentKey: auth.getMyEnrollmentKey,
   refreshToken: auth.refreshToken,
   logout: auth.logout,
 

@@ -16,6 +16,12 @@ const mockLogoutMutate = jest.fn();
 // The screen re-reads the account from the server; by default that read has not
 // resolved, so these tests exercise the stored-account fallback.
 const mockMeQuery = jest.fn(() => ({ data: undefined }));
+const mockKeyQuery = jest.fn(() => ({
+  data: { data: { enrollmentKey: 'TMD-QMCZ-9NL2-TJNQ', isPrivate: false } },
+  isPending: false,
+  isError: false,
+  refetch: jest.fn(),
+}));
 
 jest.mock('../../context/AuthContext', () => ({
   useAuth: () => ({
@@ -27,6 +33,7 @@ jest.mock('../../context/AuthContext', () => ({
 jest.mock('../../hooks/auth', () => ({
   useLogout: () => ({ mutate: mockLogoutMutate, isPending: false }),
   useMeQuery: () => mockMeQuery(),
+  useMyEnrollmentKeyQuery: () => mockKeyQuery(),
 }));
 
 const navigation = { navigate: jest.fn(), reset: jest.fn() };
@@ -34,6 +41,12 @@ const navigation = { navigate: jest.fn(), reset: jest.fn() };
 beforeEach(() => {
   jest.clearAllMocks();
   mockMeQuery.mockReturnValue({ data: undefined });
+  mockKeyQuery.mockReturnValue({
+    data: { data: { enrollmentKey: 'TMD-QMCZ-9NL2-TJNQ', isPrivate: false } },
+    isPending: false,
+    isError: false,
+    refetch: jest.fn(),
+  });
   mockAuthenticatedRequest.mockImplementation((fn, ...args) => fn(...args));
   api.getMyVehicle.mockResolvedValue({
     vehicleName: 'Shuttle 1',

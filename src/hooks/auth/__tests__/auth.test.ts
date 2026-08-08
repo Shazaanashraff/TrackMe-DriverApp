@@ -1,7 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
-import { useLogin, useRegister, useLogout, useMeQuery } from '../index';
+import { useLogin, useRegister, useLogout, useMeQuery, useMyEnrollmentKeyQuery } from '../index';
 
 jest.mock('../../../services/api', () => ({
   __esModule: true,
@@ -10,6 +10,7 @@ jest.mock('../../../services/api', () => ({
     register: jest.fn(),
     logout: jest.fn(),
     getMe: jest.fn(),
+    getMyEnrollmentKey: jest.fn(),
   },
 }));
 
@@ -201,6 +202,42 @@ describe('useMeQuery', () => {
     await waitFor(() =>
       expect((result.current.data as { user: { phoneNumber: string } }).user.phoneNumber)
         .toBe('0771234567')
+    );
+  });
+});
+
+describe('useMyEnrollmentKeyQuery', () => {
+  it('reads the driver own key', async () => {
+    (mockApi.getMyEnrollmentKey as jest.Mock).mockResolvedValueOnce({
+      data: { enrollmentKey: 'TMD-QMCZ-9NL2-TJNQ', isPrivate: true },
+    });
+
+    const { result } = renderHook(() => useMyEnrollmentKeyQuery(), { wrapper: makeWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockApi.getMyEnrollmentKey).toHaveBeenCalledWith('tok');
+  });
+
+  it('refetches on mount, since a rotation silently voids the cached key', async () => {
+    // Handing out a key the manager has already replaced is worse than a
+    // spinner: the passenger's redeem just fails.
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    qc.setQueryData(['me', 'enrollment-key'], { data: { enrollmentKey: 'TMD-OLD0-OLD0-OLD0' } });
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: qc }, children);
+
+    (mockApi.getMyEnrollmentKey as jest.Mock).mockResolvedValueOnce({
+      data: { enrollmentKey: 'TMD-P44B-X3RF-YGNX' },
+    });
+
+    const { result } = renderHook(() => useMyEnrollmentKeyQuery(), { wrapper });
+
+    await waitFor(() => expect(mockApi.getMyEnrollmentKey).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect((result.current.data as { data: { enrollmentKey: string } }).data.enrollmentKey)
+        .toBe('TMD-P44B-X3RF-YGNX')
     );
   });
 });
