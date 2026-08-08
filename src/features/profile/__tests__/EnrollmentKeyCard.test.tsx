@@ -2,7 +2,7 @@ import React from 'react';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Share } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import EnrollmentKeyCard from '../EnrollmentKeyCard';
+import EnrollmentKeyCard, { buildShareMessage } from '../EnrollmentKeyCard';
 
 jest.mock('expo-clipboard', () => ({
   setStringAsync: jest.fn().mockResolvedValue(true),
@@ -82,12 +82,15 @@ describe('EnrollmentKeyCard', () => {
   });
 
   it('shares the key with a message a passenger can act on', async () => {
-    const { getByTestId } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
+    const { getByTestId } = render(
+      <EnrollmentKeyCard enrollmentKey={KEY} driverName="Driver1" />
+    );
     fireEvent.press(getByTestId('share-enrollment-key'));
 
     await waitFor(() => expect(Share.share).toHaveBeenCalled());
     const { message } = (Share.share as jest.Mock).mock.calls[0][0];
     expect(message).toContain(KEY);
+    expect(message).toContain('Driver1');
   });
 
   it('survives Share being unavailable or dismissed', async () => {
@@ -139,5 +142,33 @@ describe('EnrollmentKeyCard', () => {
     const { queryByTestId } = render(<EnrollmentKeyCard loading />);
     expect(queryByTestId('enrollment-key-value')).toBeNull();
     expect(queryByTestId('copy-enrollment-key')).toBeNull();
+  });
+});
+
+describe('buildShareMessage', () => {
+  it('puts the key on a line of its own', () => {
+    // Chat apps wrap mid-token and tap-to-select grabs a line, so a key
+    // trailing a sentence is the part that arrives broken.
+    const lines = buildShareMessage(KEY).split(/\r?\n/);
+    expect(lines).toContain(KEY);
+  });
+
+  it('names the driver when one is known, and speaks for them when not', () => {
+    expect(buildShareMessage(KEY, { driverName: 'Driver1' })).toContain("Driver1's shuttle");
+    expect(buildShareMessage(KEY)).toContain('my shuttle');
+  });
+
+  it('tells the passenger where to put the key, in the words that app uses', () => {
+    // "My shuttle" and "Enter a key" are the passenger app's own labels; an
+    // instruction that renames them cannot be followed literally.
+    const message = buildShareMessage(KEY);
+    expect(message).toContain('My shuttle');
+    expect(message).toContain('Enter a key');
+  });
+
+  it('warns that a private driver approves first, and stays quiet otherwise', () => {
+    // Without this, a correct key looks like it failed.
+    expect(buildShareMessage(KEY, { isPrivate: true })).toMatch(/approve/i);
+    expect(buildShareMessage(KEY, { isPrivate: false })).not.toMatch(/approve/i);
   });
 });

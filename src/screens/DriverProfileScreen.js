@@ -78,6 +78,8 @@ const DriverProfileScreen = ({ navigation }) => {
         <View style={styles.card}>
           <EnrollmentKeyCard
             enrollmentKey={keyData?.enrollmentKey}
+            driverName={profile.name}
+            isPrivate={keyData?.isPrivate}
             loading={keyQuery.isPending}
             error={keyQuery.isError}
             onRetry={keyQuery.refetch}
