@@ -50,6 +50,23 @@ describe('useTrackingSession', () => {
     expect(result.current.error?.message).toBe('Socket not connected');
   });
 
+  it('logs the specific failure reason so it is not silently lost (issue #20)', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    mockStartTracking.mockResolvedValueOnce({ success: false, error: 'This bus is already being tracked elsewhere' });
+    const { result } = renderHook(() => useTrackingSession());
+
+    act(() => {
+      result.current.start('vehicle-1');
+    });
+
+    await waitFor(() => expect(result.current.status).toBe('error'));
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("start('vehicle-1')"),
+      'This bus is already being tracked elsewhere'
+    );
+    errorSpy.mockRestore();
+  });
+
   it('stop() calls stopTracking and resets to idle', async () => {
     mockStartTracking.mockResolvedValueOnce({ success: true });
     const { result } = renderHook(() => useTrackingSession());
