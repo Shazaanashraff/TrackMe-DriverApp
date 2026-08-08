@@ -80,7 +80,6 @@ const DriverDashboard = ({ navigation }: Props) => {
         <AppText variant="h2" style={styles.sectionTitle}>Your vehicle</AppText>
         <VehicleCard
           vehicle={vehicle}
-          isLive={session.status === 'tracking'}
           onRegisterPress={() => navigation.navigate('VehicleRegistration')}
         />
 

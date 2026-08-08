@@ -13,15 +13,15 @@ import StatusPill from '../../components/ui/StatusPill';
 type Vehicle = {
   vehicleName?: string;
   routeName?: string;
+  driverId?: { isPrivate?: boolean } | string | null;
 };
 
 type Props = {
   vehicle: Vehicle | null;
-  isLive?: boolean;
   onRegisterPress: () => void;
 };
 
-export default function VehicleCard({ vehicle, isLive = false, onRegisterPress }: Props) {
+export default function VehicleCard({ vehicle, onRegisterPress }: Props) {
   if (!vehicle) {
     return (
       <Card>
@@ -35,6 +35,9 @@ export default function VehicleCard({ vehicle, isLive = false, onRegisterPress }
       </Card>
     );
   }
+
+  const driver = vehicle.driverId;
+  const isPrivate = typeof driver === 'object' && driver !== null && driver.isPrivate === true;
 
   return (
     <Card>
@@ -52,12 +55,12 @@ export default function VehicleCard({ vehicle, isLive = false, onRegisterPress }
             <AppText variant="label" color={theme.color.text.muted}>{vehicle.routeName}</AppText>
           ) : null}
         </View>
-        {/* Whether riders can currently see this vehicle is the one fact about it that
-            changes, so it earns the otherwise-empty right edge of the card. */}
+        {/* Whether a passenger needs the manager's approval to enrol with this
+            driver's key. Live/off-duty already reads off the duty hero above. */}
         <StatusPill
-          testID="vehicle-visibility-pill"
-          label={isLive ? 'Visible' : 'Hidden'}
-          variant={isLive ? 'live' : 'neutral'}
+          testID="vehicle-privacy-pill"
+          label={isPrivate ? 'Private' : 'Public'}
+          variant={isPrivate ? 'warn' : 'live'}
         />
       </View>
     </Card>

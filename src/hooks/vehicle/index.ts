@@ -14,6 +14,14 @@ export function useMyVehicleQuery() {
     queryFn: () => api.getMyVehicle(token!),
     staleTime: FIVE_MINUTES,
     enabled: !!token,
+    // The vehicle carries the driver's privacy status, which only the manager
+    // can change and only from another device. Left to staleTime alone, the
+    // persisted cache re-serves the old answer on every restart inside the
+    // window, so a driver switched to public still reads Private. Revalidating
+    // on mount and on focus keeps the cached copy for an instant first paint
+    // while correcting it from the server.
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 }
 

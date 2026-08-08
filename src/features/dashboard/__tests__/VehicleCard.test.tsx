@@ -34,21 +34,41 @@ describe('VehicleCard', () => {
     expect(UNSAFE_getByType(Ionicons).props.name).toBe('bus');
   });
 
-  it('reads Hidden while off duty and Visible while broadcasting', () => {
-    const off = render(<VehicleCard vehicle={{ vehicleName: 'Shuttle 1' }} onRegisterPress={jest.fn()} />);
-    expect(off.getByText('Hidden')).toBeTruthy();
-    expect(off.queryByText('Visible')).toBeNull();
-
-    const live = render(
-      <VehicleCard vehicle={{ vehicleName: 'Shuttle 1' }} isLive onRegisterPress={jest.fn()} />
+  it('reads Private when the driver gates enrolment, Public otherwise', () => {
+    const gated = render(
+      <VehicleCard
+        vehicle={{ vehicleName: 'Shuttle 1', driverId: { isPrivate: true } }}
+        onRegisterPress={jest.fn()}
+      />
     );
-    expect(live.getByText('Visible')).toBeTruthy();
-    expect(live.queryByText('Hidden')).toBeNull();
+    expect(gated.getByText('Private')).toBeTruthy();
+    expect(gated.queryByText('Public')).toBeNull();
+
+    const open = render(
+      <VehicleCard
+        vehicle={{ vehicleName: 'Shuttle 1', driverId: { isPrivate: false } }}
+        onRegisterPress={jest.fn()}
+      />
+    );
+    expect(open.getByText('Public')).toBeTruthy();
+    expect(open.queryByText('Private')).toBeNull();
   });
 
-  it('shows no visibility pill when there is no vehicle to be visible', () => {
+  it('reads Public when the driver is not populated, rather than guessing Private', () => {
+    // my-vehicle can hand back an unpopulated ObjectId string. Defaulting to
+    // Private there would tell a public driver their key is gated.
+    const asId = render(
+      <VehicleCard
+        vehicle={{ vehicleName: 'Shuttle 1', driverId: '65f0aa11bb22cc33dd44ee55' }}
+        onRegisterPress={jest.fn()}
+      />
+    );
+    expect(asId.getByText('Public')).toBeTruthy();
+  });
+
+  it('shows no privacy pill when there is no vehicle', () => {
     const { queryByTestId } = render(<VehicleCard vehicle={null} onRegisterPress={jest.fn()} />);
-    expect(queryByTestId('vehicle-visibility-pill')).toBeNull();
+    expect(queryByTestId('vehicle-privacy-pill')).toBeNull();
   });
 
   it('renders the no-vehicle EmptyState and fires onRegisterPress from its action', () => {

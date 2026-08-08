@@ -46,6 +46,31 @@ describe('useMyVehicleQuery', () => {
     expect(mockApi.getMyVehicle).toHaveBeenCalledWith('tok');
     expect(result.current.data).toEqual({ _id: 'b1', plateNumber: 'ABC-123' });
   });
+
+  it('refetches on mount even when a cached vehicle is still within staleTime', async () => {
+    // The cache is persisted to storage, so a restart restores it. Privacy is
+    // set by the manager elsewhere, so serving that copy unchecked left the
+    // driver reading Private after being switched to public.
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    qc.setQueryData(['vehicle', 'mine'], {
+      data: { driverId: { isPrivate: true } },
+    });
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: qc }, children);
+
+    (mockApi.getMyVehicle as jest.Mock).mockResolvedValueOnce({
+      data: { driverId: { isPrivate: false } },
+    });
+
+    const { result } = renderHook(() => useMyVehicleQuery(), { wrapper });
+
+    await waitFor(() => expect(mockApi.getMyVehicle).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect((result.current.data as { data: { driverId: { isPrivate: boolean } } }).data.driverId.isPrivate).toBe(false)
+    );
+  });
 });
 
 describe('useRegisterVehicle', () => {
