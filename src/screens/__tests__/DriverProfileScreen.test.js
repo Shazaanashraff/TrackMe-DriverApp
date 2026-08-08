@@ -13,6 +13,9 @@ jest.mock('../../services/api', () => ({
 
 const mockAuthenticatedRequest = jest.fn((fn, ...args) => fn(...args));
 const mockLogoutMutate = jest.fn();
+// The screen re-reads the account from the server; by default that read has not
+// resolved, so these tests exercise the stored-account fallback.
+const mockMeQuery = jest.fn(() => ({ data: undefined }));
 
 jest.mock('../../context/AuthContext', () => ({
   useAuth: () => ({
@@ -23,12 +26,14 @@ jest.mock('../../context/AuthContext', () => ({
 
 jest.mock('../../hooks/auth', () => ({
   useLogout: () => ({ mutate: mockLogoutMutate, isPending: false }),
+  useMeQuery: () => mockMeQuery(),
 }));
 
 const navigation = { navigate: jest.fn(), reset: jest.fn() };
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockMeQuery.mockReturnValue({ data: undefined });
   mockAuthenticatedRequest.mockImplementation((fn, ...args) => fn(...args));
   api.getMyVehicle.mockResolvedValue({
     vehicleName: 'Shuttle 1',
@@ -46,6 +51,63 @@ describe('DriverProfileScreen', () => {
     expect(getAllByText('Nadia Perera').length).toBe(2);
     expect(getByText('nadia@test.com')).toBeTruthy();
     expect(await findByText('Shuttle 1')).toBeTruthy();
+  });
+
+  it('shows the phone number the manager put on the account', async () => {
+    // The row read `user.phone`, a field the account has never had, so every
+    // driver saw "-" no matter what their manager had entered.
+    mockMeQuery.mockReturnValue({
+      data: { user: { name: 'Nadia Perera', email: 'nadia@test.com', phoneNumber: '0766518388' } },
+    });
+
+    const { getByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
+    await findByText('Shuttle 1');
+    expect(getByText('0766518388')).toBeTruthy();
+  });
+
+  it('prefers the server copy over the details stored at sign-in', async () => {
+    // A manager changing the number is the whole reason the screen re-reads it.
+    mockMeQuery.mockReturnValue({
+      data: { user: { name: 'Nadia Perera', phoneNumber: '0771234567' } },
+    });
+
+    const { getByText, queryByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
+    await findByText('Shuttle 1');
+    expect(getByText('0771234567')).toBeTruthy();
+    expect(queryByText('0766518388')).toBeNull();
+  });
+
+  it('shows an email the manager added after sign-in', async () => {
+    mockMeQuery.mockReturnValue({
+      data: { user: { name: 'Nadia Perera', email: 'nadia@ananda.lk' } },
+    });
+
+    const { getByText, queryByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
+    await findByText('Shuttle 1');
+    expect(getByText('nadia@ananda.lk')).toBeTruthy();
+    expect(queryByText('nadia@test.com')).toBeNull();
+  });
+
+  it('drops an email the manager cleared, rather than keeping the stored one', async () => {
+    // Removal is the case a merge gets wrong: the server sends an empty string
+    // and the account stored at sign-in still holds the old address. Whichever
+    // way round the merge goes decides whether a removed email lingers.
+    mockMeQuery.mockReturnValue({
+      // A phone is present so the only empty row is the email one.
+      data: { user: { name: 'Nadia Perera', email: '', phoneNumber: '0766518388' } },
+    });
+
+    const { getAllByText, queryByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
+    await findByText('Shuttle 1');
+    expect(queryByText('nadia@test.com')).toBeNull();
+    expect(getAllByText('-')).toHaveLength(1);
+  });
+
+  it('falls back to the stored account while the server read is in flight', async () => {
+    const { getAllByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
+    await findByText('Shuttle 1');
+    // Still named, not blank, before /me resolves.
+    expect(getAllByText('Nadia Perera').length).toBe(2);
   });
 
   it('no longer lists My routes', async () => {

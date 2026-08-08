@@ -8,6 +8,7 @@ const api = {
   // auth
   login: auth.login,
   register: auth.register,
+  getMe: auth.getMe,
   refreshToken: auth.refreshToken,
   logout: auth.logout,
 

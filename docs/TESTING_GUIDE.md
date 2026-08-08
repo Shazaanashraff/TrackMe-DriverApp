@@ -9,6 +9,8 @@
 |---|---|---|---|---|
 | api/auth.login + useLogin | int+unit | services/api/__tests__/api.test.ts + hooks/auth/__tests__ | posts `{ identifier, password }` (a driver ID *or* an email) to /api/auth/login; sign-in by driver ID keeps `driverCode` on the saved account; **driver role-gate**; 401 | login identifier shape, role gate, or saved-account fields change |
 | auth.register/refresh/logout | int | __integration__/auth.int.test.tsx | body, expired refresh→logout | auth flow changes |
+| api/auth.getMe + useMeQuery | unit | hooks/auth/__tests__/auth.test.ts | reads the account back from /api/auth/me; refetches on mount instead of trusting the cache, since a manager edits these details elsewhere; `useLogin` keeps `phoneNumber` on the saved account | the profile screen needs another manager-maintained field |
+| DriverProfileScreen "Your details" | unit | screens/__tests__/DriverProfileScreen.test.js | renders the manager's `phoneNumber` (the row read a `phone` field that never existed); server copy wins over the account stored at sign-in for both phone and email; an email the manager cleared disappears rather than lingering; falls back to the stored account while `/me` is in flight | the details shown change, or the merge between stored and server copies changes |
 | AuthContext | unit | context/__tests__/AuthContext.test.tsx | load/save/logout/401-refresh/role-gate | auth logic changes |
 | Login + role-gate + logout | e2e | .maestro/auth-*.yaml | driver in, non-driver rejected, logout | auth UI changes |
 

@@ -15,6 +15,14 @@ export async function login(identifier: string, password: string) {
   });
 }
 
+// A driver's own details (name, email, phone) are maintained by their manager,
+// so the copy stored at sign-in goes stale. This re-reads the live record.
+export async function getMe(token: string) {
+  return requestJson(`${API_URL}/api/auth/me`, {
+    headers: authHeaders(token),
+  });
+}
+
 export async function register(
   name: string,
   email: string,

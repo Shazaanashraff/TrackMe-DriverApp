@@ -1,6 +1,7 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../context/AuthContext';
 import { queryClient } from '../../app/queryClient';
+import { qk } from '../../lib/queryKeys';
 import { AppError } from '../../lib/errors';
 import api from '../../services/api';
 
@@ -8,6 +9,7 @@ import api from '../../services/api';
 type AuthCtx = {
   login: (user: unknown, token: string, refreshToken?: string | null) => Promise<void>;
   logout: () => Promise<void>;
+  token: string | null;
 };
 
 type DriverUser = {
@@ -17,8 +19,25 @@ type DriverUser = {
   // The permanent sign-in ID. Absent on accounts created before driver IDs
   // existed, until the backend backfill runs.
   driverCode?: string;
+  // Set by the driver's manager, not by the driver.
+  phoneNumber?: string;
   role: string;
 };
+
+// A driver's own details are maintained by their manager on another device, so
+// what was stored at sign-in can be out of date with nothing to announce it.
+// Revalidating on mount and on focus is what makes an edit show up, rather than
+// waiting for the driver to sign out and back in.
+export function useMeQuery() {
+  const { token } = useAuth() as AuthCtx;
+  return useQuery({
+    queryKey: qk.me(),
+    queryFn: () => api.getMe(token!),
+    enabled: !!token,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+  });
+}
 
 export function useLogin() {
   const { login } = useAuth() as AuthCtx;
@@ -49,6 +68,7 @@ export function useLogin() {
           name: user.name,
           email: user.email,
           driverCode: user.driverCode,
+          phoneNumber: user.phoneNumber,
           role: user.role,
         },
         accessToken,
