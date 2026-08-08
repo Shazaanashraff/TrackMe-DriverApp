@@ -11,6 +11,7 @@ const baseProps = {
   permission: 'granted' as const,
   lastFix: null,
   hasVehicle: true,
+  hadVehicleBefore: false,
   onGoPress: jest.fn(),
   onEndPress: jest.fn(),
 };
@@ -53,6 +54,14 @@ describe('DutyHero', () => {
       expect(getByText('Register your vehicle to go live')).toBeTruthy();
       fireEvent.press(getByLabelText('Go online'));
       expect(onGoPress).not.toHaveBeenCalled();
+    });
+
+    it('shows the unassigned message instead when the driver had a vehicle before (issue #21)', () => {
+      const { getByText, queryByText } = render(
+        <DutyHero {...baseProps} hasVehicle={false} hadVehicleBefore />
+      );
+      expect(getByText('Your vehicle assignment was removed — contact your manager')).toBeTruthy();
+      expect(queryByText('Register your vehicle to go live')).toBeNull();
     });
   });
 

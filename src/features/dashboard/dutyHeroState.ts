@@ -20,6 +20,10 @@ export interface DeriveDutyHeroStateInput {
   connecting: boolean;
   permission: LocationPermissionStatus;
   hasVehicle: boolean;
+  // True once this driver has been observed to have a vehicle at all, even if
+  // useMyVehicleQuery now returns none — distinguishes "never registered" from
+  // "a manager unassigned it" (issue #21). Ignored when hasVehicle is true.
+  hadVehicleBefore: boolean;
   secondsSinceFix: number | null;
 }
 
@@ -29,6 +33,7 @@ export function deriveDutyHeroState({
   connecting,
   permission,
   hasVehicle,
+  hadVehicleBefore,
   secondsSinceFix,
 }: DeriveDutyHeroStateInput): DutyHeroState {
   if (status === 'tracking') {
@@ -77,7 +82,9 @@ export function deriveDutyHeroState({
   if (!hasVehicle) {
     return {
       headline: "You're off duty",
-      subline: 'Register your vehicle to go live',
+      subline: hadVehicleBefore
+        ? 'Your vehicle assignment was removed — contact your manager'
+        : 'Register your vehicle to go live',
       dot: 'off',
       showAllowLocation: false,
       goDisabled: true,

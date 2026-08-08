@@ -6,6 +6,7 @@ const base = {
   connecting: false,
   permission: 'granted' as const,
   hasVehicle: true,
+  hadVehicleBefore: false,
   secondsSinceFix: null,
 };
 
@@ -25,6 +26,17 @@ describe('deriveDutyHeroState', () => {
     const state = deriveDutyHeroState({ ...base, hasVehicle: false });
     expect(state.subline).toBe('Register your vehicle to go live');
     expect(state.goDisabled).toBe(true);
+  });
+
+  it('shows a distinct message when a manager unassigned a previously-held vehicle (issue #21)', () => {
+    const state = deriveDutyHeroState({ ...base, hasVehicle: false, hadVehicleBefore: true });
+    expect(state.subline).toBe('Your vehicle assignment was removed — contact your manager');
+    expect(state.goDisabled).toBe(true);
+  });
+
+  it('hadVehicleBefore is ignored once a vehicle is present again', () => {
+    const state = deriveDutyHeroState({ ...base, hasVehicle: true, hadVehicleBefore: true });
+    expect(state.subline).toBe("Riders can't see you yet");
   });
 
   it('off duty while the socket is still connecting', () => {
