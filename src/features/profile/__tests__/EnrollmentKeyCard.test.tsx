@@ -19,11 +19,12 @@ describe('EnrollmentKeyCard', () => {
   it('masks the key until it is asked for', () => {
     // A credential should not be sitting in the open on a screen the driver
     // holds up in public.
-    const { getByTestId, queryByTestId } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
-    // Nothing of the key is rendered at all while it is covered: the mask is
-    // drawn from the group lengths, which the format already fixes.
+    const { getByTestId, queryByTestId, getByText } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
+    // Nothing of the key is rendered at all while it is covered, and the field
+    // says what it is rather than standing in for the value.
     expect(queryByTestId('enrollment-key-value')).toBeNull();
     expect(getByTestId('enrollment-key-mask')).toBeTruthy();
+    expect(getByText('Tap to reveal')).toBeTruthy();
   });
 
   it('reveals the key on the toggle and hides it again', () => {
@@ -31,7 +32,7 @@ describe('EnrollmentKeyCard', () => {
     const toggle = getByTestId('toggle-enrollment-key');
 
     fireEvent.press(toggle);
-    expect(getByTestId('enrollment-key-value').props.children).toBe(KEY);
+    expect(getByTestId('enrollment-key-value').props.accessibilityLabel).toBe(KEY);
 
     fireEvent.press(toggle);
     expect(queryByTestId('enrollment-key-value')).toBeNull();
@@ -43,7 +44,7 @@ describe('EnrollmentKeyCard', () => {
     const { getByTestId, queryByTestId } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
 
     fireEvent.press(getByTestId('toggle-enrollment-key'));
-    expect(getByTestId('enrollment-key-value').props.children).toBe(KEY);
+    expect(getByTestId('enrollment-key-value').props.accessibilityLabel).toBe(KEY);
 
     act(() => { jest.advanceTimersByTime(21000); });
     expect(queryByTestId('enrollment-key-value')).toBeNull();
@@ -116,7 +117,7 @@ describe('EnrollmentKeyCard', () => {
     // to and should not inherit it.
     const { getByTestId, queryByTestId, rerender } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
     fireEvent.press(getByTestId('toggle-enrollment-key'));
-    expect(getByTestId('enrollment-key-value').props.children).toBe(KEY);
+    expect(getByTestId('enrollment-key-value').props.accessibilityLabel).toBe(KEY);
 
     const rotated = 'TMD-P44B-X3RF-YGNX';
     rerender(<EnrollmentKeyCard enrollmentKey={rotated} />);

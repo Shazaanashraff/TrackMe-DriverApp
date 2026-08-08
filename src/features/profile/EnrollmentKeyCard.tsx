@@ -22,19 +22,6 @@ const COPIED_FOR_MS = 2000;
 // half the time, and a key left on screen is a credential left on screen.
 const REVEALED_FOR_MS = 20000;
 
-// The covered key is drawn, not typed. Every masking character we tried fought
-// the typeface: the asterisk rides high and the round dot thins into a dotted
-// rule, both of which sit off the line the dashes sit on. A bar has no baseline
-// to fight and no glyph to render, so it looks the same on every platform and
-// at any text scale.
-//
-// One bar per dash-separated group, so the shape still reads as a key. The bars
-// flex to the group lengths rather than to a character count, which keeps the
-// row filling the field on a narrow phone and a tablet alike.
-export function maskGroups(value: string) {
-  return value.split('-').map((group) => group.length);
-}
-
 export default function EnrollmentKeyCard({
   enrollmentKey,
   loading = false,
@@ -97,54 +84,51 @@ export default function EnrollmentKeyCard({
         </View>
       ) : (
         <>
-          <View style={styles.keyBox}>
-            {/* One token, so it is never broken across lines: a key read aloud
-                or typed by eye has to survive the trip. */}
+          {/* Covered, the field says what it is and what to do; every attempt to
+              draw a stand-in key (dots, asterisks, bars) read as an empty input
+              rather than a withheld value. Revealed, the key is set in the
+              groups it is issued in, which is how it gets read down a phone. */}
+          <Pressable
+            testID="toggle-enrollment-key"
+            onPress={() => setRevealed((r) => !r)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: revealed }}
+            accessibilityLabel={revealed ? 'Hide enrollment key' : 'Show enrollment key'}
+            style={[styles.keyBox, revealed && styles.keyBoxRevealed]}
+          >
             {revealed ? (
-              <AppText
-                testID="enrollment-key-value"
-                variant="h2"
-                style={[styles.keyText, styles.keyRevealed]}
-                selectable
-                // A key is one token. On a narrow phone let it shrink to fit
-                // rather than break across two lines.
-                numberOfLines={1}
-                adjustsFontSizeToFit
-              >
-                {enrollmentKey}
-              </AppText>
-            ) : (
               <View
-                testID="enrollment-key-mask"
-                style={styles.maskRow}
-                accessibilityRole="text"
-                accessibilityLabel="Enrollment key hidden"
+                testID="enrollment-key-value"
+                style={styles.groups}
+                accessibilityLabel={enrollmentKey}
               >
-                {maskGroups(enrollmentKey || '').map((length, index) => (
-                  <View
-                    // Groups are positional and fixed by the key format.
-                    // eslint-disable-next-line react/no-array-index-key
-                    key={index}
-                    style={[styles.maskBar, { flex: length }]}
-                  />
+                {(enrollmentKey || '').split('-').map((group) => (
+                  <View key={group} style={styles.group}>
+                    <AppText style={styles.groupText} selectable>
+                      {group}
+                    </AppText>
+                  </View>
                 ))}
               </View>
+            ) : (
+              <View testID="enrollment-key-mask" style={styles.hiddenRow}>
+                <Ionicons
+                  name="lock-closed"
+                  size={15}
+                  color={theme.color.text.muted}
+                />
+                <AppText variant="label" color={theme.color.text.secondary}>
+                  Tap to reveal
+                </AppText>
+              </View>
             )}
-            <Pressable
-              testID="toggle-enrollment-key"
-              onPress={() => setRevealed((r) => !r)}
-              accessibilityRole="button"
-              accessibilityLabel={revealed ? 'Hide enrollment key' : 'Show enrollment key'}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              style={styles.eye}
-            >
-              <Ionicons
-                name={revealed ? 'eye-off-outline' : 'eye-outline'}
-                size={20}
-                color={theme.color.primary[600]}
-              />
-            </Pressable>
-          </View>
+
+            <Ionicons
+              name={revealed ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color={theme.color.primary[600]}
+            />
+          </Pressable>
 
           <View style={styles.actions}>
             <PrimaryButton
@@ -174,38 +158,45 @@ const styles = StyleSheet.create({
   keyBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    // The masked state is the resting state, so the box sits quiet on the card
-    // and only the revealed key is asked to stand out.
+    justifyContent: 'space-between',
     backgroundColor: theme.color.surface.field,
     borderRadius: theme.radius.control,
     borderWidth: theme.borderWidth.hairline,
     borderColor: theme.color.border.hairline,
     paddingVertical: theme.space[3],
     paddingHorizontal: theme.space[4],
-    minHeight: 52,
+    // Fixed so revealing does not make the card jump.
+    minHeight: 56,
   },
-  keyText: {
-    flex: 1,
+  // Revealed, the field steps forward: the key is the one thing on this card
+  // worth looking at while it is on screen.
+  keyBoxRevealed: {
+    backgroundColor: theme.color.primary[50],
+    borderColor: theme.color.primary[500],
   },
-  maskRow: {
-    flex: 1,
+  hiddenRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    // The gaps stand in for the dashes, so the four groups still read as one
-    // key rather than four unrelated bars.
     gap: theme.space[3],
   },
-  maskBar: {
-    height: 10,
-    borderRadius: theme.radius.pill,
-    backgroundColor: theme.color.border.strong,
+  groups: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.space[2],
+    flex: 1,
   },
-  keyRevealed: {
+  // Each issued block gets its own cell, so the key is read and dictated a
+  // block at a time instead of as one eighteen-character run.
+  group: {
+    backgroundColor: theme.color.surface.card,
+    borderRadius: theme.radius.tag,
+    paddingVertical: theme.space[2],
+    paddingHorizontal: theme.space[3],
+  },
+  groupText: {
+    fontSize: 14,
+    letterSpacing: 1,
     color: theme.color.text.primary,
-    letterSpacing: 1.5,
-  },
-  eye: {
-    paddingLeft: theme.space[3],
   },
   actions: {
     flexDirection: 'row',
