@@ -19,7 +19,9 @@ describe('EnrollmentKeyCard', () => {
   it('masks the key until it is asked for', () => {
     // A credential should not be sitting in the open on a screen the driver
     // holds up in public.
-    const { getByTestId, queryByTestId, getByText } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
+    const { getByTestId, queryByTestId, getByText } = render(
+      <EnrollmentKeyCard enrollmentKey={KEY} />
+    );
     // Nothing of the key is rendered at all while it is covered, and the field
     // says what it is rather than standing in for the value.
     expect(queryByTestId('enrollment-key-value')).toBeNull();
@@ -98,7 +100,7 @@ describe('EnrollmentKeyCard', () => {
     const { getByTestId } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
 
     // An unhandled rejection here would surface as a redbox over a screen whose
-    // key is on display and copyable anyway.
+    // key is copyable anyway.
     fireEvent.press(getByTestId('share-enrollment-key'));
     await waitFor(() => expect(Share.share).toHaveBeenCalled());
     expect(getByTestId('enrollment-key-mask')).toBeTruthy();
@@ -118,15 +120,14 @@ describe('EnrollmentKeyCard', () => {
   it('re-masks when the key is rotated while revealed', async () => {
     // Reveal is a decision about one key; a replacement has not been consented
     // to and should not inherit it.
-    const { getByTestId, queryByTestId, rerender } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
+    const { getByTestId, queryByTestId, rerender } = render(
+      <EnrollmentKeyCard enrollmentKey={KEY} />
+    );
     fireEvent.press(getByTestId('toggle-enrollment-key'));
     expect(getByTestId('enrollment-key-value').props.children).toBe(KEY);
 
-    const rotated = 'TMD-P44B-X3RF-YGNX';
-    rerender(<EnrollmentKeyCard enrollmentKey={rotated} />);
-    await waitFor(() =>
-      expect(queryByTestId('enrollment-key-value')).toBeNull()
-    );
+    rerender(<EnrollmentKeyCard enrollmentKey="TMD-P44B-X3RF-YGNX" />);
+    await waitFor(() => expect(queryByTestId('enrollment-key-value')).toBeNull());
   });
 
   it('offers a retry instead of a blank card when the key will not load', () => {
@@ -146,11 +147,12 @@ describe('EnrollmentKeyCard', () => {
 });
 
 describe('buildShareMessage', () => {
+  const lines = (message: string) => message.split(/\r?\n/);
+
   it('puts the key on a line of its own', () => {
     // Chat apps wrap mid-token and tap-to-select grabs a line, so a key
     // trailing a sentence is the part that arrives broken.
-    const lines = buildShareMessage(KEY).split(/\r?\n/);
-    expect(lines).toContain(KEY);
+    expect(lines(buildShareMessage(KEY))).toContain(KEY);
   });
 
   it('names the driver when one is known, and speaks for them when not', () => {
@@ -158,17 +160,10 @@ describe('buildShareMessage', () => {
     expect(buildShareMessage(KEY)).toContain('my shuttle');
   });
 
-  it('tells the passenger where to put the key, in the words that app uses', () => {
-    // "My shuttle" and "Enter a key" are the passenger app's own labels; an
-    // instruction that renames them cannot be followed literally.
-    const message = buildShareMessage(KEY);
-    expect(message).toContain('My shuttle');
-    expect(message).toContain('Enter a key');
-  });
-
-  it('warns that a private driver approves first, and stays quiet otherwise', () => {
-    // Without this, a correct key looks like it failed.
-    expect(buildShareMessage(KEY, { isPrivate: true })).toMatch(/approve/i);
-    expect(buildShareMessage(KEY, { isPrivate: false })).not.toMatch(/approve/i);
+  it('stays to the invitation and the key', () => {
+    // It lands in a chat window, so anything past who and what is a wall of
+    // text the reader scrolls by.
+    const written = lines(buildShareMessage(KEY, { driverName: 'Driver1' })).filter(Boolean);
+    expect(written).toHaveLength(3);
   });
 });

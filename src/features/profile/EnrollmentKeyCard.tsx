@@ -12,38 +12,27 @@ import InlineError from '../../components/ui/InlineError';
 type Props = {
   enrollmentKey?: string;
   driverName?: string;
-  isPrivate?: boolean;
   loading?: boolean;
   error?: boolean;
   onRetry?: () => void;
 };
 
-// The message lands in someone else's chat app, where it has to stand on its
-// own: the passenger may not have TrackMe yet and has no idea what a key is.
+// Who is inviting, and the key. Anything more (where to type it, what happens
+// next) is a wall of text in a chat window, and the driver is right there to
+// ask.
 //
 // The key goes on its own line rather than trailing a sentence. Chat apps wrap
 // mid-token and tap-to-select grabs the whole line, so a key sitting after a
 // colon is the one part of the message that arrives broken.
 export function buildShareMessage(
   enrollmentKey: string,
-  { driverName, isPrivate }: { driverName?: string; isPrivate?: boolean } = {}
+  { driverName }: { driverName?: string } = {}
 ) {
   const opener = driverName
     ? `Join ${driverName}'s shuttle on TrackMe.`
     : 'Join my shuttle on TrackMe.';
 
-  return [
-    opener,
-    '',
-    'Enrollment key:',
-    enrollmentKey,
-    '',
-    // Named exactly as the passenger app labels them, so the instruction can be
-    // followed literally rather than interpreted.
-    'Open TrackMe, go to My shuttle, then tap "Enter a key".',
-    // Worth saying up front: otherwise a correct key looks like it failed.
-    ...(isPrivate ? ['', "I'll approve your request before you're added."] : []),
-  ].join('\n');
+  return [opener, '', 'Enrollment key:', enrollmentKey].join('\n');
 }
 
 // How long the button stays on "Copied" before naming its action again.
@@ -55,7 +44,6 @@ const REVEALED_FOR_MS = 20000;
 export default function EnrollmentKeyCard({
   enrollmentKey,
   driverName,
-  isPrivate = false,
   loading = false,
   error = false,
   onRetry,
@@ -94,7 +82,7 @@ export default function EnrollmentKeyCard({
     if (!enrollmentKey) return;
     try {
       await Share.share({
-        message: buildShareMessage(enrollmentKey, { driverName, isPrivate }),
+        message: buildShareMessage(enrollmentKey, { driverName }),
         // Android's chooser shows this above the targets; iOS ignores it.
         title: 'Shuttle enrollment key',
       });
@@ -103,7 +91,7 @@ export default function EnrollmentKeyCard({
       // others. Neither is worth an error in front of the driver, who can copy
       // the key instead.
     }
-  }, [enrollmentKey, driverName, isPrivate]);
+  }, [enrollmentKey, driverName]);
 
   return (
     <Card title="Your enrollment key" style={styles.card}>
@@ -120,8 +108,8 @@ export default function EnrollmentKeyCard({
         <>
           {/* Covered, the field says what it is and what to do; every attempt to
               draw a stand-in key (dots, asterisks, bars) read as an empty input
-              rather than a withheld value. Revealed, the key is set in the
-              groups it is issued in, which is how it gets read down a phone. */}
+              rather than a withheld value. The whole field is the target, not
+              just the eye. */}
           <Pressable
             testID="toggle-enrollment-key"
             onPress={() => setRevealed((r) => !r)}
