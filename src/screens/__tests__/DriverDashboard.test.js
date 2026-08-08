@@ -1,6 +1,7 @@
 import React from 'react';
 import { Alert } from 'react-native';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import DriverDashboard from '../DriverDashboard';
 import api from '../../services/api';
 import { AppError } from '../../lib/errors';
@@ -8,17 +9,23 @@ import { AppError } from '../../lib/errors';
 // Covers only the Phase-2 "Update Route" banner behavior; the rest of the screen
 // (live tracking, logout, etc.) is covered by the feature-component tests + hook tests.
 
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
+
 jest.mock('../../services/api', () => ({
   getMyCustomRoute: jest.fn(),
   reportJourney: jest.fn(() => Promise.resolve({ flagged: false })),
 }));
 
+const mockUseMyVehicleQuery = jest.fn(() => ({
+  data: { vehicleId: 'VEHICLE-1', vehicleName: 'Shuttle', seatCapacity: 20 },
+  isLoading: false,
+  error: null,
+}));
+
 jest.mock('../../hooks/vehicle', () => ({
-  useMyVehicleQuery: () => ({
-    data: { vehicleId: 'VEHICLE-1', vehicleName: 'Shuttle', seatCapacity: 20 },
-    isLoading: false,
-    error: null,
-  }),
+  useMyVehicleQuery: () => mockUseMyVehicleQuery(),
 }));
 
 const mockUseTrackingSession = jest.fn(() => ({
@@ -71,14 +78,20 @@ jest.mock('../../components/CustomRouteRecorder', () => {
   };
 });
 
-beforeEach(() => {
+beforeEach(async () => {
   jest.clearAllMocks();
+  await AsyncStorage.clear();
   mockUseTrackingSession.mockReturnValue({
     status: 'idle',
     error: undefined,
     isReconnecting: false,
     start: jest.fn(),
     stop: jest.fn(),
+  });
+  mockUseMyVehicleQuery.mockReturnValue({
+    data: { vehicleId: 'VEHICLE-1', vehicleName: 'Shuttle', seatCapacity: 20 },
+    isLoading: false,
+    error: null,
   });
 });
 
@@ -168,5 +181,38 @@ describe('DriverDashboard — Go on duty failure surfaced (issue #20)', () => {
     await waitFor(() => expect(api.getMyCustomRoute).toHaveBeenCalled());
 
     expect(alertSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('DriverDashboard — unassigned-vehicle messaging (issue #21)', () => {
+  it('shows the generic register-vehicle message for a driver who never had one', async () => {
+    api.getMyCustomRoute.mockResolvedValue({ data: { isCustomRoute: false } });
+    mockUseMyVehicleQuery.mockReturnValue({ data: null, isLoading: false, error: null });
+
+    const { findByText, queryByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+
+    expect(await findByText('Register your vehicle to go live')).toBeTruthy();
+    expect(queryByText('Your vehicle assignment was removed — contact your manager')).toBeNull();
+  });
+
+  it('shows the removed-assignment message once a previously-seen vehicle disappears', async () => {
+    api.getMyCustomRoute.mockResolvedValue({ data: { isCustomRoute: false } });
+    await AsyncStorage.setItem('driver_had_vehicle_before', 'true');
+    mockUseMyVehicleQuery.mockReturnValue({ data: null, isLoading: false, error: null });
+
+    const { findByText, queryByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+
+    expect(await findByText('Your vehicle assignment was removed — contact your manager')).toBeTruthy();
+    expect(queryByText('Register your vehicle to go live')).toBeNull();
+  });
+
+  it('persists that this driver has had a vehicle once one is seen', async () => {
+    api.getMyCustomRoute.mockResolvedValue({ data: { isCustomRoute: false } });
+
+    render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+
+    await waitFor(async () => {
+      expect(await AsyncStorage.getItem('driver_had_vehicle_before')).toBe('true');
+    });
   });
 });

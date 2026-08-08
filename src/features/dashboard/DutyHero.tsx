@@ -20,6 +20,7 @@ type Props = {
   permission: LocationPermissionStatus;
   lastFix: LocationFix | null;
   hasVehicle: boolean;
+  hadVehicleBefore: boolean;
   onGoPress: () => void;
   onEndPress: () => void;
 };
@@ -65,6 +66,7 @@ export default function DutyHero({
   permission,
   lastFix,
   hasVehicle,
+  hadVehicleBefore,
   onGoPress,
   onEndPress,
 }: Props) {
@@ -106,6 +108,7 @@ export default function DutyHero({
     connecting,
     permission,
     hasVehicle,
+    hadVehicleBefore,
     secondsSinceFix,
   });
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, SafeAreaView, StatusBar, View, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
 import { useMyVehicleQuery } from '../hooks/vehicle';
 import { useTrackingSession } from '../hooks/useTrackingSession';
@@ -29,6 +30,11 @@ function unwrap<T>(response: unknown): T {
   return ((response as { data?: T })?.data ?? response) as T;
 }
 
+// Persisted so a driver whose vehicle was unassigned while the app was closed
+// still sees the distinct "removed" message (not "never registered") on
+// reopen, rather than only within the session that saw it happen — issue #21.
+const HAD_VEHICLE_KEY = 'driver_had_vehicle_before';
+
 type Props = {
   navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void };
 };
@@ -40,6 +46,20 @@ const DriverDashboard = ({ navigation }: Props) => {
   const vehicle = unwrap<Vehicle>(myVehicleQuery.data) as Vehicle | null;
   const vehicleId = vehicle?.vehicleId || vehicle?._id || '';
   const routeId = vehicle?.routeId || vehicle?.assignedRoute || '';
+  const hasVehicle = !!vehicle;
+
+  const [hadVehicleBefore, setHadVehicleBefore] = useState(false);
+  useEffect(() => {
+    AsyncStorage.getItem(HAD_VEHICLE_KEY).then((v) => {
+      if (v === 'true') setHadVehicleBefore(true);
+    });
+  }, []);
+  useEffect(() => {
+    if (hasVehicle) {
+      setHadVehicleBefore(true);
+      AsyncStorage.setItem(HAD_VEHICLE_KEY, 'true').catch(() => {});
+    }
+  }, [hasVehicle]);
 
   const session = useTrackingSession();
   const broadcast = useLocationBroadcast({ active: session.status === 'tracking', vehicleId, routeId });
@@ -84,7 +104,8 @@ const DriverDashboard = ({ navigation }: Props) => {
           connecting={connecting}
           permission={broadcast.permission}
           lastFix={session.status === 'tracking' ? broadcast.lastFix : null}
-          hasVehicle={!!vehicle}
+          hasVehicle={hasVehicle}
+          hadVehicleBefore={hadVehicleBefore}
           onGoPress={handleStart}
           onEndPress={() => setShowEndConfirm(true)}
         />
