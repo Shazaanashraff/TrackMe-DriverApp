@@ -9,8 +9,7 @@ import {
   SafeAreaView,
   StyleSheet,
 } from 'react-native';
-import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import { useRegisterVehicle } from '../hooks/vehicle';
 import { theme } from '../theme';
 import AppText from '../components/ui/AppText';
 import ScreenHeader from '../components/ui/ScreenHeader';
@@ -24,7 +23,7 @@ const VEHICLE_TYPES = ['AC', 'NON-AC', 'DELUXE', 'SLEEPER'];
 const SERVICE_TYPES = ['PUBLIC', 'SCHOOL', 'OFFICE'];
 
 const VehicleRegistrationScreen = ({ navigation }) => {
-  const { authenticatedRequest } = useAuth();
+  const registerVehicle = useRegisterVehicle();
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [formError, setFormError] = useState(null);
@@ -65,7 +64,7 @@ const VehicleRegistrationScreen = ({ navigation }) => {
         bookingEnabled: formData.bookingEnabled,
       };
 
-      const response = await authenticatedRequest(api.registerVehicle, vehicleData);
+      const response = await registerVehicle.mutateAsync(vehicleData);
 
       if (response.success) {
         setSaved(true);
