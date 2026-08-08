@@ -101,6 +101,10 @@ export default function EnrollmentKeyCard({
               variant="h2"
               style={[styles.keyText, revealed ? styles.keyRevealed : styles.keyMasked]}
               selectable={revealed}
+              // A key is one token. On a narrow phone let it shrink to fit
+              // rather than break across two lines.
+              numberOfLines={1}
+              adjustsFontSizeToFit
             >
               {revealed ? enrollmentKey : maskKey(enrollmentKey || '')}
             </AppText>
@@ -167,8 +171,10 @@ const styles = StyleSheet.create({
     // Solid enough to read as a filled password field rather than a dotted
     // rule, without the brand accent that made it look like loading pips.
     color: theme.color.text.secondary,
-    letterSpacing: 3,
-    fontSize: 13,
+    // Sized to the largest that still keeps all 18 characters on one line next
+    // to the eye; past this the mask wraps and the field grows a second row.
+    letterSpacing: 1,
+    fontSize: 20,
   },
   keyRevealed: {
     color: theme.color.text.primary,
