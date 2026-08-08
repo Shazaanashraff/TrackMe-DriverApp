@@ -1,7 +1,9 @@
 import React from 'react';
+import { Alert } from 'react-native';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import DriverDashboard from '../DriverDashboard';
 import api from '../../services/api';
+import { AppError } from '../../lib/errors';
 
 // Covers only the Phase-2 "Update Route" banner behavior; the rest of the screen
 // (live tracking, logout, etc.) is covered by the feature-component tests + hook tests.
@@ -19,14 +21,16 @@ jest.mock('../../hooks/vehicle', () => ({
   }),
 }));
 
+const mockUseTrackingSession = jest.fn(() => ({
+  status: 'idle',
+  error: undefined,
+  isReconnecting: false,
+  start: jest.fn(),
+  stop: jest.fn(),
+}));
+
 jest.mock('../../hooks/useTrackingSession', () => ({
-  useTrackingSession: () => ({
-    status: 'idle',
-    error: undefined,
-    isReconnecting: false,
-    start: jest.fn(),
-    stop: jest.fn(),
-  }),
+  useTrackingSession: () => mockUseTrackingSession(),
 }));
 
 jest.mock('../../hooks/useLocationBroadcast', () => ({
@@ -69,6 +73,13 @@ jest.mock('../../components/CustomRouteRecorder', () => {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockUseTrackingSession.mockReturnValue({
+    status: 'idle',
+    error: undefined,
+    isReconnecting: false,
+    start: jest.fn(),
+    stop: jest.fn(),
+  });
 });
 
 describe('DriverDashboard — quick actions', () => {
@@ -124,5 +135,38 @@ describe('DriverDashboard — Update Route banner (Phase 2)', () => {
 
     const recorder = await findByTestId('mock-recorder');
     expect(recorder.props.children).toBe('recorder:update:ROUTE-1');
+  });
+});
+
+describe('DriverDashboard — Go on duty failure surfaced (issue #20)', () => {
+  it('shows the specific server-refusal reason to the driver', async () => {
+    api.getMyCustomRoute.mockResolvedValue({ data: { isCustomRoute: false } });
+    mockUseTrackingSession.mockReturnValue({
+      status: 'error',
+      error: new AppError('tracking', 'This bus is already being tracked elsewhere'),
+      isReconnecting: false,
+      start: jest.fn(),
+      stop: jest.fn(),
+    });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith(
+        "Couldn't go on duty",
+        'This bus is already being tracked elsewhere'
+      )
+    );
+  });
+
+  it('does not alert while idle (no false positives)', async () => {
+    api.getMyCustomRoute.mockResolvedValue({ data: { isCustomRoute: false } });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+    await waitFor(() => expect(api.getMyCustomRoute).toHaveBeenCalled());
+
+    expect(alertSpy).not.toHaveBeenCalled();
   });
 });

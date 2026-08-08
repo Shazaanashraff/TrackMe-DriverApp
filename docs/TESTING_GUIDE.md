@@ -23,7 +23,7 @@
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
 | services/socket | unit | services/__tests__/socket.test.ts | emitLocation payload, startTracking ack, stop, cleanup | socket contract changes |
-| useTrackingSession | unit | hooks/__tests__/useTrackingSession.test.ts | start ack ok/fail, stop, cleanup | session logic changes |
+| useTrackingSession | unit | hooks/__tests__/useTrackingSession.test.ts | start ack ok/fail, stop, cleanup, logs the server-refusal reason via console.error on a failed ack (issue #20) | session logic changes |
 | useLocationBroadcast | unit | hooks/__tests__/useLocationBroadcast.test.ts | permission, throttle, min-distance, offline buffer/replay, stop removes watcher, **accuracy passthrough on LocationFix (Signal Ink GPS stat chip, UI-only, never sent over the wire)** | GPS logic changes |
 | location service / locationUtils | unit | services/__tests__/location.test.ts, helpers/__tests__/locationUtils.test.ts | permission branches, distance/throttle | location logic changes |
 | tracking socket contract | int | __integration__/tracking.int.test.tsx | start/location/stop payloads, ack, reconnect replay | contract changes |
@@ -55,6 +55,7 @@
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
 | Quick actions (Home) | unit | screens/__tests__/DriverDashboard.test.js | My routes row navigates to RouteManagement, so the route list is reachable without going via Profile | Home action rows change |
+| Go on duty failure surfaced (issue #20) | unit | screens/__tests__/DriverDashboard.test.js | a `useTrackingSession` error state pops an `Alert.alert` with the specific server-refusal message; idle status never alerts | error-surfacing UI or the tracking-session error shape changes |
 | dutyHeroState (pure state machine) | unit | features/dashboard/__tests__/dutyHeroState.test.ts | off duty (bus/no bus/connecting), live, live+updated-Ns-ago, reconnecting (priority over denied), permission denied, gpsQualityLabel thresholds | STYLEGUIDE §6.2/§8 DutyHero states or copy change |
 | DutyHero | unit | features/dashboard/__tests__/DutyHero.test.tsx | greeting (with/without bus name), off-duty/no-bus/live/reconnecting/permission-denied states, GO/END callbacks, stat chip values (timer, updates-sent counter, GPS), busy accessibilityState while starting | DutyHero wiring or STYLEGUIDE spec changes |
 | GoButton | unit | features/dashboard/__tests__/GoButton.test.tsx | GO/END label+a11y-label, onPress fires, disabled blocks press, disabled/busy accessibilityState, idle pulse ring only when off-duty+enabled | STYLEGUIDE §6.2 GoButton spec changes |

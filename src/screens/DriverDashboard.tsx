@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, SafeAreaView, StatusBar, View, StyleSheet } from 'react-native';
+import { Alert, ScrollView, SafeAreaView, StatusBar, View, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useMyVehicleQuery } from '../hooks/vehicle';
 import { useTrackingSession } from '../hooks/useTrackingSession';
@@ -52,6 +52,15 @@ const DriverDashboard = ({ navigation }: Props) => {
   useEffect(() => {
     if (broadcast.lastFix) journey.recordFix(broadcast.lastFix);
   }, [broadcast.lastFix, journey]);
+
+  // "Go on duty" failing server-side (e.g. bus already tracked elsewhere) was captured
+  // in session.error but never shown to the driver — see issue #20. Fires once per new
+  // error instance (a fresh AppError object each failed start() call).
+  useEffect(() => {
+    if (session.status === 'error' && session.error) {
+      Alert.alert("Couldn't go on duty", session.error.message);
+    }
+  }, [session.status, session.error]);
 
   const handleStart = () => session.start(vehicleId);
 
