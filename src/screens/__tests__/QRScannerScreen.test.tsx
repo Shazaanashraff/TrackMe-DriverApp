@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, act } from '@testing-library/react-native';
+import { render, act, cleanup } from '@testing-library/react-native';
 import QRScannerScreen from '../QRScannerScreen';
 
 let capturedOnBarcodeScanned: ((event: { data: string }) => void) | undefined;
@@ -103,5 +103,99 @@ describe('QRScannerScreen', () => {
 
     const { getByText } = render(<QRScannerScreen navigation={navigation} route={route} />);
     expect(getByText("QR attendance isn't enabled for this route yet — contact your manager.")).toBeTruthy();
+  });
+});
+
+describe('QRScannerScreen — cooldown feedback + queueing (issue #11)', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    // Unmount while fake timers are still active so the cleanup effect's
+    // clearTimeout(cooldownTimerRef.current) clears a real pending fake timer,
+    // instead of leaking a still-armed cooldown timer into the next test.
+    cleanup();
+    jest.useRealTimers();
+  });
+
+  it('shows explicit feedback instead of silently dropping a second scan during the cooldown window', () => {
+    const { getByText } = render(<QRScannerScreen navigation={navigation} route={route} />);
+
+    act(() => {
+      capturedOnBarcodeScanned?.({ data: 'rider-1-token' });
+    });
+    expect(mockSubmitScan).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      capturedOnBarcodeScanned?.({ data: 'rider-2-token' });
+    });
+
+    // Not silently dropped — an explicit "wait" message is shown, and the second
+    // rider's scan is not submitted yet (still queued).
+    expect(getByText('Please wait a moment — recording the last scan')).toBeTruthy();
+    expect(mockSubmitScan).toHaveBeenCalledTimes(1);
+  });
+
+  it('fires the queued scan automatically once the cooldown clears, without a manual re-scan', () => {
+    render(<QRScannerScreen navigation={navigation} route={route} />);
+
+    act(() => {
+      capturedOnBarcodeScanned?.({ data: 'rider-1-token' });
+    });
+    act(() => {
+      capturedOnBarcodeScanned?.({ data: 'rider-2-token' });
+    });
+    expect(mockSubmitScan).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
+
+    expect(mockSubmitScan).toHaveBeenCalledTimes(2);
+    expect(mockSubmitScan).toHaveBeenNthCalledWith(2, 'rider-2-token');
+  });
+
+  it('clears the cooldown lock with nothing queued when only one scan happened', () => {
+    const { queryByText } = render(<QRScannerScreen navigation={navigation} route={route} />);
+
+    act(() => {
+      capturedOnBarcodeScanned?.({ data: 'rider-1-token' });
+    });
+
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
+
+    expect(mockSubmitScan).toHaveBeenCalledTimes(1);
+    expect(queryByText('Please wait a moment — recording the last scan')).toBeNull();
+
+    // The lock is released — a genuinely new scan now goes straight through.
+    act(() => {
+      capturedOnBarcodeScanned?.({ data: 'rider-3-token' });
+    });
+    expect(mockSubmitScan).toHaveBeenCalledTimes(2);
+  });
+
+  it('a later scan during the cooldown replaces an earlier queued one — only the latest fires', () => {
+    render(<QRScannerScreen navigation={navigation} route={route} />);
+
+    act(() => {
+      capturedOnBarcodeScanned?.({ data: 'rider-1-token' });
+    });
+    act(() => {
+      capturedOnBarcodeScanned?.({ data: 'rider-2-token' });
+    });
+    act(() => {
+      capturedOnBarcodeScanned?.({ data: 'rider-3-token' });
+    });
+    expect(mockSubmitScan).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      jest.advanceTimersByTime(3000);
+    });
+
+    expect(mockSubmitScan).toHaveBeenCalledTimes(2);
+    expect(mockSubmitScan).toHaveBeenNthCalledWith(2, 'rider-3-token');
   });
 });
