@@ -24,10 +24,11 @@ const REVEALED_FOR_MS = 20000;
 
 // Keeps the dashes so it still reads as a key, and gives away nothing else.
 // The character count is fixed by the key format, so it leaks no length either.
-// A filled circle rather than a bullet: at text size a bullet thins out into a
-// dotted rule, which reads as a divider instead of a covered value.
+// Asterisks rather than the round dot most password fields use. Note the glyph
+// rides high in this typeface, so the row sits above the centre line the dashes
+// sit on; that was seen and chosen, so do not "fix" the alignment casually.
 export function maskKey(value: string) {
-  return value.replace(/[^-]/g, '●');
+  return value.replace(/[^-]/g, '*');
 }
 
 export default function EnrollmentKeyCard({
