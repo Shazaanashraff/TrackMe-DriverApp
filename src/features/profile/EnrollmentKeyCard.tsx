@@ -22,13 +22,17 @@ const COPIED_FOR_MS = 2000;
 // half the time, and a key left on screen is a credential left on screen.
 const REVEALED_FOR_MS = 20000;
 
-// Keeps the dashes so it still reads as a key, and gives away nothing else.
-// The character count is fixed by the key format, so it leaks no length either.
-// Asterisks rather than the round dot most password fields use. Note the glyph
-// rides high in this typeface, so the row sits above the centre line the dashes
-// sit on; that was seen and chosen, so do not "fix" the alignment casually.
-export function maskKey(value: string) {
-  return value.replace(/[^-]/g, '*');
+// The covered key is drawn, not typed. Every masking character we tried fought
+// the typeface: the asterisk rides high and the round dot thins into a dotted
+// rule, both of which sit off the line the dashes sit on. A bar has no baseline
+// to fight and no glyph to render, so it looks the same on every platform and
+// at any text scale.
+//
+// One bar per dash-separated group, so the shape still reads as a key. The bars
+// flex to the group lengths rather than to a character count, which keeps the
+// row filling the field on a narrow phone and a tablet alike.
+export function maskGroups(value: string) {
+  return value.split('-').map((group) => group.length);
 }
 
 export default function EnrollmentKeyCard({
@@ -96,18 +100,36 @@ export default function EnrollmentKeyCard({
           <View style={styles.keyBox}>
             {/* One token, so it is never broken across lines: a key read aloud
                 or typed by eye has to survive the trip. */}
-            <AppText
-              testID="enrollment-key-value"
-              variant="h2"
-              style={[styles.keyText, revealed ? styles.keyRevealed : styles.keyMasked]}
-              selectable={revealed}
-              // A key is one token. On a narrow phone let it shrink to fit
-              // rather than break across two lines.
-              numberOfLines={1}
-              adjustsFontSizeToFit
-            >
-              {revealed ? enrollmentKey : maskKey(enrollmentKey || '')}
-            </AppText>
+            {revealed ? (
+              <AppText
+                testID="enrollment-key-value"
+                variant="h2"
+                style={[styles.keyText, styles.keyRevealed]}
+                selectable
+                // A key is one token. On a narrow phone let it shrink to fit
+                // rather than break across two lines.
+                numberOfLines={1}
+                adjustsFontSizeToFit
+              >
+                {enrollmentKey}
+              </AppText>
+            ) : (
+              <View
+                testID="enrollment-key-mask"
+                style={styles.maskRow}
+                accessibilityRole="text"
+                accessibilityLabel="Enrollment key hidden"
+              >
+                {maskGroups(enrollmentKey || '').map((length, index) => (
+                  <View
+                    // Groups are positional and fixed by the key format.
+                    // eslint-disable-next-line react/no-array-index-key
+                    key={index}
+                    style={[styles.maskBar, { flex: length }]}
+                  />
+                ))}
+              </View>
+            )}
             <Pressable
               testID="toggle-enrollment-key"
               onPress={() => setRevealed((r) => !r)}
@@ -165,16 +187,18 @@ const styles = StyleSheet.create({
   keyText: {
     flex: 1,
   },
-  // Dots in the brand accent read as a row of loading pips. Muted, they read as
-  // what they are: something deliberately withheld.
-  keyMasked: {
-    // Solid enough to read as a filled password field rather than a dotted
-    // rule, without the brand accent that made it look like loading pips.
-    color: theme.color.text.secondary,
-    // Sized to the largest that still keeps all 18 characters on one line next
-    // to the eye; past this the mask wraps and the field grows a second row.
-    letterSpacing: 1,
-    fontSize: 20,
+  maskRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    // The gaps stand in for the dashes, so the four groups still read as one
+    // key rather than four unrelated bars.
+    gap: theme.space[3],
+  },
+  maskBar: {
+    height: 10,
+    borderRadius: theme.radius.pill,
+    backgroundColor: theme.color.border.strong,
   },
   keyRevealed: {
     color: theme.color.text.primary,

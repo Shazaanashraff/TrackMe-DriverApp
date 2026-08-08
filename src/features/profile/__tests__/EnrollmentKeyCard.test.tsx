@@ -19,33 +19,34 @@ describe('EnrollmentKeyCard', () => {
   it('masks the key until it is asked for', () => {
     // A credential should not be sitting in the open on a screen the driver
     // holds up in public.
-    const { getByTestId } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
-    const shown = getByTestId('enrollment-key-value').props.children;
-    expect(shown).toBe('***-****-****-****');
-    expect(shown).not.toContain('QMCZ');
+    const { getByTestId, queryByTestId } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
+    // Nothing of the key is rendered at all while it is covered: the mask is
+    // drawn from the group lengths, which the format already fixes.
+    expect(queryByTestId('enrollment-key-value')).toBeNull();
+    expect(getByTestId('enrollment-key-mask')).toBeTruthy();
   });
 
   it('reveals the key on the toggle and hides it again', () => {
-    const { getByTestId } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
+    const { getByTestId, queryByTestId } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
     const toggle = getByTestId('toggle-enrollment-key');
 
     fireEvent.press(toggle);
     expect(getByTestId('enrollment-key-value').props.children).toBe(KEY);
 
     fireEvent.press(toggle);
-    expect(getByTestId('enrollment-key-value').props.children).not.toBe(KEY);
+    expect(queryByTestId('enrollment-key-value')).toBeNull();
   });
 
   it('re-hides a revealed key on its own', () => {
     // Left revealed, the key stays readable to whoever next looks at the phone.
     jest.useFakeTimers();
-    const { getByTestId } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
+    const { getByTestId, queryByTestId } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
 
     fireEvent.press(getByTestId('toggle-enrollment-key'));
     expect(getByTestId('enrollment-key-value').props.children).toBe(KEY);
 
     act(() => { jest.advanceTimersByTime(21000); });
-    expect(getByTestId('enrollment-key-value').props.children).not.toBe(KEY);
+    expect(queryByTestId('enrollment-key-value')).toBeNull();
     jest.useRealTimers();
   });
 
@@ -57,11 +58,11 @@ describe('EnrollmentKeyCard', () => {
 
   it('copies the real key while it is still masked on screen', async () => {
     // The driver can hand the key over without ever putting it on display.
-    const { getByTestId } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
+    const { getByTestId, queryByTestId } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
 
     fireEvent.press(getByTestId('copy-enrollment-key'));
     await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalledWith(KEY));
-    expect(getByTestId('enrollment-key-value').props.children).not.toBe(KEY);
+    expect(queryByTestId('enrollment-key-value')).toBeNull();
   });
 
   it('copies the key and says so, then offers the action again', async () => {
@@ -96,7 +97,7 @@ describe('EnrollmentKeyCard', () => {
     // key is on display and copyable anyway.
     fireEvent.press(getByTestId('share-enrollment-key'));
     await waitFor(() => expect(Share.share).toHaveBeenCalled());
-    expect(getByTestId('enrollment-key-value')).toBeTruthy();
+    expect(getByTestId('enrollment-key-mask')).toBeTruthy();
   });
 
   it('drops the copied confirmation when the key is rotated underneath it', async () => {
@@ -113,14 +114,14 @@ describe('EnrollmentKeyCard', () => {
   it('re-masks when the key is rotated while revealed', async () => {
     // Reveal is a decision about one key; a replacement has not been consented
     // to and should not inherit it.
-    const { getByTestId, rerender } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
+    const { getByTestId, queryByTestId, rerender } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
     fireEvent.press(getByTestId('toggle-enrollment-key'));
     expect(getByTestId('enrollment-key-value').props.children).toBe(KEY);
 
     const rotated = 'TMD-P44B-X3RF-YGNX';
     rerender(<EnrollmentKeyCard enrollmentKey={rotated} />);
     await waitFor(() =>
-      expect(getByTestId('enrollment-key-value').props.children).not.toBe(rotated)
+      expect(queryByTestId('enrollment-key-value')).toBeNull()
     );
   });
 
