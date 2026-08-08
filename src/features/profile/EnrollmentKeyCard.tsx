@@ -94,22 +94,21 @@ export default function EnrollmentKeyCard({
             accessibilityRole="button"
             accessibilityState={{ expanded: revealed }}
             accessibilityLabel={revealed ? 'Hide enrollment key' : 'Show enrollment key'}
-            style={[styles.keyBox, revealed && styles.keyBoxRevealed]}
+            style={styles.keyBox}
           >
             {revealed ? (
-              <View
+              <AppText
                 testID="enrollment-key-value"
-                style={styles.groups}
-                accessibilityLabel={enrollmentKey}
+                variant="h2"
+                style={styles.keyRevealed}
+                selectable
+                // A key is one token. On a narrow phone let it shrink to fit
+                // rather than break across two lines.
+                numberOfLines={1}
+                adjustsFontSizeToFit
               >
-                {(enrollmentKey || '').split('-').map((group) => (
-                  <View key={group} style={styles.group}>
-                    <AppText style={styles.groupText} selectable>
-                      {group}
-                    </AppText>
-                  </View>
-                ))}
-              </View>
+                {enrollmentKey}
+              </AppText>
             ) : (
               <View testID="enrollment-key-mask" style={styles.hiddenRow}>
                 <Ionicons
@@ -168,35 +167,15 @@ const styles = StyleSheet.create({
     // Fixed so revealing does not make the card jump.
     minHeight: 56,
   },
-  // Revealed, the field steps forward: the key is the one thing on this card
-  // worth looking at while it is on screen.
-  keyBoxRevealed: {
-    backgroundColor: theme.color.primary[50],
-    borderColor: theme.color.primary[500],
-  },
   hiddenRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: theme.space[3],
   },
-  groups: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.space[2],
+  keyRevealed: {
     flex: 1,
-  },
-  // Each issued block gets its own cell, so the key is read and dictated a
-  // block at a time instead of as one eighteen-character run.
-  group: {
-    backgroundColor: theme.color.surface.card,
-    borderRadius: theme.radius.tag,
-    paddingVertical: theme.space[2],
-    paddingHorizontal: theme.space[3],
-  },
-  groupText: {
-    fontSize: 14,
-    letterSpacing: 1,
     color: theme.color.text.primary,
+    letterSpacing: 1.5,
   },
   actions: {
     flexDirection: 'row',

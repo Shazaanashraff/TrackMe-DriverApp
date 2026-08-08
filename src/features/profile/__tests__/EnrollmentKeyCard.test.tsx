@@ -32,7 +32,7 @@ describe('EnrollmentKeyCard', () => {
     const toggle = getByTestId('toggle-enrollment-key');
 
     fireEvent.press(toggle);
-    expect(getByTestId('enrollment-key-value').props.accessibilityLabel).toBe(KEY);
+    expect(getByTestId('enrollment-key-value').props.children).toBe(KEY);
 
     fireEvent.press(toggle);
     expect(queryByTestId('enrollment-key-value')).toBeNull();
@@ -44,7 +44,7 @@ describe('EnrollmentKeyCard', () => {
     const { getByTestId, queryByTestId } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
 
     fireEvent.press(getByTestId('toggle-enrollment-key'));
-    expect(getByTestId('enrollment-key-value').props.accessibilityLabel).toBe(KEY);
+    expect(getByTestId('enrollment-key-value').props.children).toBe(KEY);
 
     act(() => { jest.advanceTimersByTime(21000); });
     expect(queryByTestId('enrollment-key-value')).toBeNull();
@@ -117,7 +117,7 @@ describe('EnrollmentKeyCard', () => {
     // to and should not inherit it.
     const { getByTestId, queryByTestId, rerender } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
     fireEvent.press(getByTestId('toggle-enrollment-key'));
-    expect(getByTestId('enrollment-key-value').props.accessibilityLabel).toBe(KEY);
+    expect(getByTestId('enrollment-key-value').props.children).toBe(KEY);
 
     const rotated = 'TMD-P44B-X3RF-YGNX';
     rerender(<EnrollmentKeyCard enrollmentKey={rotated} />);
