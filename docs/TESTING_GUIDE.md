@@ -109,6 +109,13 @@
 | CustomRouteRecorder | unit (Jest+RTL) | src/components/__tests__/CustomRouteRecorder.test.js | coach-mark first-run gating, Track/Add Stop/Complete state machine, breadcrumb accumulation + AsyncStorage persistence, crash/background recovery (resume/submit/discard), add-stop guards (no fix yet, too-close dedupe), record POST payload shape, **update mode** (Phase 2): update-specific copy, no onboarding tour, submits via recordRouteUpdate with routeId, mode-specific AsyncStorage buffer key | recording flow, coach-marks, update mode, or AsyncStorage buffer shape changes |
 | DriverDashboard — Update Route banner (Phase 2) | unit (Jest+RTL) | src/screens/__tests__/DriverDashboard.test.js | banner hidden for normal/no-flag routes, shown when an ACTIVE custom route has a pending change request, tapping it opens CustomRouteRecorder in update mode with the right routeId | off-route flag banner or Update Route entry point changes |
 
+## Boarding / QR Attendance
+| Item | Type | Test file | Cases | Update when |
+|---|---|---|---|---|
+| useBoardingScan | unit | features/boarding/__tests__/useBoardingScan.test.ts | submit success/debounced/error, offline queueing + replay-on-reconnect | scan submission or offline-queue logic changes |
+| QRScannerScreen | unit (Jest+RTL) | screens/__tests__/QRScannerScreen.test.tsx | permission-denied state, submits scanned data, success/debounced/error feedback banners | scan screen UI or feedback copy changes |
+| QRScannerScreen cooldown feedback + queueing (issue #11) | unit (Jest+RTL) | screens/__tests__/QRScannerScreen.test.tsx | a scan landing during the 3s post-scan cooldown shows an explicit "Please wait a moment" banner instead of being silently dropped; it auto-fires the moment the cooldown clears, without a manual re-scan; a later scan during the same cooldown replaces an earlier queued one (only the latest fires); the lock clears cleanly with nothing queued | the cooldown window, queueing behavior, or feedback copy changes |
+
 ## Existing tests (keep green)
 - helpers/__tests__/formatters.test.js ✓
 - helpers/__tests__/geo.test.js ✓
