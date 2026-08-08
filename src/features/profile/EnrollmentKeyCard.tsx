@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { View, Share, StyleSheet } from 'react-native';
+import { View, Pressable, Share, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { theme } from '../../theme';
 import AppText from '../../components/ui/AppText';
@@ -10,7 +11,6 @@ import InlineError from '../../components/ui/InlineError';
 
 type Props = {
   enrollmentKey?: string;
-  isPrivate?: boolean;
   loading?: boolean;
   error?: boolean;
   onRetry?: () => void;
@@ -18,19 +18,30 @@ type Props = {
 
 // How long the button stays on "Copied" before naming its action again.
 const COPIED_FOR_MS = 2000;
+// A revealed key re-hides itself. The driver is holding the phone in public
+// half the time, and a key left on screen is a credential left on screen.
+const REVEALED_FOR_MS = 20000;
+
+// Keeps the dashes so it still reads as a key, and gives away nothing else.
+// The character count is fixed by the key format, so it leaks no length either.
+export function maskKey(value: string) {
+  return value.replace(/[^-]/g, '•');
+}
 
 export default function EnrollmentKeyCard({
   enrollmentKey,
-  isPrivate = false,
   loading = false,
   error = false,
   onRetry,
 }: Props) {
   const [copied, setCopied] = useState(false);
+  const [revealed, setRevealed] = useState(false);
 
-  // A rotated key must not leave the button claiming the old one was copied.
+  // A rotated key must not inherit the previous one's revealed state, nor leave
+  // the button claiming the old key was copied.
   useEffect(() => {
     setCopied(false);
+    setRevealed(false);
   }, [enrollmentKey]);
 
   useEffect(() => {
@@ -39,8 +50,16 @@ export default function EnrollmentKeyCard({
     return () => clearTimeout(timer);
   }, [copied]);
 
+  useEffect(() => {
+    if (!revealed) return undefined;
+    const timer = setTimeout(() => setRevealed(false), REVEALED_FOR_MS);
+    return () => clearTimeout(timer);
+  }, [revealed]);
+
   const handleCopy = useCallback(async () => {
     if (!enrollmentKey) return;
+    // Copying does not reveal: the driver can hand the key over without it ever
+    // being on screen.
     await Clipboard.setStringAsync(enrollmentKey);
     setCopied(true);
   }, [enrollmentKey]);
@@ -53,19 +72,13 @@ export default function EnrollmentKeyCard({
       });
     } catch {
       // Share is unavailable on some platforms and a dismissed sheet rejects on
-      // others. Neither is worth an error in front of the driver, whose key is
-      // on screen and copyable regardless.
+      // others. Neither is worth an error in front of the driver, who can copy
+      // the key instead.
     }
   }, [enrollmentKey]);
 
   return (
     <Card title="Your enrollment key" style={styles.card}>
-      <AppText variant="label" color={theme.color.text.muted} style={styles.blurb}>
-        {isPrivate
-          ? 'Share this with passengers joining your shuttle. You approve each request before they are enrolled.'
-          : 'Share this with passengers joining your shuttle. Anyone with the key is enrolled straight away.'}
-      </AppText>
-
       {loading ? (
         <Skeleton height={52} radius={theme.radius.control} />
       ) : error ? (
@@ -77,17 +90,31 @@ export default function EnrollmentKeyCard({
         </View>
       ) : (
         <>
-          {/* One token, so it is never broken across lines: a key read aloud or
-              copied by eye has to survive the trip. */}
           <View style={styles.keyBox}>
+            {/* One token, so it is never broken across lines: a key read aloud
+                or typed by eye has to survive the trip. */}
             <AppText
               testID="enrollment-key-value"
               variant="h2"
               style={styles.keyText}
-              selectable
+              selectable={revealed}
             >
-              {enrollmentKey}
+              {revealed ? enrollmentKey : maskKey(enrollmentKey || '')}
             </AppText>
+            <Pressable
+              testID="toggle-enrollment-key"
+              onPress={() => setRevealed((r) => !r)}
+              accessibilityRole="button"
+              accessibilityLabel={revealed ? 'Hide enrollment key' : 'Show enrollment key'}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={styles.eye}
+            >
+              <Ionicons
+                name={revealed ? 'eye-off-outline' : 'eye-outline'}
+                size={20}
+                color={theme.color.primary[600]}
+              />
+            </Pressable>
           </View>
 
           <View style={styles.actions}>
@@ -115,19 +142,21 @@ const styles = StyleSheet.create({
   card: {
     padding: theme.space[4],
   },
-  blurb: {
-    marginBottom: theme.space[3],
-  },
   keyBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.color.primary[50],
     borderRadius: theme.radius.control,
     paddingVertical: theme.space[3],
     paddingHorizontal: theme.space[4],
-    alignItems: 'center',
   },
   keyText: {
+    flex: 1,
     color: theme.color.primary[600],
     letterSpacing: 1.5,
+  },
+  eye: {
+    paddingLeft: theme.space[3],
   },
   actions: {
     flexDirection: 'row',
