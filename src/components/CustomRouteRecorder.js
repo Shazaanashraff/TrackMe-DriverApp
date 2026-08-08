@@ -9,7 +9,7 @@ import api from '../services/api';
 import { startTracking as startTrackingSession, stopTracking } from '../services/socket';
 import { COLORS, FONTS, SPACING, BORDER_RADIUS, SHADOWS } from '../constants/theme';
 import { theme } from '../theme';
-import { haversineMeters, totalDistanceMeters, formatElapsed } from '../helpers/geo';
+import { haversineMeters, totalDistanceMeters, formatElapsed, appendBreadcrumbPoint } from '../helpers/geo';
 import PrimaryButton from './ui/PrimaryButton';
 
 const MIN_STOP_DISTANCE_METERS = 15;
@@ -167,7 +167,7 @@ const CustomRouteRecorder = ({ vehicle, routeId, mode = 'initial', onSubmitted }
   };
 
   const applyFix = (point) => {
-    breadcrumbRef.current = [...breadcrumbRef.current, point];
+    breadcrumbRef.current = appendBreadcrumbPoint(breadcrumbRef.current, point);
     setCurrentLocation(point);
     setBreadcrumbCount(breadcrumbRef.current.length);
     setDistanceMeters(totalDistanceMeters(breadcrumbRef.current));
