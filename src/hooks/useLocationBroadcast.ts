@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import * as Location from 'expo-location';
 import { emitLocation, getConnectionState, onConnectionStateChange } from '../services/socket';
 import { shouldEmit, LocationFix } from '../helpers/locationUtils';
@@ -95,6 +96,24 @@ export function useLocationBroadcast({
     return unsubscribe;
   }, [emitFix]);
 
+  const beginWatching = useCallback(() => {
+    return Location.watchPositionAsync(
+      {
+        accuracy: Location.Accuracy.High,
+        timeInterval: 3000,
+        distanceInterval: 3,
+      },
+      (location: { coords: { latitude: number; longitude: number; accuracy?: number | null } }) => {
+        handleFix({
+          lat: location.coords.latitude,
+          lng: location.coords.longitude,
+          timestamp: Date.now(),
+          accuracy: location.coords.accuracy,
+        });
+      }
+    );
+  }, [handleFix]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -104,21 +123,7 @@ export function useLocationBroadcast({
       setPermission(status === 'granted' ? 'granted' : 'denied');
       if (status !== 'granted') return;
 
-      const subscription = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 3000,
-          distanceInterval: 3,
-        },
-        (location: { coords: { latitude: number; longitude: number; accuracy?: number | null } }) => {
-          handleFix({
-            lat: location.coords.latitude,
-            lng: location.coords.longitude,
-            timestamp: Date.now(),
-            accuracy: location.coords.accuracy,
-          });
-        }
-      );
+      const subscription = await beginWatching();
       if (cancelled) {
         safeRemove(subscription);
         return;
@@ -139,7 +144,38 @@ export function useLocationBroadcast({
       lastFixRef.current = null;
       setLastFix(null);
     };
-  }, [active, handleFix]);
+  }, [active, beginWatching]);
+
+  // A driver who denies the location prompt, then grants it later via the OS
+  // Settings app, wasn't picked up until the app was fully restarted — no
+  // AppState listener re-checked permission on return to foreground. Re-checks
+  // (without prompting) whenever the app comes back to the foreground while
+  // tracking is meant to be active and we aren't already watching (issue #26).
+  useEffect(() => {
+    let cancelled = false;
+
+    const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (nextState !== 'active' || !active || subscriptionRef.current) return;
+
+      (async () => {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (cancelled || status !== 'granted') return;
+
+        setPermission('granted');
+        const watcher = await beginWatching();
+        if (cancelled || subscriptionRef.current) {
+          safeRemove(watcher);
+          return;
+        }
+        subscriptionRef.current = watcher;
+      })();
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.remove();
+    };
+  }, [active, beginWatching]);
 
   return { permission, bufferedCount, lastFix };
 }
