@@ -54,8 +54,12 @@ export function useTrackingSession(): UseTrackingSessionResult {
       activeVehicleIdRef.current = vehicleId;
       setStatus('tracking');
     } else {
+      const reason = ack.error || 'Failed to start tracking';
+      // No crash-reporting SDK wired up yet — console.error is the floor so a
+      // "go on duty" failure is at least visible in device/Metro logs (issue #20).
+      console.error(`[useTrackingSession] start('${vehicleId}') refused:`, reason);
       setStatus('error');
-      setError(new AppError('tracking', ack.error || 'Failed to start tracking'));
+      setError(new AppError('tracking', reason));
     }
   }, []);
 

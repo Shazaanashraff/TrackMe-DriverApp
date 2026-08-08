@@ -21,6 +21,22 @@ export const totalDistanceMeters = (points) => {
   return total;
 };
 
+// Custom-route recording has no cap on how long a driver can leave it running,
+// unlike useLocationBroadcast's send buffer (MAX_BUFFER_SIZE=50) — see issue #17.
+export const MAX_BREADCRUMB_POINTS = 5000;
+
+// Appends a point to a breadcrumb array, halving its resolution once it exceeds
+// maxPoints so an extremely long recording stays bounded in memory instead of
+// growing forever. The newest point is always kept; normal-length recordings
+// (well under maxPoints) are returned unchanged, so route fidelity is unaffected.
+export const appendBreadcrumbPoint = (points, point, maxPoints = MAX_BREADCRUMB_POINTS) => {
+  const next = [...points, point];
+  if (next.length <= maxPoints) return next;
+  const last = next[next.length - 1];
+  const halved = next.slice(0, -1).filter((_, i) => i % 2 === 0);
+  return [...halved, last];
+};
+
 // Format elapsed milliseconds as "MM:SS" (or "H:MM:SS" past an hour).
 export const formatElapsed = (ms) => {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));

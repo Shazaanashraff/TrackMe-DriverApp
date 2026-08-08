@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, SafeAreaView, StatusBar, StyleSheet, Linking, Pressable, ActivityIndicator } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
@@ -114,6 +114,11 @@ const QRScannerScreen = ({ navigation, route }: Props) => {
   const [permission, requestPermission] = useCameraPermissions();
   const { status, lastResult, errorMessage, submitScan } = useBoardingScan(vehicleId);
   const scanLockRef = useRef(false);
+  // A different rider's scan landing mid-cooldown is queued here rather than
+  // dropped, and fired the moment the cooldown clears (issue #11).
+  const pendingScanRef = useRef<string | null>(null);
+  const cooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showCooldownHint, setShowCooldownHint] = useState(false);
 
   const [permissionRequested, setPermissionRequested] = useState(false);
 
@@ -125,19 +130,54 @@ const QRScannerScreen = ({ navigation, route }: Props) => {
     }
   }, [permission, permissionRequested, requestPermission]);
 
-  const handleScan = useCallback(
-    ({ data }: { data: string }) => {
-      if (scanLockRef.current) return;
+  useEffect(() => {
+    return () => {
+      if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
+    };
+  }, []);
+
+  // Routed through a ref rather than a direct self-reference so fireScan can
+  // schedule its own replay from inside the setTimeout callback below.
+  const fireScanRef = useRef<(data: string) => void>(() => {});
+
+  const fireScan = useCallback(
+    (data: string) => {
       scanLockRef.current = true;
+      setShowCooldownHint(false);
       submitScan(data);
-      setTimeout(() => {
+      cooldownTimerRef.current = setTimeout(() => {
         scanLockRef.current = false;
+        const queued = pendingScanRef.current;
+        pendingScanRef.current = null;
+        if (queued) {
+          fireScanRef.current(queued);
+        } else {
+          setShowCooldownHint(false);
+        }
       }, 3000);
     },
     [submitScan]
   );
 
-  const feedback = feedbackFor(status, lastResult, errorMessage);
+  useEffect(() => {
+    fireScanRef.current = fireScan;
+  }, [fireScan]);
+
+  const handleScan = useCallback(
+    ({ data }: { data: string }) => {
+      if (scanLockRef.current) {
+        pendingScanRef.current = data;
+        setShowCooldownHint(true);
+        return;
+      }
+      fireScan(data);
+    },
+    [fireScan]
+  );
+
+  const feedback = showCooldownHint
+    ? { variant: 'neutral' as const, message: 'Please wait a moment — recording the last scan' }
+    : feedbackFor(status, lastResult, errorMessage);
 
   return (
     <SafeAreaView style={styles.container}>
