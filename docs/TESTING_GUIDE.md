@@ -107,7 +107,7 @@
 ## Custom Route Recording (school/work shuttles)
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
-| helpers/geo.js (haversine/distance/elapsed) | unit | src/helpers/__tests__/geo.test.js | distance calc, degenerate input, elapsed formatting | geo math changes |
+| helpers/geo.js (haversine/distance/elapsed/breadcrumb cap) | unit | src/helpers/__tests__/geo.test.js | distance calc, degenerate input, elapsed formatting; appendBreadcrumbPoint (issue #17): normal-length recordings unaffected, halves resolution once MAX_BREADCRUMB_POINTS is exceeded, always keeps the newest point, stays bounded across many points instead of growing forever | geo math or the breadcrumb cap changes |
 | CustomRouteRecorder | unit (Jest+RTL) | src/components/__tests__/CustomRouteRecorder.test.js | coach-mark first-run gating, Track/Add Stop/Complete state machine, breadcrumb accumulation + AsyncStorage persistence, crash/background recovery (resume/submit/discard), add-stop guards (no fix yet, too-close dedupe), record POST payload shape, **update mode** (Phase 2): update-specific copy, no onboarding tour, submits via recordRouteUpdate with routeId, mode-specific AsyncStorage buffer key | recording flow, coach-marks, update mode, or AsyncStorage buffer shape changes |
 | DriverDashboard — Update Route banner (Phase 2) | unit (Jest+RTL) | src/screens/__tests__/DriverDashboard.test.js | banner hidden for normal/no-flag routes, shown when an ACTIVE custom route has a pending change request, tapping it opens CustomRouteRecorder in update mode with the right routeId | off-route flag banner or Update Route entry point changes |
 
