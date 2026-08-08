@@ -21,7 +21,7 @@ describe('EnrollmentKeyCard', () => {
     // holds up in public.
     const { getByTestId } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
     const shown = getByTestId('enrollment-key-value').props.children;
-    expect(shown).toBe('•••-••••-••••-••••');
+    expect(shown).toBe('●●●-●●●●-●●●●-●●●●');
     expect(shown).not.toContain('QMCZ');
   });
 

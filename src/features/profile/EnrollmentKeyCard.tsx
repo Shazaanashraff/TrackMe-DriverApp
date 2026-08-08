@@ -24,8 +24,10 @@ const REVEALED_FOR_MS = 20000;
 
 // Keeps the dashes so it still reads as a key, and gives away nothing else.
 // The character count is fixed by the key format, so it leaks no length either.
+// A filled circle rather than a bullet: at text size a bullet thins out into a
+// dotted rule, which reads as a divider instead of a covered value.
 export function maskKey(value: string) {
-  return value.replace(/[^-]/g, '•');
+  return value.replace(/[^-]/g, '●');
 }
 
 export default function EnrollmentKeyCard({
@@ -96,7 +98,7 @@ export default function EnrollmentKeyCard({
             <AppText
               testID="enrollment-key-value"
               variant="h2"
-              style={styles.keyText}
+              style={[styles.keyText, revealed ? styles.keyRevealed : styles.keyMasked]}
               selectable={revealed}
             >
               {revealed ? enrollmentKey : maskKey(enrollmentKey || '')}
@@ -145,14 +147,30 @@ const styles = StyleSheet.create({
   keyBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.color.primary[50],
+    // The masked state is the resting state, so the box sits quiet on the card
+    // and only the revealed key is asked to stand out.
+    backgroundColor: theme.color.surface.field,
     borderRadius: theme.radius.control,
+    borderWidth: theme.borderWidth.hairline,
+    borderColor: theme.color.border.hairline,
     paddingVertical: theme.space[3],
     paddingHorizontal: theme.space[4],
+    minHeight: 52,
   },
   keyText: {
     flex: 1,
-    color: theme.color.primary[600],
+  },
+  // Dots in the brand accent read as a row of loading pips. Muted, they read as
+  // what they are: something deliberately withheld.
+  keyMasked: {
+    // Solid enough to read as a filled password field rather than a dotted
+    // rule, without the brand accent that made it look like loading pips.
+    color: theme.color.text.secondary,
+    letterSpacing: 3,
+    fontSize: 13,
+  },
+  keyRevealed: {
+    color: theme.color.text.primary,
     letterSpacing: 1.5,
   },
   eye: {
