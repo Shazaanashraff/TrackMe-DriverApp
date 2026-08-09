@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   ScrollView,
@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   StyleSheet,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRegisterVehicle } from '../hooks/vehicle';
 import { theme } from '../theme';
 import AppText from '../components/ui/AppText';
@@ -21,6 +22,12 @@ import InlineError from '../components/ui/InlineError';
 
 const VEHICLE_TYPES = ['AC', 'NON-AC', 'DELUXE', 'SLEEPER'];
 const SERVICE_TYPES = ['PUBLIC', 'SCHOOL', 'OFFICE'];
+
+// A failed submission (e.g. a network drop) only kept typed fields alive in
+// local state — if the screen unmounted/remounted, or the app was
+// force-closed, the driver had to retype everything. Persist a draft so a
+// remount can recover it (issue #27).
+const DRAFT_KEY = 'vehicle_registration_draft';
 
 const VehicleRegistrationScreen = ({ navigation }) => {
   const registerVehicle = useRegisterVehicle();
@@ -36,6 +43,24 @@ const VehicleRegistrationScreen = ({ navigation }) => {
     bookingEnabled: true,
   });
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    AsyncStorage.getItem(DRAFT_KEY).then((raw) => {
+      if (!raw) return;
+      try {
+        const draft = JSON.parse(raw);
+        if (draft && typeof draft === 'object') {
+          setFormData((prev) => ({ ...prev, ...draft }));
+        }
+      } catch {
+        // Corrupt draft — ignore and start fresh rather than crash the screen.
+      }
+    });
+  }, []);
+
+  const persistDraft = (data) => {
+    AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(data)).catch(() => {});
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -68,15 +93,19 @@ const VehicleRegistrationScreen = ({ navigation }) => {
 
       if (response.success) {
         setSaved(true);
+        AsyncStorage.removeItem(DRAFT_KEY).catch(() => {});
         setTimeout(() => navigation.goBack(), 700);
       } else {
         setFormError(response.message || "Couldn't save your vehicle. Try again.");
+        persistDraft(formData);
       }
     } catch (error) {
       if (error?.isBackendConnectionError) {
+        persistDraft(formData);
         return;
       }
       setFormError(error.message || "Couldn't save your vehicle. Try again.");
+      persistDraft(formData);
     } finally {
       setLoading(false);
     }
