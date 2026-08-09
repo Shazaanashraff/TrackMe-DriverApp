@@ -25,6 +25,12 @@ type QueuedScan = { qrToken: string; vehicleId: string; timestamp: number };
 
 const QUEUE_KEY = 'boarding_scan_queue';
 const COOLDOWN_MS = 3000;
+const BASE_BACKOFF_MS = 1000;
+const MAX_BACKOFF_MS = 8000;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 const INVALID_QR_MESSAGE = 'This QR code is invalid or expired.';
 const QR_NOT_ENABLED_MESSAGE = "QR attendance isn't enabled for this route yet — contact your manager.";
@@ -79,6 +85,11 @@ export function useBoardingScan(vehicleId: string) {
   const cooldownRef = useRef(false);
   const cooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const replayingRef = useRef(false);
+  // Grows on each replay failure, resets on success — spreads out repeated
+  // retries during a server hiccup instead of hammering it back-to-back
+  // (issue #22). A fresh single scan always fires immediately; only the
+  // request *after* a failure waits.
+  const backoffRef = useRef(0);
 
   useEffect(() => {
     readQueue().then((queue) => setPendingCount(queue.length));
@@ -147,6 +158,10 @@ export function useBoardingScan(vehicleId: string) {
 
       const remaining: QueuedScan[] = [];
       for (const item of queue) {
+        if (backoffRef.current > 0) {
+          await delay(backoffRef.current);
+        }
+
         try {
           const res = await authenticatedRequest(api.submitBoardingScan, {
             qrToken: item.qrToken,
@@ -155,7 +170,11 @@ export function useBoardingScan(vehicleId: string) {
           const data = unwrap<BoardingScanResult>(res);
           setLastResult(data);
           setStatus(isDebounced(res) ? 'debounced' : 'success');
+          backoffRef.current = 0;
         } catch (err) {
+          backoffRef.current =
+            backoffRef.current === 0 ? BASE_BACKOFF_MS : Math.min(MAX_BACKOFF_MS, backoffRef.current * 2);
+
           const normalized = normalizeError(err);
           if (isOfflineError(normalized)) {
             // Still offline — keep this (and the rest of the queue) for next time.

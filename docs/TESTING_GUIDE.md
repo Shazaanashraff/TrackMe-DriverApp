@@ -118,7 +118,7 @@
 ## Boarding / QR Attendance
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
-| useBoardingScan | unit | features/boarding/__tests__/useBoardingScan.test.ts | submit success/debounced/error, offline queueing + replay-on-reconnect | scan submission or offline-queue logic changes |
+| useBoardingScan | unit | features/boarding/__tests__/useBoardingScan.test.ts | submit success/debounced/error, offline queueing + replay-on-reconnect, **replay retries back off exponentially after consecutive failures (1s, 2s, capped at 8s) instead of hammering the server, resets to no delay once one succeeds, and a fresh all-success replay after a prior success stays undelayed (issue #22)** | scan submission, offline-queue, or retry/backoff logic changes |
 | QRScannerScreen | unit (Jest+RTL) | screens/__tests__/QRScannerScreen.test.tsx | permission-denied state, submits scanned data, success/debounced/error feedback banners | scan screen UI or feedback copy changes |
 | QRScannerScreen cooldown feedback + queueing (issue #11) | unit (Jest+RTL) | screens/__tests__/QRScannerScreen.test.tsx | a scan landing during the 3s post-scan cooldown shows an explicit "Please wait a moment" banner instead of being silently dropped; it auto-fires the moment the cooldown clears, without a manual re-scan; a later scan during the same cooldown replaces an earlier queued one (only the latest fires); the lock clears cleanly with nothing queued | the cooldown window, queueing behavior, or feedback copy changes |
 
