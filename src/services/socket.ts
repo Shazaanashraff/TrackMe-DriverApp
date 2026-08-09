@@ -128,6 +128,8 @@ export const disconnectSocket = (): void => {
   }
 };
 
+const LOCATION_ACK_TIMEOUT_MS = 5000;
+
 export const emitLocation = (
   vehicleId: string,
   routeId: string,
@@ -136,7 +138,22 @@ export const emitLocation = (
   callback?: (response: unknown) => void
 ): void => {
   if (socket && socket.connected) {
+    // A dropped ack (common on a spotty connection) used to leave the fix
+    // silently treated as delivered — it never came back as a NACK, so it was
+    // never re-buffered for retry, leaving a silent gap in the route (issue
+    // #13). Resolve with a NACK-shaped response on timeout so the caller's
+    // existing isNackResponse() check re-buffers it the same as a real NACK.
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      callback?.({ success: false, error: 'Ack timeout' });
+    }, LOCATION_ACK_TIMEOUT_MS);
+
     socket.emit('driver:location', { vehicleId, routeId, lat, lng }, (response: unknown) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       callback?.(response);
     });
   }

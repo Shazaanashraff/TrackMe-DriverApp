@@ -196,6 +196,27 @@ describe('offline buffer', () => {
     expect(mockEmitLocation).toHaveBeenCalledWith('b1', 'r1', 6.9271, 79.8612, expect.any(Function));
     expect(result.current.bufferedCount).toBe(0);
   });
+
+  it('re-buffers a fix whose ack times out even though the socket believed it was connected (issue #13)', async () => {
+    // Connected per getConnectionState, but the real emitLocation (services/socket.ts)
+    // resolves a dropped ack with a NACK-shaped response after its own timeout — simulate
+    // that here since this hook mocks services/socket entirely.
+    mockGetConnectionState.mockReturnValue({ status: 'connected' });
+    mockEmitLocation.mockImplementation(
+      (_vehicleId: string, _routeId: string, _lat: number, _lng: number, cb: (r: unknown) => void) => {
+        cb({ success: false, error: 'Ack timeout' });
+      }
+    );
+
+    const { result } = renderHook(() =>
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
+    );
+    await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
+
+    act(() => fireFix(6.9271, 79.8612));
+
+    expect(result.current.bufferedCount).toBe(1);
+  });
 });
 
 describe('foreground permission re-check (issues #26, #14)', () => {
