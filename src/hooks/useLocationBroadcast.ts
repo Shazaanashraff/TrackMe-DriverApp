@@ -146,22 +146,35 @@ export function useLocationBroadcast({
     };
   }, [active, beginWatching]);
 
-  // A driver who denies the location prompt, then grants it later via the OS
-  // Settings app, wasn't picked up until the app was fully restarted — no
-  // AppState listener re-checked permission on return to foreground. Re-checks
-  // (without prompting) whenever the app comes back to the foreground while
-  // tracking is meant to be active and we aren't already watching (issue #26).
+  // Permission can change in either direction while a driver is on duty: granted
+  // later via the OS Settings app after an earlier denial (issue #26), or revoked
+  // mid-shift (issue #14) — neither was picked up without an app restart, since
+  // permission was only ever checked once at mount. Re-checks (without prompting)
+  // whenever the app returns to the foreground while tracking is meant to be
+  // active: starts the watcher if now granted and not already watching, and stops
+  // it (surfacing the denied state to DutyHero's live-status UI) if now denied.
   useEffect(() => {
     let cancelled = false;
 
     const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
-      if (nextState !== 'active' || !active || subscriptionRef.current) return;
+      if (nextState !== 'active' || !active) return;
 
       (async () => {
         const { status } = await Location.getForegroundPermissionsAsync();
-        if (cancelled || status !== 'granted') return;
+        if (cancelled) return;
+
+        if (status !== 'granted') {
+          setPermission('denied');
+          if (subscriptionRef.current) {
+            safeRemove(subscriptionRef.current);
+            subscriptionRef.current = null;
+          }
+          return;
+        }
 
         setPermission('granted');
+        if (subscriptionRef.current) return;
+
         const watcher = await beginWatching();
         if (cancelled || subscriptionRef.current) {
           safeRemove(watcher);
