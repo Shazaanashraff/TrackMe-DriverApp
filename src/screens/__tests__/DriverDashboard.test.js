@@ -139,6 +139,41 @@ describe('DriverDashboard — Go on duty failure surfaced (issue #20)', () => {
   });
 });
 
+describe('DriverDashboard — stop-tracking ack failure surfaced (issue #12)', () => {
+  it('alerts and stays on "You\'re live" when the server never confirms the stop', async () => {
+    mockUseTrackingSession.mockReturnValue({
+      status: 'tracking',
+      error: new AppError('tracking', 'No response from server'),
+      isReconnecting: false,
+      start: jest.fn(),
+      stop: jest.fn(),
+    });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith("Couldn't confirm you're off duty", 'No response from server')
+    );
+  });
+
+  it('does not alert while tracking cleanly with no error', async () => {
+    mockUseTrackingSession.mockReturnValue({
+      status: 'tracking',
+      error: undefined,
+      isReconnecting: false,
+      start: jest.fn(),
+      stop: jest.fn(),
+    });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    const { findByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+    await findByText('Your vehicle');
+
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+});
+
 describe('DriverDashboard — unassigned-vehicle messaging (issue #21)', () => {
   it('shows the generic register-vehicle message for a driver who never had one', async () => {
     mockUseMyVehicleQuery.mockReturnValue({ data: null, isLoading: false, error: null });

@@ -83,19 +83,65 @@ describe('startTracking', () => {
 });
 
 describe('stopTracking', () => {
-  it('emits driver:stop-tracking when connected', () => {
+  it('resolves the server ack when connected', async () => {
     const { connectSocket, stopTracking } = getModule();
     connectSocket('tok');
-    stopTracking('vehicle-1');
-    expect(mockSocket.emit).toHaveBeenCalledWith('driver:stop-tracking', { vehicleId: 'vehicle-1' });
+
+    mockSocket.emit.mockImplementationOnce(
+      (_event: string, _payload: unknown, cb: (r: unknown) => void) => cb({ success: true })
+    );
+
+    await expect(stopTracking('vehicle-1')).resolves.toEqual({ success: true });
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      'driver:stop-tracking',
+      { vehicleId: 'vehicle-1' },
+      expect.any(Function)
+    );
   });
 
-  it('no-ops when not connected', () => {
+  it('resolves success:false without emitting when not connected', async () => {
     const { connectSocket, stopTracking } = getModule();
     connectSocket('tok');
     mockSocket.connected = false;
-    stopTracking('vehicle-1');
+
+    await expect(stopTracking('vehicle-1')).resolves.toEqual({
+      success: false,
+      error: 'Socket not connected',
+    });
     expect(mockSocket.emit).not.toHaveBeenCalled();
+  });
+
+  it('resolves success:false when the ack never arrives within the timeout (issue #12)', async () => {
+    jest.useFakeTimers();
+    const { connectSocket, stopTracking } = getModule();
+    connectSocket('tok');
+
+    // No cb invocation — simulates a dropped ack on a bad connection.
+    mockSocket.emit.mockImplementationOnce(() => {});
+
+    const promise = stopTracking('vehicle-1');
+    await jest.advanceTimersByTimeAsync(5000);
+
+    await expect(promise).resolves.toEqual({ success: false, error: 'No response from server' });
+    jest.useRealTimers();
+  });
+
+  it('ignores a late ack that arrives after the timeout already resolved', async () => {
+    jest.useFakeTimers();
+    const { connectSocket, stopTracking } = getModule();
+    connectSocket('tok');
+
+    let ackCallback: ((r: unknown) => void) | undefined;
+    mockSocket.emit.mockImplementationOnce((_event: string, _payload: unknown, cb: (r: unknown) => void) => {
+      ackCallback = cb;
+    });
+
+    const promise = stopTracking('vehicle-1');
+    await jest.advanceTimersByTimeAsync(5000);
+    await expect(promise).resolves.toEqual({ success: false, error: 'No response from server' });
+
+    expect(() => ackCallback?.({ success: true })).not.toThrow();
+    jest.useRealTimers();
   });
 });
 

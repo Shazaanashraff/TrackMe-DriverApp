@@ -74,6 +74,15 @@ const DriverDashboard = ({ navigation }: Props) => {
     }
   }, [session.status, session.error]);
 
+  // A failed stop-tracking ack leaves status at 'tracking' rather than
+  // flipping to 'idle' (issue #12) — surface it the same way as a failed
+  // start so the driver knows to try End journey again.
+  useEffect(() => {
+    if (session.status === 'tracking' && session.error) {
+      Alert.alert("Couldn't confirm you're off duty", session.error.message);
+    }
+  }, [session.status, session.error]);
+
 
   const handleStart = () => session.start(vehicleId);
 
