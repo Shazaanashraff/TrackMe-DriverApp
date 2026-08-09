@@ -13,6 +13,7 @@ jest.mock('../../services/socket', () => ({
 }));
 
 const mockRequestForegroundPermissionsAsync = jest.fn();
+const mockGetForegroundPermissionsAsync = jest.fn();
 const mockWatchPositionAsync = jest.fn();
 const mockRemove = jest.fn();
 
@@ -20,9 +21,32 @@ jest.mock('expo-location', () => ({
   __esModule: true,
   requestForegroundPermissionsAsync: (...args: unknown[]) =>
     mockRequestForegroundPermissionsAsync(...args),
+  getForegroundPermissionsAsync: (...args: unknown[]) =>
+    mockGetForegroundPermissionsAsync(...args),
   watchPositionAsync: (...args: unknown[]) => mockWatchPositionAsync(...args),
   Accuracy: { High: 4 },
 }));
+
+// RN's own AppState jest mock never invokes registered listeners, so the
+// AppState-driven foreground re-check (issue #26) can't be exercised through
+// it. Mock the native module directly and capture the listener ourselves.
+let appStateListener: ((state: string) => void) | null = null;
+const mockAppStateRemove = jest.fn();
+
+jest.mock('react-native/Libraries/AppState/AppState', () => ({
+  __esModule: true,
+  default: {
+    addEventListener: jest.fn((_event: string, cb: (state: string) => void) => {
+      appStateListener = cb;
+      return { remove: mockAppStateRemove };
+    }),
+    currentState: 'active',
+  },
+}));
+
+function fireAppStateChange(state: string) {
+  appStateListener?.(state);
+}
 
 let watchCallback:
   | ((location: { coords: { latitude: number; longitude: number; accuracy?: number | null } }) => void)
@@ -31,9 +55,11 @@ let watchCallback:
 beforeEach(() => {
   jest.clearAllMocks();
   watchCallback = null;
+  appStateListener = null;
   mockGetConnectionState.mockReturnValue({ status: 'connected' });
   mockOnConnectionStateChange.mockReturnValue(() => {});
   mockRequestForegroundPermissionsAsync.mockResolvedValue({ status: 'granted' });
+  mockGetForegroundPermissionsAsync.mockResolvedValue({ status: 'granted' });
   mockWatchPositionAsync.mockImplementation(async (_opts: unknown, cb: typeof watchCallback) => {
     watchCallback = cb;
     return { remove: mockRemove };
@@ -169,6 +195,80 @@ describe('offline buffer', () => {
 
     expect(mockEmitLocation).toHaveBeenCalledWith('b1', 'r1', 6.9271, 79.8612, expect.any(Function));
     expect(result.current.bufferedCount).toBe(0);
+  });
+});
+
+describe('foreground permission re-check (issue #26)', () => {
+  it('starts watching once permission is granted via Settings and the app returns to foreground', async () => {
+    mockRequestForegroundPermissionsAsync.mockResolvedValue({ status: 'denied' });
+    const { result } = renderHook(() =>
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
+    );
+
+    await waitFor(() => expect(result.current.permission).toBe('denied'));
+    expect(mockWatchPositionAsync).not.toHaveBeenCalled();
+
+    mockGetForegroundPermissionsAsync.mockResolvedValue({ status: 'granted' });
+    await act(async () => {
+      fireAppStateChange('active');
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(result.current.permission).toBe('granted'));
+    expect(mockWatchPositionAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not restart the watcher if already watching', async () => {
+    renderHook(() => useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' }));
+    await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalledTimes(1));
+
+    await act(async () => {
+      fireAppStateChange('active');
+      await Promise.resolve();
+    });
+
+    expect(mockGetForegroundPermissionsAsync).not.toHaveBeenCalled();
+    expect(mockWatchPositionAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('does nothing on a foreground transition while inactive', async () => {
+    mockRequestForegroundPermissionsAsync.mockResolvedValue({ status: 'denied' });
+    renderHook(() => useLocationBroadcast({ active: false, vehicleId: 'b1', routeId: 'r1' }));
+
+    await act(async () => {
+      fireAppStateChange('active');
+      await Promise.resolve();
+    });
+
+    expect(mockGetForegroundPermissionsAsync).not.toHaveBeenCalled();
+    expect(mockWatchPositionAsync).not.toHaveBeenCalled();
+  });
+
+  it('stays denied and does not watch if permission is still denied on recheck', async () => {
+    mockRequestForegroundPermissionsAsync.mockResolvedValue({ status: 'denied' });
+    const { result } = renderHook(() =>
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
+    );
+    await waitFor(() => expect(result.current.permission).toBe('denied'));
+
+    mockGetForegroundPermissionsAsync.mockResolvedValue({ status: 'denied' });
+    await act(async () => {
+      fireAppStateChange('active');
+      await Promise.resolve();
+    });
+
+    expect(result.current.permission).toBe('denied');
+    expect(mockWatchPositionAsync).not.toHaveBeenCalled();
+  });
+
+  it('removes the AppState listener on unmount', async () => {
+    const { unmount } = renderHook(() =>
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
+    );
+    await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
+
+    unmount();
+    expect(mockAppStateRemove).toHaveBeenCalled();
   });
 });
 
