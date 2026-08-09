@@ -155,10 +155,29 @@ export const startTracking = (vehicleId: string): Promise<TrackingAck> => {
   });
 };
 
-export const stopTracking = (vehicleId: string): void => {
-  if (socket && socket.connected) {
-    socket.emit('driver:stop-tracking', { vehicleId });
-  }
+const STOP_ACK_TIMEOUT_MS = 5000;
+
+export const stopTracking = (vehicleId: string): Promise<TrackingAck> => {
+  return new Promise((resolve) => {
+    if (!socket || !socket.connected) {
+      resolve({ success: false, error: 'Socket not connected' });
+      return;
+    }
+
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve({ success: false, error: 'No response from server' });
+    }, STOP_ACK_TIMEOUT_MS);
+
+    socket.emit('driver:stop-tracking', { vehicleId }, (response: TrackingAck) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(response || { success: false, error: 'No response from server' });
+    });
+  });
 };
 
 export const getNotificationListeners = () => notificationListeners;

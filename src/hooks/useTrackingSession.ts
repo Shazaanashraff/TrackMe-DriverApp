@@ -11,7 +11,7 @@ export interface UseTrackingSessionResult {
   // useLocationBroadcast (019) and the offline buffer (073) to show "reconnecting, buffering".
   isReconnecting: boolean;
   start: (vehicleId: string) => Promise<void>;
-  stop: (vehicleId: string) => void;
+  stop: (vehicleId: string) => Promise<void>;
 }
 
 export function useTrackingSession(): UseTrackingSessionResult {
@@ -35,10 +35,12 @@ export function useTrackingSession(): UseTrackingSessionResult {
   }, []);
 
   // Stop cleanly on unmount (covers logout / navigating away mid-session).
+  // Fire-and-forget: the component is gone, so there's nothing left to
+  // update the ack result into.
   useEffect(() => {
     return () => {
       if (activeVehicleIdRef.current) {
-        stopTracking(activeVehicleIdRef.current);
+        void stopTracking(activeVehicleIdRef.current);
       }
     };
   }, []);
@@ -63,12 +65,24 @@ export function useTrackingSession(): UseTrackingSessionResult {
     }
   }, []);
 
-  const stop = useCallback((vehicleId: string) => {
-    stopTracking(vehicleId);
-    activeVehicleIdRef.current = null;
-    setIsReconnecting(false);
+  const stop = useCallback(async (vehicleId: string) => {
     setError(undefined);
-    setStatus('idle');
+
+    const ack = await stopTracking(vehicleId);
+
+    if (ack.success) {
+      activeVehicleIdRef.current = null;
+      setIsReconnecting(false);
+      setStatus('idle');
+    } else {
+      // Don't show "off duty" as confirmed until the server has actually
+      // acknowledged the stop (issue #12) — status stays 'tracking' so the
+      // driver knows to retry, and location keeps broadcasting in the
+      // meantime rather than going dark on an unconfirmed stop.
+      const reason = ack.error || "Failed to confirm you're off duty";
+      console.error(`[useTrackingSession] stop('${vehicleId}') unconfirmed:`, reason);
+      setError(new AppError('tracking', reason));
+    }
   }, []);
 
   return { status, error, isReconnecting, start, stop };
