@@ -198,7 +198,7 @@ describe('offline buffer', () => {
   });
 });
 
-describe('foreground permission re-check (issue #26)', () => {
+describe('foreground permission re-check (issues #26, #14)', () => {
   it('starts watching once permission is granted via Settings and the app returns to foreground', async () => {
     mockRequestForegroundPermissionsAsync.mockResolvedValue({ status: 'denied' });
     const { result } = renderHook(() =>
@@ -218,7 +218,7 @@ describe('foreground permission re-check (issue #26)', () => {
     expect(mockWatchPositionAsync).toHaveBeenCalledTimes(1);
   });
 
-  it('does not restart the watcher if already watching', async () => {
+  it('does not restart the watcher if already watching and still granted', async () => {
     renderHook(() => useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' }));
     await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalledTimes(1));
 
@@ -227,8 +227,9 @@ describe('foreground permission re-check (issue #26)', () => {
       await Promise.resolve();
     });
 
-    expect(mockGetForegroundPermissionsAsync).not.toHaveBeenCalled();
+    expect(mockGetForegroundPermissionsAsync).toHaveBeenCalled();
     expect(mockWatchPositionAsync).toHaveBeenCalledTimes(1);
+    expect(mockRemove).not.toHaveBeenCalled();
   });
 
   it('does nothing on a foreground transition while inactive', async () => {
@@ -259,6 +260,46 @@ describe('foreground permission re-check (issue #26)', () => {
 
     expect(result.current.permission).toBe('denied');
     expect(mockWatchPositionAsync).not.toHaveBeenCalled();
+  });
+
+  it('stops the watcher and flips to denied when permission is revoked mid-shift (issue #14)', async () => {
+    const { result } = renderHook(() =>
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
+    );
+    await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalledTimes(1));
+    expect(result.current.permission).toBe('granted');
+
+    mockGetForegroundPermissionsAsync.mockResolvedValue({ status: 'denied' });
+    await act(async () => {
+      fireAppStateChange('active');
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(result.current.permission).toBe('denied'));
+    expect(mockRemove).toHaveBeenCalledTimes(1);
+  });
+
+  it('resumes watching if permission is granted again after a mid-shift revocation', async () => {
+    const { result } = renderHook(() =>
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
+    );
+    await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalledTimes(1));
+
+    mockGetForegroundPermissionsAsync.mockResolvedValue({ status: 'denied' });
+    await act(async () => {
+      fireAppStateChange('active');
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(result.current.permission).toBe('denied'));
+
+    mockGetForegroundPermissionsAsync.mockResolvedValue({ status: 'granted' });
+    await act(async () => {
+      fireAppStateChange('active');
+      await Promise.resolve();
+    });
+
+    await waitFor(() => expect(result.current.permission).toBe('granted'));
+    expect(mockWatchPositionAsync).toHaveBeenCalledTimes(2);
   });
 
   it('removes the AppState listener on unmount', async () => {
