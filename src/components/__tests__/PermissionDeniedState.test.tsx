@@ -6,7 +6,7 @@ import PermissionDeniedState from '../PermissionDeniedState';
 describe('PermissionDeniedState', () => {
   it('shows the STYLEGUIDE §8 copy', () => {
     const { getByText } = render(<PermissionDeniedState />);
-    expect(getByText('Allow location so riders can see your bus')).toBeTruthy();
+    expect(getByText('Allow location so riders can see your vehicle')).toBeTruthy();
     expect(getByText('Allow location')).toBeTruthy();
   });
 

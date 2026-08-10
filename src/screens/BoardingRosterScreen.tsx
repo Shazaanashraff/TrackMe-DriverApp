@@ -8,15 +8,15 @@ import StatusPill from '../components/ui/StatusPill';
 import EmptyState from '../components/ui/EmptyState';
 import Skeleton from '../components/ui/Skeleton';
 import { formatTime } from '../helpers/formatters';
-import { useMyBusQuery } from '../hooks/bus';
+import { useMyVehicleQuery } from '../hooks/vehicle';
 import { useBoardingRosterQuery, RosterRider, RosterStatus } from '../hooks/boarding';
 
 type Props = {
   navigation: { goBack: () => void };
-  route: { params?: { busId?: string } };
+  route: { params?: { vehicleId?: string } };
 };
 
-type Bus = { busId?: string; _id?: string };
+type Vehicle = { vehicleId?: string; _id?: string };
 
 function unwrap<T>(response: unknown): T {
   return ((response as { data?: T })?.data ?? response) as T;
@@ -45,11 +45,11 @@ function RiderRow({ rider }: { rider: RosterRider }) {
 }
 
 const BoardingRosterScreen = ({ navigation, route }: Props) => {
-  const myBusQuery = useMyBusQuery();
-  const bus = unwrap<Bus>(myBusQuery.data) as Bus | null;
-  const busId = route?.params?.busId || bus?.busId || bus?._id || '';
+  const myVehicleQuery = useMyVehicleQuery();
+  const vehicle = unwrap<Vehicle>(myVehicleQuery.data) as Vehicle | null;
+  const vehicleId = route?.params?.vehicleId || vehicle?.vehicleId || vehicle?._id || '';
 
-  const { data, isLoading, isError, refetch, isRefetching } = useBoardingRosterQuery(busId);
+  const { data, isLoading, isError, refetch, isRefetching } = useBoardingRosterQuery(vehicleId);
 
   const header = (
     <View>
@@ -122,7 +122,7 @@ const BoardingRosterScreen = ({ navigation, route }: Props) => {
             <EmptyState
               icon="people-outline"
               title="No enrolled riders"
-              subtitle="Riders who join this route will appear here."
+              subtitle="Riders who enroll with you will appear here."
             />
           )
         }

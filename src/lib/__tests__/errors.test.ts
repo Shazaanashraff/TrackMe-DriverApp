@@ -117,11 +117,6 @@ describe('userMessage', () => {
     expect(userMessage(err)).toContain('driver');
   });
 
-  it('returns known code message for PAYOUT_PENDING', () => {
-    const err = new AppError('http', 'Conflict', { status: 409, code: 'PAYOUT_PENDING' });
-    expect(userMessage(err)).toContain('payout');
-  });
-
   it('never leaks raw 500 body — returns generic message for 5xx', () => {
     const err = AppError.fromHttp(500, { message: 'Internal server error trace: pg.connect ...' });
     const msg = userMessage(err);

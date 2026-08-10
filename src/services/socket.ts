@@ -82,9 +82,6 @@ export const connectSocket = (token: string): Socket => {
         },
         (routeData: unknown) => {
           if (__DEV__) console.log('Route update:', routeData);
-        },
-        (earningsData: unknown) => {
-          if (__DEV__) console.log('Earnings:', earningsData);
         }
       );
     });
@@ -132,36 +129,55 @@ export const disconnectSocket = (): void => {
 };
 
 export const emitLocation = (
-  busId: string,
+  vehicleId: string,
   routeId: string,
   lat: number,
   lng: number,
   callback?: (response: unknown) => void
 ): void => {
   if (socket && socket.connected) {
-    socket.emit('driver:location', { busId, routeId, lat, lng }, (response: unknown) => {
+    socket.emit('driver:location', { vehicleId, routeId, lat, lng }, (response: unknown) => {
       callback?.(response);
     });
   }
 };
 
-export const startTracking = (busId: string): Promise<TrackingAck> => {
+export const startTracking = (vehicleId: string): Promise<TrackingAck> => {
   return new Promise((resolve) => {
     if (!socket || !socket.connected) {
       resolve({ success: false, error: 'Socket not connected' });
       return;
     }
 
-    socket.emit('driver:start-tracking', { busId }, (response: TrackingAck) => {
+    socket.emit('driver:start-tracking', { vehicleId }, (response: TrackingAck) => {
       resolve(response || { success: false, error: 'No response from server' });
     });
   });
 };
 
-export const stopTracking = (busId: string): void => {
-  if (socket && socket.connected) {
-    socket.emit('driver:stop-tracking', { busId });
-  }
+const STOP_ACK_TIMEOUT_MS = 5000;
+
+export const stopTracking = (vehicleId: string): Promise<TrackingAck> => {
+  return new Promise((resolve) => {
+    if (!socket || !socket.connected) {
+      resolve({ success: false, error: 'Socket not connected' });
+      return;
+    }
+
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve({ success: false, error: 'No response from server' });
+    }, STOP_ACK_TIMEOUT_MS);
+
+    socket.emit('driver:stop-tracking', { vehicleId }, (response: TrackingAck) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(response || { success: false, error: 'No response from server' });
+    });
+  });
 };
 
 export const getNotificationListeners = () => notificationListeners;

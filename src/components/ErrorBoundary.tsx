@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
 
@@ -42,6 +42,12 @@ export class ErrorBoundary extends Component<Props, State> {
           <TouchableOpacity style={styles.button} onPress={this.handleReset}>
             <Text style={styles.buttonText}>Reload</Text>
           </TouchableOpacity>
+          {__DEV__ && this.state.error ? (
+            <ScrollView style={styles.devBox} contentContainerStyle={{ padding: theme.space[2] }}>
+              <Text selectable style={styles.devText}>{String(this.state.error?.message || this.state.error)}</Text>
+              <Text selectable style={styles.devStack}>{String(this.state.error?.stack || '').slice(0, 1200)}</Text>
+            </ScrollView>
+          ) : null}
         </View>
       );
     }
@@ -76,5 +82,25 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     ...theme.textStyle('body', { weight: 'medium', color: theme.color.white }),
+  },
+  devBox: {
+    maxHeight: 260,
+    alignSelf: 'stretch',
+    marginTop: theme.space[3],
+    backgroundColor: theme.color.surface.card,
+    borderRadius: theme.radius.card,
+    borderWidth: theme.borderWidth.hairline,
+    borderColor: theme.color.border.hairline,
+  },
+  devText: {
+    fontFamily: theme.fontFamily('bold'),
+    fontSize: 12,
+    color: theme.color.danger.main,
+  },
+  devStack: {
+    fontFamily: theme.fontFamily('medium'),
+    fontSize: 10,
+    color: theme.color.text.secondary,
+    marginTop: theme.space[1],
   },
 });

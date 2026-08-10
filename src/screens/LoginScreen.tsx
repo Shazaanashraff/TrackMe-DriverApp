@@ -4,7 +4,7 @@ import { useLogin } from '../hooks/auth';
 import { AppError, normalizeError } from '../lib/errors';
 import { theme } from '../theme';
 import AppText from '../components/ui/AppText';
-import ShiftBusIcon from '../components/ShiftBusIcon';
+import ShiftVehicleIcon from '../components/ShiftVehicleIcon';
 import FormInput from '../components/ui/FormInput';
 import PrimaryButton from '../components/ui/PrimaryButton';
 import InlineError from '../components/ui/InlineError';
@@ -15,19 +15,21 @@ function asAppError(error: unknown): AppError {
 }
 
 const LoginScreen = () => {
-  const [email, setEmail] = useState('');
+  // Drivers sign in with the ID on their slip or, if they were given one, an
+  // email, so the field takes either.
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [emailError, setEmailError] = useState<string | null>(null);
+  const [identifierError, setIdentifierError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const login = useLogin();
 
   const handleLogin = () => {
-    setEmailError(null);
+    setIdentifierError(null);
     setPasswordError(null);
 
     let hasError = false;
-    if (!email) {
-      setEmailError('Email is required');
+    if (!identifier.trim()) {
+      setIdentifierError('Driver ID or email is required');
       hasError = true;
     }
     if (!password) {
@@ -39,7 +41,7 @@ const LoginScreen = () => {
     }
     if (hasError) return;
 
-    login.mutate({ email, password });
+    login.mutate({ identifier: identifier.trim(), password });
   };
 
   return (
@@ -47,22 +49,24 @@ const LoginScreen = () => {
       <StatusBar barStyle="light-content" />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
-          <ShiftBusIcon size={56} />
+          <ShiftVehicleIcon size={56} />
           <AppText variant="h1" onInk style={styles.appName}>TrackMe</AppText>
           <AppText variant="label" color={theme.color.primary[300]}>Drive. Go live. Get paid.</AppText>
         </View>
 
         <View style={styles.form}>
           <FormInput
-            label="Email"
-            icon="mail-outline"
-            value={email}
-            onChangeText={setEmail}
-            placeholder="driver@test.com"
-            keyboardType="email-address"
+            label="Driver ID or email"
+            icon="id-card-outline"
+            value={identifier}
+            onChangeText={setIdentifier}
+            placeholder="DRV-4K7P-9XQ2 or driver@company.com"
+            // Left uncapitalized so an email is not shouted back at the driver;
+            // the server accepts a driver ID in any case.
             autoCapitalize="none"
+            autoCorrect={false}
           />
-          <InlineError message={emailError} />
+          <InlineError message={identifierError} />
 
           <FormInput
             label="Password"

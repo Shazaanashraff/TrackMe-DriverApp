@@ -1,9 +1,8 @@
 export const qk = {
-  myBus: () => ['bus', 'mine'] as const,
-  routes: () => ['routes'] as const,
-  routesManagement: () => ['routes', 'management'] as const,
-  earningsStats: () => ['earnings', 'stats'] as const,
-  earningsHistory: (page: number) => ['earnings', 'history', page] as const,
-  dailyBreakdown: () => ['earnings', 'daily'] as const,
-  boardingRoster: (busId: string) => ['boarding', 'roster', busId] as const,
+  me: () => ['me'] as const,
+  myEnrollmentKey: () => ['me', 'enrollment-key'] as const,
+  myVehicle: () => ['vehicle', 'mine'] as const,
+  route: (routeId: string) => ['routes', 'detail', routeId] as const,
+  trips: (page: number) => ['trips', 'history', page] as const,
+  boardingRoster: (vehicleId: string) => ['boarding', 'roster', vehicleId] as const,
 };

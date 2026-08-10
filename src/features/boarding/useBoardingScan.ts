@@ -13,7 +13,7 @@ export type BoardingScanResult = {
   eventId?: string;
   studentId?: string;
   studentName?: string;
-  busId?: string;
+  vehicleId?: string;
   routeId?: string;
   type?: BoardingEventType;
   timestamp?: string;
@@ -23,14 +23,20 @@ export type BoardingScanResult = {
 
 export type BoardingScanStatus = 'idle' | 'scanning' | 'success' | 'error' | 'debounced';
 
-type QueuedScan = { qrToken: string; busId: string; timestamp: number };
+type QueuedScan = { qrToken: string; vehicleId: string; timestamp: number };
 
 const QUEUE_KEY = 'boarding_scan_queue';
 const COOLDOWN_MS = 3000;
+const BASE_BACKOFF_MS = 1000;
+const MAX_BACKOFF_MS = 8000;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 const INVALID_QR_MESSAGE = 'This QR code is invalid or expired.';
 const QR_NOT_ENABLED_MESSAGE = "QR attendance isn't enabled for this route yet — contact your manager.";
-const BUS_NOT_FOUND_MESSAGE = 'Something went wrong. Please try again.';
+const VEHICLE_NOT_FOUND_MESSAGE = 'Something went wrong. Please try again.';
 const GENERIC_ERROR_MESSAGE = 'Something went wrong. Please try again.';
 
 function unwrap<T>(response: unknown): T {
@@ -44,7 +50,7 @@ function isDebounced(response: unknown): boolean {
 function friendlyMessageFor(error: AppError): string {
   if (error.status === 401) return INVALID_QR_MESSAGE;
   if (error.status === 403) return QR_NOT_ENABLED_MESSAGE;
-  if (error.status === 404) return BUS_NOT_FOUND_MESSAGE;
+  if (error.status === 404) return VEHICLE_NOT_FOUND_MESSAGE;
   return GENERIC_ERROR_MESSAGE;
 }
 
@@ -70,7 +76,7 @@ async function writeQueue(queue: QueuedScan[]): Promise<void> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AuthenticatedRequest = (fn: (...args: any[]) => Promise<unknown>, ...args: unknown[]) => Promise<unknown>;
 
-export function useBoardingScan(busId: string) {
+export function useBoardingScan(vehicleId: string) {
   const { authenticatedRequest } = useAuth() as { authenticatedRequest: AuthenticatedRequest };
   const queryClient = useQueryClient();
 
@@ -82,6 +88,11 @@ export function useBoardingScan(busId: string) {
   const cooldownRef = useRef(false);
   const cooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const replayingRef = useRef(false);
+  // Grows on each replay failure, resets on success — spreads out repeated
+  // retries during a server hiccup instead of hammering it back-to-back
+  // (issue #22). A fresh single scan always fires immediately; only the
+  // request *after* a failure waits.
+  const backoffRef = useRef(0);
 
   useEffect(() => {
     readQueue().then((queue) => setPendingCount(queue.length));
@@ -101,16 +112,16 @@ export function useBoardingScan(busId: string) {
     }, COOLDOWN_MS);
   }, []);
 
-  const queueScan = useCallback(async (qrToken: string, busId: string) => {
+  const queueScan = useCallback(async (qrToken: string, vehicleId: string) => {
     const queue = await readQueue();
-    queue.push({ qrToken, busId, timestamp: Date.now() });
+    queue.push({ qrToken, vehicleId, timestamp: Date.now() });
     await writeQueue(queue);
     setPendingCount(queue.length);
   }, []);
 
   const submitScan = useCallback(
     async (qrToken: string, type?: BoardingEventType) => {
-      if (!busId) return;
+      if (!vehicleId) return;
       if (cooldownRef.current) return;
       startCooldown();
 
@@ -118,20 +129,20 @@ export function useBoardingScan(busId: string) {
       setErrorMessage(null);
 
       try {
-        const res = await authenticatedRequest(api.submitBoardingScan, { qrToken, busId, type });
+        const res = await authenticatedRequest(api.submitBoardingScan, { qrToken, vehicleId, type });
         const data = unwrap<BoardingScanResult>(res);
         if (isDebounced(res)) {
           setStatus('debounced');
         } else {
           setStatus('success');
           // A new BOARD/ALIGHT changed the on-board roster — refresh the count card + page.
-          queryClient.invalidateQueries({ queryKey: qk.boardingRoster(busId) });
+          queryClient.invalidateQueries({ queryKey: qk.boardingRoster(vehicleId) });
         }
         setLastResult(data);
       } catch (err) {
         const normalized = normalizeError(err);
         if (isOfflineError(normalized)) {
-          await queueScan(qrToken, busId);
+          await queueScan(qrToken, vehicleId);
           setStatus('error');
           setErrorMessage("You're offline. This scan will be sent when you're back online.");
           return;
@@ -140,7 +151,7 @@ export function useBoardingScan(busId: string) {
         setErrorMessage(friendlyMessageFor(normalized));
       }
     },
-    [authenticatedRequest, busId, queueScan, startCooldown, queryClient]
+    [authenticatedRequest, vehicleId, queueScan, startCooldown, queryClient]
   );
 
   const replayQueuedScans = useCallback(async () => {
@@ -152,15 +163,23 @@ export function useBoardingScan(busId: string) {
 
       const remaining: QueuedScan[] = [];
       for (const item of queue) {
+        if (backoffRef.current > 0) {
+          await delay(backoffRef.current);
+        }
+
         try {
           const res = await authenticatedRequest(api.submitBoardingScan, {
             qrToken: item.qrToken,
-            busId: item.busId,
+            vehicleId: item.vehicleId,
           });
           const data = unwrap<BoardingScanResult>(res);
           setLastResult(data);
           setStatus(isDebounced(res) ? 'debounced' : 'success');
+          backoffRef.current = 0;
         } catch (err) {
+          backoffRef.current =
+            backoffRef.current === 0 ? BASE_BACKOFF_MS : Math.min(MAX_BACKOFF_MS, backoffRef.current * 2);
+
           const normalized = normalizeError(err);
           if (isOfflineError(normalized)) {
             // Still offline — keep this (and the rest of the queue) for next time.

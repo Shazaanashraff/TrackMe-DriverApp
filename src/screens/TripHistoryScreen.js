@@ -6,17 +6,9 @@ import api from '../services/api';
 import { theme } from '../theme';
 import AppText from '../components/ui/AppText';
 import Card from '../components/ui/Card';
-import StatusPill from '../components/ui/StatusPill';
 import EmptyState from '../components/ui/EmptyState';
 import Skeleton from '../components/ui/Skeleton';
-import { formatCurrency } from '../helpers/formatters';
-
-const STATUS_VARIANT = {
-  PAID: 'live',
-  PROCESSED: 'neutral',
-  PENDING: 'warn',
-  FAILED: 'danger',
-};
+import { formatTime } from '../helpers/formatters';
 
 const TripHistoryScreen = () => {
   const { authenticatedRequest } = useAuth();
@@ -26,8 +18,8 @@ const TripHistoryScreen = () => {
 
   const loadTrips = useCallback(async () => {
     try {
-      const response = await authenticatedRequest(api.getDriverEarningsHistory, { page: 1, limit: 30 });
-      setTrips(response.earnings || []);
+      const response = await authenticatedRequest(api.getDriverTrips, { page: 1, limit: 30 });
+      setTrips(response.trips || []);
     } catch (error) {
       console.error('Failed to load trip history:', error);
       setTrips([]);
@@ -65,13 +57,9 @@ const TripHistoryScreen = () => {
             </AppText>
             <AppText variant="caption" color={theme.color.text.muted}>{tripDate}</AppText>
           </View>
-          <AppText variant="body" weight="medium">{formatCurrency(item.netEarnings || 0)}</AppText>
-        </View>
-        <View style={styles.tripFooter}>
-          <StatusPill
-            label={item.paymentStatus || 'PENDING'}
-            variant={STATUS_VARIANT[item.paymentStatus] || 'warn'}
-          />
+          {item.startTime ? (
+            <AppText variant="caption" color={theme.color.text.muted}>{formatTime(item.startTime)}</AppText>
+          ) : null}
         </View>
       </Card>
     );
@@ -100,9 +88,10 @@ const TripHistoryScreen = () => {
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <EmptyState
+              fill
               icon="receipt-outline"
               title="No trips yet"
-              subtitle="Your completed journeys will show up here."
+              subtitle="Finish a journey and it will show up here."
             />
           }
           refreshControl={
@@ -127,13 +116,15 @@ const styles = StyleSheet.create({
     padding: theme.space[5],
     paddingTop: 0,
     paddingBottom: theme.space[8],
+    // Lets the empty state claim the full remaining height instead of stranding
+    // itself under the header.
+    flexGrow: 1,
   },
   skeletonRow: {
     marginBottom: theme.space[3],
   },
   tripCard: {
     marginBottom: theme.space[3],
-    gap: theme.space[3],
   },
   tripRow: {
     flexDirection: 'row',
@@ -150,9 +141,6 @@ const styles = StyleSheet.create({
   },
   textBlock: {
     flex: 1,
-  },
-  tripFooter: {
-    flexDirection: 'row',
   },
 });
 

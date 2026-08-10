@@ -7,8 +7,11 @@
 ## Auth
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
-| api/auth.login + useLogin | int+unit | __integration__/auth.int.test.tsx + hooks/auth/__tests__ | URL/method/body, **driver role-gate**, 401 | login/role changes |
+| api/auth.login + useLogin | int+unit | services/api/__tests__/api.test.ts + hooks/auth/__tests__ | posts `{ identifier, password }` (a driver ID *or* an email) to /api/auth/login; sign-in by driver ID keeps `driverCode` on the saved account; **driver role-gate**; 401 | login identifier shape, role gate, or saved-account fields change |
 | auth.register/refresh/logout | int | __integration__/auth.int.test.tsx | body, expired refresh→logout | auth flow changes |
+| api/auth.getMe + useMeQuery | unit | hooks/auth/__tests__/auth.test.ts | reads the account back from /api/auth/me; refetches on mount instead of trusting the cache, since a manager edits these details elsewhere; `useLogin` keeps `phoneNumber` on the saved account | the profile screen needs another manager-maintained field |
+| EnrollmentKeyCard + useMyEnrollmentKeyQuery | unit | features/profile/__tests__/EnrollmentKeyCard.test.tsx + hooks/auth/__tests__/auth.test.ts | covered, the field reads "Tap to reveal" and no character of the key is rendered; tapping it reveals the key on one line, re-hides itself after a timeout, and re-masks when rotated while revealed; Copy puts the real key on the clipboard while the display stays masked, then returns the button to "Copy"; shares a message that names the driver and puts the key on its own line, and stays to those two things; survives Share being unavailable or dismissed; a rotation drops a stale "Copied"; error offers a retry rather than a blank card; the query refetches on mount because a rotation silently voids the cached key | the key card's actions change, the masking rule changes, or the key stops being manager-rotatable |
+| DriverProfileScreen "Your details" | unit | screens/__tests__/DriverProfileScreen.test.js | renders the manager's `phoneNumber` (the row read a `phone` field that never existed); server copy wins over the account stored at sign-in for both phone and email; an email the manager cleared disappears rather than lingering; falls back to the stored account while `/me` is in flight | the details shown change, or the merge between stored and server copies changes |
 | AuthContext | unit | context/__tests__/AuthContext.test.tsx | load/save/logout/401-refresh/role-gate | auth logic changes |
 | Login + role-gate + logout | e2e | .maestro/auth-*.yaml | driver in, non-driver rejected, logout | auth UI changes |
 
@@ -22,18 +25,12 @@
 ## Tracking (hero)
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
-| services/socket | unit | services/__tests__/socket.test.ts | emitLocation payload, startTracking ack, stop, cleanup | socket contract changes |
-| useTrackingSession | unit | hooks/__tests__/useTrackingSession.test.ts | start ack ok/fail, stop, cleanup | session logic changes |
-| useLocationBroadcast | unit | hooks/__tests__/useLocationBroadcast.test.ts | permission, throttle, min-distance, offline buffer/replay, stop removes watcher, **accuracy passthrough on LocationFix (Signal Ink GPS stat chip, UI-only, never sent over the wire)** | GPS logic changes |
+| services/socket | unit | services/__tests__/socket.test.ts | emitLocation payload, startTracking ack, cleanup, **stopTracking resolves the server ack when connected, resolves `success:false` without emitting when not connected, resolves `success:false` after a 5s timeout if the ack never arrives, and ignores a late ack that arrives after the timeout already resolved (issue #12)** | socket contract changes |
+| useTrackingSession | unit | hooks/__tests__/useTrackingSession.test.ts | start ack ok/fail, cleanup, logs the server-refusal reason via console.error on a failed ack (issue #20), **stop() awaits the stopTracking ack before resetting to idle; on a failed/timed-out ack it stays in `'tracking'` (not confirmed off duty) and surfaces the error via console.error + `error` state (issue #12)** | session logic changes |
+| useLocationBroadcast | unit | hooks/__tests__/useLocationBroadcast.test.ts | permission, throttle, min-distance, offline buffer/replay, stop removes watcher, **accuracy passthrough on LocationFix (Signal Ink GPS stat chip, UI-only, never sent over the wire)**, **re-checks permission (no prompt) on every AppState foreground transition while active (issues #26, #14): starts the watcher if now granted and not already watching (no-op if inactive/still denied/already watching-and-granted); stops the watcher and flips `permission` to `'denied'` if a previously-granted permission is found revoked mid-shift, so DutyHero's live-status warning (existing `permission === 'denied'` branch) actually surfaces; resumes watching if granted again later; listener removed on unmount** | GPS logic changes |
 | location service / locationUtils | unit | services/__tests__/location.test.ts, helpers/__tests__/locationUtils.test.ts | permission branches, distance/throttle | location logic changes |
 | tracking socket contract | int | __integration__/tracking.int.test.tsx | start/location/stop payloads, ack, reconnect replay | contract changes |
 | Start→broadcast→stop, permission, offline | e2e | .maestro/tracking-*.yaml | core lifecycle + permission + offline | tracking UI changes |
-
-## Earnings
-| Item | Type | Test file | Cases | Update when |
-|---|---|---|---|---|
-| earnings hooks (stats/history/daily/payout) | unit+int | hooks/earnings/__tests__ + __integration__/earnings.int.test.tsx | pagination, payout 409, invalidation | earnings schema changes |
-| Earnings view / payout | e2e | .maestro/earnings.yaml | stats+history, request payout | earnings UI changes |
 
 ## Theme (Signal Ink redesign)
 | Item | Type | Test file | Cases | Update when |
@@ -48,7 +45,7 @@
 | Card | unit | components/ui/__tests__/Card.test.js | renders children, optional title, no-title case | STYLEGUIDE §6.1 Card spec changes |
 | ListRow | unit | components/ui/__tests__/ListRow.test.js | title/subtitle/value render, onPress fires, non-pressable without onPress | STYLEGUIDE §6.1 ListRow spec changes |
 | StatusPill | unit | components/ui/__tests__/StatusPill.test.tsx | label render, neutral/live/warn/danger color mapping, default variant | STYLEGUIDE §6.1 StatusPill spec changes |
-| EmptyState | unit | components/ui/__tests__/EmptyState.test.js | title/subtitle render, action button fires onAction, omitted without action props | STYLEGUIDE §6.1 EmptyState spec changes |
+| EmptyState | unit | components/ui/__tests__/EmptyState.test.js | title/subtitle render, action button fires onAction, omitted without action props, `fill` applies flex:1 (and only then) so an empty list centres in the space left rather than stranding at the top | STYLEGUIDE §6.1 EmptyState spec changes |
 | Skeleton | unit | components/ui/__tests__/Skeleton.test.tsx | renders, width/height/radius applied, pulse loop skipped under reduce-motion | STYLEGUIDE §5 motion tokens change |
 | ConfirmSheet | unit | components/ui/__tests__/ConfirmSheet.test.tsx | title/message render, confirm/cancel callbacks fire, default cancel label | STYLEGUIDE §6.2 ConfirmSheet spec changes |
 | FormInput (Input spec) | unit | components/ui/__tests__/components.test.js | label/placeholder render, error text render/omit | STYLEGUIDE §6.1 Input spec changes |
@@ -60,25 +57,27 @@
 ## Home / DutyHero (Signal Ink)
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
-| dutyHeroState (pure state machine) | unit | features/dashboard/__tests__/dutyHeroState.test.ts | off duty (bus/no bus/connecting), live, live+updated-Ns-ago, reconnecting (priority over denied), permission denied, gpsQualityLabel thresholds | STYLEGUIDE §6.2/§8 DutyHero states or copy change |
-| DutyHero | unit | features/dashboard/__tests__/DutyHero.test.tsx | greeting (with/without bus name), off-duty/no-bus/live/reconnecting/permission-denied states, GO/END callbacks, stat chip values (timer, updates-sent counter, GPS), busy accessibilityState while starting | DutyHero wiring or STYLEGUIDE spec changes |
+| Quick actions (Home) | unit | screens/__tests__/DriverDashboard.test.js | My routes row navigates to RouteManagement, so the route list is reachable without going via Profile | Home action rows change |
+| Go on duty failure surfaced (issue #20) | unit | screens/__tests__/DriverDashboard.test.js | a `useTrackingSession` error state pops an `Alert.alert` with the specific server-refusal message; idle status never alerts | error-surfacing UI or the tracking-session error shape changes |
+| Stop-tracking ack failure surfaced (issue #12) | unit | screens/__tests__/DriverDashboard.test.js | an error while `status === 'tracking'` (an unconfirmed stop) pops "Couldn't confirm you're off duty" with the specific reason; tracking cleanly with no error never alerts | error-surfacing UI or the tracking-session error shape changes |
+| dutyHeroState (pure state machine) | unit | features/dashboard/__tests__/dutyHeroState.test.ts | off duty (bus/no bus/connecting), live, live+updated-Ns-ago, reconnecting (priority over denied), permission denied, gpsQualityLabel thresholds; unassigned-vehicle messaging (issue #21): distinct subline when `hadVehicleBefore` is true, ignored once a vehicle is present again | STYLEGUIDE §6.2/§8 DutyHero states or copy change |
+| DutyHero | unit | features/dashboard/__tests__/DutyHero.test.tsx | greeting (with/without bus name), off-duty/no-bus/live/reconnecting/permission-denied states, GO/END callbacks, stat chip values (timer, updates-sent counter, GPS), busy accessibilityState while starting; no-vehicle vs. unassigned-after-having-one messaging (issue #21) | DutyHero wiring or STYLEGUIDE spec changes |
+| DriverDashboard — unassigned-vehicle messaging (issue #21) | unit | screens/__tests__/DriverDashboard.test.js | never-registered driver sees the generic register message; a driver who previously had a vehicle (persisted in AsyncStorage `driver_had_vehicle_before`) sees the distinct "assignment was removed" message once the vehicle disappears; the flag is persisted the first time a vehicle is observed | vehicle-presence tracking or the persisted-flag key changes |
 | GoButton | unit | features/dashboard/__tests__/GoButton.test.tsx | GO/END label+a11y-label, onPress fires, disabled blocks press, disabled/busy accessibilityState, idle pulse ring only when off-duty+enabled | STYLEGUIDE §6.2 GoButton spec changes |
 | StatChip | unit | features/dashboard/__tests__/StatChip.test.tsx | value/label render | STYLEGUIDE §6.2 StatChip spec changes |
-| VehicleCard (renamed from AssignedBusCard) | unit | features/dashboard/__tests__/VehicleCard.test.tsx | bus details render, route name in sub-line when present, registration fallback, no-bus EmptyState + Add-my-bus action | STYLEGUIDE §6.2 VehicleCard spec changes |
+| VehicleCard (renamed from AssignedBusCard) | unit | features/dashboard/__tests__/VehicleCard.test.tsx | shows the vehicle name only — no internal ID, no seat count; route name as the sub-line when present (absent, not blank, when there is none); renders the `bus` Ionicons glyph rather than the missing-icon "?" that `name="vehicle"` produced; no-bus EmptyState + Add-my-bus action; visibility pill reads Hidden off duty and Visible while broadcasting, and is absent when there is no vehicle | STYLEGUIDE §6.2 VehicleCard spec changes, or seat/ID display returns |
+| Vehicle registration without a seat count | unit | screens/__tests__/VehicleRegistrationScreen.test.js | the form has no Seats field, submit is not blocked on one, and `seatCapacity` is absent from the registerVehicle payload | the seat-count field returns, or the backend requires seatCapacity again (validators.js validateCreateVehicle) |
+| VehicleRegistrationScreen uses useRegisterVehicle, not a raw authenticatedRequest call (issue #19) | unit | screens/__tests__/VehicleRegistrationScreen.test.js | successful save invalidates `qk.myVehicle()` (`['vehicle', 'mine']`) so the Dashboard's VehicleCard reflects the new vehicle immediately on goBack, instead of waiting out its 5-minute staleTime; `api.registerVehicle` is called with the correct `(vehicleData, token)` argument order | the screen stops using the `useRegisterVehicle` hook, or the myVehicle query key changes |
+| VehicleRegistrationScreen draft persistence on failed submission (issue #27) | unit | screens/__tests__/VehicleRegistrationScreen.test.js | typed fields survive an unmount/remount after a server-rejected save (`success: false`) or a network-failure (`isBackendConnectionError`) save, restored from an AsyncStorage draft; the draft is cleared on a successful save so a later registration starts blank | the draft key, the fields persisted, or when the draft is written/cleared changes |
 | CustomRouteSection (restyled, `children` prop removed) | unit | features/dashboard/__tests__/CustomRouteSection.test.tsx | renders null when no custom-route content, awaiting-naming card, create-mode recorder, update-mode recorder, update-route banner + button | recorder/update flow or restyle changes |
 | PermissionDeniedState (restyled, STYLEGUIDE §8 copy) | unit | components/__tests__/PermissionDeniedState.test.tsx | shows exact §8 copy, Allow-location button opens Settings | copy or Settings-link behavior changes |
 | useLocationBroadcast — accuracy passthrough | unit | hooks/__tests__/useLocationBroadcast.test.ts | accuracy carried onto lastFix when reported, undefined when not (UI-only; never sent over the wire) | GPS stat chip data source changes |
 | AppNavigator (MainTabs + root stack) | unit | navigation/__tests__/AppNavigator.test.js | 4 tabs render with Home active by default, tab switch, BusRegistration/RouteManagement push above tabs, login/loading gates | navigation structure changes |
 
-## Earnings / Trips tabs (Signal Ink)
+## Trips tab (Signal Ink)
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
-| DriverEarningsScreen (segmented Summary/History, no ink) | unit | screens/__tests__/DriverEarningsScreen.test.tsx | balance card + Summary content by default, segment switch to History, end-to-end payout flow (open sheet → fill fields → submit → mutate called) | segment layout or payout wiring changes |
-| EarningsSummary (2-up grid) | unit | features/earnings/__tests__/EarningsSummary.test.tsx | today/week/month/pending amounts+trip counts, null-stats zeroing, loading skeletons replace amounts | STYLEGUIDE stat-card spec changes |
-| DailyBreakdownChart (folded into Summary) | unit | features/earnings/__tests__/DailyBreakdownChart.test.tsx | row render, empty state, loading skeletons, error+retry | chart spec or copy changes |
-| EarningsHistoryList (ListRow-style cards + StatusPill) | unit | features/earnings/__tests__/EarningsHistoryList.test.tsx | item render + StatusPill, payout link fires only for PENDING, empty state, loading skeletons, error+retry | history card spec changes |
-| PayoutRequestForm (bottom-sheet style) | unit | features/earnings/__tests__/PayoutRequestForm.test.tsx | field validation, trimmed submit payload, loading spinner replaces Submit label, cancel callback | form fields or sheet styling changes |
-| TripHistoryScreen (Card+ListRow pattern) | unit | screens/__tests__/TripHistoryScreen.test.js | header copy, row render (route/date/amount/StatusPill), empty state (incl. on fetch failure), pull-to-refresh reload | STYLEGUIDE §7.2 Trips spec or copy changes |
+| TripHistoryScreen (Card+ListRow pattern) | unit | screens/__tests__/TripHistoryScreen.test.js | header copy, row render (route/date/start time), no money or payment status rendered even for legacy records, empty state (incl. on fetch failure), pull-to-refresh reload | STYLEGUIDE §7.2 Trips spec or copy changes |
 
 ## Profile / Bus registration / My routes / Login (Signal Ink)
 | Item | Type | Test file | Cases | Update when |
@@ -89,7 +88,7 @@
 | RouteForm (Card + FormInput) | unit | features/route-management/__tests__/RouteForm.test.tsx | field errors, normalized submit payload, form clears after submit, mutation error message | form fields or validation changes |
 | RouteListItem (Card + StatusPill) | unit | features/route-management/__tests__/RouteListItem.test.tsx | route details render, ACTIVE/INACTIVE StatusPill | STYLEGUIDE route-card spec changes |
 | RouteList (EmptyState) | unit | features/route-management/__tests__/RouteList.test.tsx | routes render with count badge, empty state copy, error+retry | list spec or copy changes |
-| LoginScreen (ink hero top 35%) | unit | screens/__tests__/LoginScreen.test.tsx | inputs render, blocked submit + inline errors, valid-credentials mutate call, role-gate error copy, loading state | validation, role gate, or copy changes |
+| LoginScreen (ink hero top 35%) | unit | screens/__tests__/LoginScreen.test.tsx | "Driver ID or email" + password inputs render, blocked submit + inline errors, signs in with either an email or a driver ID, identifier is trimmed, role-gate error copy, loading state | validation, the sign-in identifier, role gate, or copy changes |
 | ShiftBusIcon (recolorable body/detail) | unit | components/__tests__/ShiftBusIcon.test.js | renders at given size, defaults to signal/white, accepts custom colors | mark recoloring changes |
 | lib/errors — INVALID_CREDENTIALS copy | unit | lib/__tests__/errors.test.ts | returns the exact STYLEGUIDE §8 "Wrong email or password. Try again." string | auth error copy changes |
 
@@ -114,15 +113,22 @@
 ## Custom Route Recording (school/work shuttles)
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
-| helpers/geo.js (haversine/distance/elapsed) | unit | src/helpers/__tests__/geo.test.js | distance calc, degenerate input, elapsed formatting | geo math changes |
+| helpers/geo.js (haversine/distance/elapsed/breadcrumb cap) | unit | src/helpers/__tests__/geo.test.js | distance calc, degenerate input, elapsed formatting; appendBreadcrumbPoint (issue #17): normal-length recordings unaffected, halves resolution once MAX_BREADCRUMB_POINTS is exceeded, always keeps the newest point, stays bounded across many points instead of growing forever | geo math or the breadcrumb cap changes |
 | CustomRouteRecorder | unit (Jest+RTL) | src/components/__tests__/CustomRouteRecorder.test.js | coach-mark first-run gating, Track/Add Stop/Complete state machine, breadcrumb accumulation + AsyncStorage persistence, crash/background recovery (resume/submit/discard), add-stop guards (no fix yet, too-close dedupe), record POST payload shape, **update mode** (Phase 2): update-specific copy, no onboarding tour, submits via recordRouteUpdate with routeId, mode-specific AsyncStorage buffer key | recording flow, coach-marks, update mode, or AsyncStorage buffer shape changes |
 | DriverDashboard — Update Route banner (Phase 2) | unit (Jest+RTL) | src/screens/__tests__/DriverDashboard.test.js | banner hidden for normal/no-flag routes, shown when an ACTIVE custom route has a pending change request, tapping it opens CustomRouteRecorder in update mode with the right routeId | off-route flag banner or Update Route entry point changes |
+
+## Boarding / QR Attendance
+| Item | Type | Test file | Cases | Update when |
+|---|---|---|---|---|
+| useBoardingScan | unit | features/boarding/__tests__/useBoardingScan.test.ts | submit success/debounced/error, offline queueing + replay-on-reconnect, **replay retries back off exponentially after consecutive failures (1s, 2s, capped at 8s) instead of hammering the server, resets to no delay once one succeeds, and a fresh all-success replay after a prior success stays undelayed (issue #22)** | scan submission, offline-queue, or retry/backoff logic changes |
+| useBoardingScan → roster invalidation | unit | src/features/boarding/__tests__/useBoardingScan.test.ts | invalidates `['boarding','roster',vehicleId]` on a non-debounced success; not on debounce | scan→roster refresh behaviour changes |
+| QRScannerScreen | unit (Jest+RTL) | screens/__tests__/QRScannerScreen.test.tsx | permission-denied state, submits scanned data, success/debounced/error feedback banners | scan screen UI or feedback copy changes |
+| QRScannerScreen cooldown feedback + queueing (issue #11) | unit (Jest+RTL) | screens/__tests__/QRScannerScreen.test.tsx | a scan landing during the 3s post-scan cooldown shows an explicit "Please wait a moment" banner instead of being silently dropped; it auto-fires the moment the cooldown clears, without a manual re-scan; a later scan during the same cooldown replaces an earlier queued one (only the latest fires); the lock clears cleanly with nothing queued | the cooldown window, queueing behavior, or feedback copy changes |
 
 ## QR Attendance — on-board roster (todo 091)
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
-| api/boarding.getBoardingRoster + useBoardingRosterQuery | unit | src/hooks/boarding/__tests__/useBoardingRosterQuery.test.ts | GET URL/`{busId}` arg, unwraps `{data}`, disabled without busId, error surface | roster endpoint contract or query key/cache policy changes |
-| useBoardingScan → roster invalidation | unit | src/features/boarding/__tests__/useBoardingScan.test.ts | invalidates `['boarding','roster',busId]` on a non-debounced success; not on debounce | scan→roster refresh behaviour changes |
+| api/boarding.getBoardingRoster + useBoardingRosterQuery | unit | src/hooks/boarding/__tests__/useBoardingRosterQuery.test.ts | GET URL/`{vehicleId}` arg, unwraps `{data}`, disabled without vehicleId, error surface | roster endpoint contract or query key/cache policy changes |
 | OnBoardCard (Home "X / Y on board") | unit (Jest+RTL) | src/features/dashboard/__tests__/OnBoardCard.test.tsx | count render + navigate on press, no-enrolled empty state (non-pressable), loading skeleton, hidden on query error | card copy, gating, or navigation target changes |
 | BoardingRosterScreen (enrolled roster page) | unit (Jest+RTL) | src/screens/__tests__/BoardingRosterScreen.test.tsx | count summary, every rider + status pill (ON/OFF/NOT_BOARDED), guests section, empty state, error state, back | roster page layout, status mapping, or guests handling changes |
 | On-board roster flow | e2e | .maestro/on-board-roster.yaml | login → tap "On board" card → assert roster page | Home card entry point or roster screen title changes |

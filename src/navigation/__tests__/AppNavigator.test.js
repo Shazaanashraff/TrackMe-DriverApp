@@ -13,18 +13,12 @@ jest.mock('../../screens/DriverDashboard', () => {
   return function MockDashboard({ navigation }) {
     return (
       <TouchableOpacity
-        onPress={() => navigation.navigate('BusRegistration')}
-        testID="go-to-bus-registration"
+        onPress={() => navigation.navigate('VehicleRegistration')}
+        testID="go-to-vehicle-registration"
       >
         <Text>Dashboard Screen</Text>
       </TouchableOpacity>
     );
-  };
-});
-jest.mock('../../screens/DriverEarningsScreen', () => {
-  const { Text } = require('react-native');
-  return function MockEarnings() {
-    return <Text>Earnings Screen</Text>;
   };
 });
 jest.mock('../../screens/TripHistoryScreen', () => {
@@ -34,28 +28,15 @@ jest.mock('../../screens/TripHistoryScreen', () => {
   };
 });
 jest.mock('../../screens/DriverProfileScreen', () => {
-  const { Text, TouchableOpacity } = require('react-native');
-  return function MockProfile({ navigation }) {
-    return (
-      <TouchableOpacity
-        onPress={() => navigation.navigate('RouteManagement')}
-        testID="go-to-route-management"
-      >
-        <Text>Profile Screen</Text>
-      </TouchableOpacity>
-    );
+  const { Text } = require('react-native');
+  return function MockProfile() {
+    return <Text>Profile Screen</Text>;
   };
 });
-jest.mock('../../screens/BusRegistrationScreen', () => {
+jest.mock('../../screens/VehicleRegistrationScreen', () => {
   const { Text } = require('react-native');
-  return function MockBusRegistration() {
-    return <Text>Bus Registration Screen</Text>;
-  };
-});
-jest.mock('../../screens/RouteManagementScreen', () => {
-  const { Text } = require('react-native');
-  return function MockRouteManagement() {
-    return <Text>Route Management Screen</Text>;
+  return function MockVehicleRegistration() {
+    return <Text>Vehicle Registration Screen</Text>;
   };
 });
 jest.mock('../../screens/LoginScreen', () => {
@@ -87,33 +68,26 @@ describe('AppNavigator', () => {
     useAuth.mockReturnValue({ user: { name: 'Driver' }, loading: false });
   });
 
-  it('renders all four tab labels with Home active by default', () => {
-    const { getByText } = renderNav();
+  it('renders all three tab labels with Home active by default', () => {
+    const { getByText, queryByText } = renderNav();
     expect(getByText('Dashboard Screen')).toBeTruthy();
     expect(getByText('Home')).toBeTruthy();
-    expect(getByText('Earnings')).toBeTruthy();
     expect(getByText('Trips')).toBeTruthy();
     expect(getByText('Profile')).toBeTruthy();
+    expect(queryByText('Earnings')).toBeNull();
   });
 
   it('switches tabs on tap', () => {
     const { getByText, queryByText } = renderNav();
-    fireEvent.press(getByText('Earnings'));
-    expect(getByText('Earnings Screen')).toBeTruthy();
+    fireEvent.press(getByText('Trips'));
+    expect(getByText('Trips Screen')).toBeTruthy();
     expect(queryByText('Dashboard Screen')).toBeNull();
   });
 
-  it('pushes BusRegistration above the tabs', async () => {
+  it('pushes VehicleRegistration above the tabs', async () => {
     const { getByTestId, findByText } = renderNav();
-    fireEvent.press(getByTestId('go-to-bus-registration'));
-    expect(await findByText('Bus Registration Screen')).toBeTruthy();
-  });
-
-  it('pushes RouteManagement above the tabs', async () => {
-    const { getByText, getByTestId, findByText } = renderNav();
-    fireEvent.press(getByText('Profile'));
-    fireEvent.press(getByTestId('go-to-route-management'));
-    expect(await findByText('Route Management Screen')).toBeTruthy();
+    fireEvent.press(getByTestId('go-to-vehicle-registration'));
+    expect(await findByText('Vehicle Registration Screen')).toBeTruthy();
   });
 
   it('shows the login screen when logged out', () => {

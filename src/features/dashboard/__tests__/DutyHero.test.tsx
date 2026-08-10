@@ -4,25 +4,26 @@ import DutyHero from '../DutyHero';
 
 const baseProps = {
   firstName: 'Nadia',
-  busName: 'Shuttle 1',
+  vehicleName: 'Shuttle 1',
   status: 'idle' as const,
   isReconnecting: false,
   connecting: false,
   permission: 'granted' as const,
   lastFix: null,
-  hasBus: true,
+  hasVehicle: true,
+  hadVehicleBefore: false,
   onGoPress: jest.fn(),
   onEndPress: jest.fn(),
 };
 
 describe('DutyHero', () => {
-  it('renders the greeting with first name and bus name', () => {
+  it('renders the greeting with first name and vehicle name', () => {
     const { getByText } = render(<DutyHero {...baseProps} />);
     expect(getByText('Hi Nadia · Shuttle 1')).toBeTruthy();
   });
 
-  it('omits the bus name from the greeting when there is none', () => {
-    const { getByText } = render(<DutyHero {...baseProps} busName={undefined} />);
+  it('omits the vehicle name from the greeting when there is none', () => {
+    const { getByText } = render(<DutyHero {...baseProps} vehicleName={undefined} />);
     expect(getByText('Hi Nadia')).toBeTruthy();
   });
 
@@ -33,7 +34,7 @@ describe('DutyHero', () => {
         <DutyHero {...baseProps} onGoPress={onGoPress} />
       );
       expect(getByText("You're off duty")).toBeTruthy();
-      expect(getByText("Riders can't see your bus yet")).toBeTruthy();
+      expect(getByText("Riders can't see you yet")).toBeTruthy();
       fireEvent.press(getByLabelText('Go online'));
       expect(onGoPress).toHaveBeenCalledTimes(1);
     });
@@ -44,15 +45,23 @@ describe('DutyHero', () => {
     });
   });
 
-  describe('no bus state', () => {
-    it('disables GO and shows the register-bus subline', () => {
+  describe('no vehicle state', () => {
+    it('disables GO and shows the register-vehicle subline', () => {
       const onGoPress = jest.fn();
       const { getByText, getByLabelText } = render(
-        <DutyHero {...baseProps} hasBus={false} onGoPress={onGoPress} />
+        <DutyHero {...baseProps} hasVehicle={false} onGoPress={onGoPress} />
       );
-      expect(getByText('Register your bus to go live')).toBeTruthy();
+      expect(getByText('Register your vehicle to go live')).toBeTruthy();
       fireEvent.press(getByLabelText('Go online'));
       expect(onGoPress).not.toHaveBeenCalled();
+    });
+
+    it('shows the unassigned message instead when the driver had a vehicle before (issue #21)', () => {
+      const { getByText, queryByText } = render(
+        <DutyHero {...baseProps} hasVehicle={false} hadVehicleBefore />
+      );
+      expect(getByText('Your vehicle assignment was removed — contact your manager')).toBeTruthy();
+      expect(queryByText('Register your vehicle to go live')).toBeNull();
     });
   });
 
@@ -74,7 +83,7 @@ describe('DutyHero', () => {
       const { getByText } = render(
         <DutyHero {...baseProps} status="tracking" lastFix={{ lat: 1, lng: 1, timestamp: Date.now() }} />
       );
-      expect(getByText(/Riders can see your bus · updated \d+s ago/)).toBeTruthy();
+      expect(getByText(/Riders can see your vehicle · updated \d+s ago/)).toBeTruthy();
     });
 
     it('counts a new updates-sent tick each time lastFix changes', () => {
@@ -116,7 +125,7 @@ describe('DutyHero', () => {
         <DutyHero {...baseProps} status="tracking" isReconnecting />
       );
       expect(getByText('Reconnecting…')).toBeTruthy();
-      expect(getByText('Hang tight — finding the server')).toBeTruthy();
+      expect(getByText('Hang tight, finding the server')).toBeTruthy();
     });
   });
 
@@ -126,7 +135,7 @@ describe('DutyHero', () => {
         <DutyHero {...baseProps} status="tracking" permission="denied" />
       );
       expect(getByText("You're live")).toBeTruthy();
-      expect(getByText('Allow location so riders can see your bus')).toBeTruthy();
+      expect(getByText('Allow location so riders can see your vehicle')).toBeTruthy();
       expect(getByText('Allow location')).toBeTruthy();
     });
   });

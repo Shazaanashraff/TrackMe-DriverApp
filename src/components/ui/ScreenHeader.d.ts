@@ -6,6 +6,7 @@ interface ScreenHeaderProps {
   onBack?: () => void;
   rightElement?: React.ReactNode;
   style?: ViewStyle;
+  onInk?: boolean;
 }
 
 declare const ScreenHeader: React.FC<ScreenHeaderProps>;

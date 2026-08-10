@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import * as Location from 'expo-location';
 import { emitLocation, getConnectionState, onConnectionStateChange } from '../services/socket';
 import { shouldEmit, LocationFix } from '../helpers/locationUtils';
@@ -9,9 +10,21 @@ const MIN_DISTANCE_METERS = 3;
 const MIN_INTERVAL_MS = 2500;
 const MAX_BUFFER_SIZE = 50;
 
+// expo-location's web build can throw on subscription.remove()
+// ("LocationEventEmitter.removeSubscription is not a function") depending on the
+// Expo/RN version. Removing the watcher must never crash the app (e.g. on End
+// Journey), so swallow that teardown error.
+export function safeRemove(subscription: { remove: () => void } | null): void {
+  try {
+    subscription?.remove();
+  } catch {
+    /* expo-location web teardown incompatibility — safe to ignore */
+  }
+}
+
 export interface UseLocationBroadcastOptions {
   active: boolean;
-  busId: string;
+  vehicleId: string;
   routeId: string;
 }
 
@@ -27,7 +40,7 @@ function isNackResponse(response: unknown): boolean {
 
 export function useLocationBroadcast({
   active,
-  busId,
+  vehicleId,
   routeId,
 }: UseLocationBroadcastOptions): UseLocationBroadcastResult {
   const [permission, setPermission] = useState<LocationPermissionStatus>('undetermined');
@@ -46,13 +59,13 @@ export function useLocationBroadcast({
 
   const emitFix = useCallback(
     (fix: LocationFix) => {
-      emitLocation(busId, routeId, fix.lat, fix.lng, (response: unknown) => {
+      emitLocation(vehicleId, routeId, fix.lat, fix.lng, (response: unknown) => {
         if (isNackResponse(response)) {
           pushToBuffer(fix);
         }
       });
     },
-    [busId, routeId, pushToBuffer]
+    [vehicleId, routeId, pushToBuffer]
   );
 
   const handleFix = useCallback(
@@ -83,6 +96,24 @@ export function useLocationBroadcast({
     return unsubscribe;
   }, [emitFix]);
 
+  const beginWatching = useCallback(() => {
+    return Location.watchPositionAsync(
+      {
+        accuracy: Location.Accuracy.High,
+        timeInterval: 3000,
+        distanceInterval: 3,
+      },
+      (location: { coords: { latitude: number; longitude: number; accuracy?: number | null } }) => {
+        handleFix({
+          lat: location.coords.latitude,
+          lng: location.coords.longitude,
+          timestamp: Date.now(),
+          accuracy: location.coords.accuracy,
+        });
+      }
+    );
+  }, [handleFix]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -92,23 +123,9 @@ export function useLocationBroadcast({
       setPermission(status === 'granted' ? 'granted' : 'denied');
       if (status !== 'granted') return;
 
-      const subscription = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 3000,
-          distanceInterval: 3,
-        },
-        (location: { coords: { latitude: number; longitude: number; accuracy?: number | null } }) => {
-          handleFix({
-            lat: location.coords.latitude,
-            lng: location.coords.longitude,
-            timestamp: Date.now(),
-            accuracy: location.coords.accuracy,
-          });
-        }
-      );
+      const subscription = await beginWatching();
       if (cancelled) {
-        subscription.remove();
+        safeRemove(subscription);
         return;
       }
       subscriptionRef.current = subscription;
@@ -121,13 +138,57 @@ export function useLocationBroadcast({
     return () => {
       cancelled = true;
       if (subscriptionRef.current) {
-        subscriptionRef.current.remove();
+        safeRemove(subscriptionRef.current);
         subscriptionRef.current = null;
       }
       lastFixRef.current = null;
       setLastFix(null);
     };
-  }, [active, handleFix]);
+  }, [active, beginWatching]);
+
+  // Permission can change in either direction while a driver is on duty: granted
+  // later via the OS Settings app after an earlier denial (issue #26), or revoked
+  // mid-shift (issue #14) — neither was picked up without an app restart, since
+  // permission was only ever checked once at mount. Re-checks (without prompting)
+  // whenever the app returns to the foreground while tracking is meant to be
+  // active: starts the watcher if now granted and not already watching, and stops
+  // it (surfacing the denied state to DutyHero's live-status UI) if now denied.
+  useEffect(() => {
+    let cancelled = false;
+
+    const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (nextState !== 'active' || !active) return;
+
+      (async () => {
+        const { status } = await Location.getForegroundPermissionsAsync();
+        if (cancelled) return;
+
+        if (status !== 'granted') {
+          setPermission('denied');
+          if (subscriptionRef.current) {
+            safeRemove(subscriptionRef.current);
+            subscriptionRef.current = null;
+          }
+          return;
+        }
+
+        setPermission('granted');
+        if (subscriptionRef.current) return;
+
+        const watcher = await beginWatching();
+        if (cancelled || subscriptionRef.current) {
+          safeRemove(watcher);
+          return;
+        }
+        subscriptionRef.current = watcher;
+      })();
+    });
+
+    return () => {
+      cancelled = true;
+      subscription.remove();
+    };
+  }, [active, beginWatching]);
 
   return { permission, bufferedCount, lastFix };
 }

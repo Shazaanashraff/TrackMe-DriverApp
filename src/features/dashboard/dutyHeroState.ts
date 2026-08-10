@@ -19,7 +19,11 @@ export interface DeriveDutyHeroStateInput {
   isReconnecting: boolean;
   connecting: boolean;
   permission: LocationPermissionStatus;
-  hasBus: boolean;
+  hasVehicle: boolean;
+  // True once this driver has been observed to have a vehicle at all, even if
+  // useMyVehicleQuery now returns none — distinguishes "never registered" from
+  // "a manager unassigned it" (issue #21). Ignored when hasVehicle is true.
+  hadVehicleBefore: boolean;
   secondsSinceFix: number | null;
 }
 
@@ -28,14 +32,15 @@ export function deriveDutyHeroState({
   isReconnecting,
   connecting,
   permission,
-  hasBus,
+  hasVehicle,
+  hadVehicleBefore,
   secondsSinceFix,
 }: DeriveDutyHeroStateInput): DutyHeroState {
   if (status === 'tracking') {
     if (isReconnecting) {
       return {
         headline: 'Reconnecting…',
-        subline: 'Hang tight — finding the server',
+        subline: 'Hang tight, finding the server',
         dot: 'warn',
         showAllowLocation: false,
         goDisabled: false,
@@ -45,7 +50,7 @@ export function deriveDutyHeroState({
     if (permission === 'denied') {
       return {
         headline: "You're live",
-        subline: 'Allow location so riders can see your bus',
+        subline: 'Allow location so riders can see your vehicle',
         dot: 'warn',
         showAllowLocation: true,
         goDisabled: false,
@@ -56,8 +61,8 @@ export function deriveDutyHeroState({
       headline: "You're live",
       subline:
         secondsSinceFix != null
-          ? `Riders can see your bus · updated ${secondsSinceFix}s ago`
-          : 'Riders can see your bus',
+          ? `Riders can see your vehicle · updated ${secondsSinceFix}s ago`
+          : 'Riders can see your vehicle',
       dot: 'on',
       showAllowLocation: false,
       goDisabled: false,
@@ -67,17 +72,19 @@ export function deriveDutyHeroState({
   if (connecting) {
     return {
       headline: "You're off duty",
-      subline: 'Hang tight — finding the server',
+      subline: 'Hang tight, finding the server',
       dot: 'off',
       showAllowLocation: false,
-      goDisabled: !hasBus,
+      goDisabled: !hasVehicle,
     };
   }
 
-  if (!hasBus) {
+  if (!hasVehicle) {
     return {
       headline: "You're off duty",
-      subline: 'Register your bus to go live',
+      subline: hadVehicleBefore
+        ? 'Your vehicle assignment was removed — contact your manager'
+        : 'Register your vehicle to go live',
       dot: 'off',
       showAllowLocation: false,
       goDisabled: true,
@@ -86,7 +93,7 @@ export function deriveDutyHeroState({
 
   return {
     headline: "You're off duty",
-    subline: "Riders can't see your bus yet",
+    subline: "Riders can't see you yet",
     dot: 'off',
     showAllowLocation: false,
     goDisabled: false,

@@ -9,7 +9,7 @@ Keep tests + `docs/TESTING_GUIDE.md` in sync with code changes.
 - Socket tracking events/payloads change (`driver:location`, `driver:start-tracking`,
   `driver:stop-tracking`) or the location service / `useLocationBroadcast` / `useTrackingSession`
   behavior changes.
-- Screen/flow steps change for tracking, bus registration, route management, or earnings.
+- Screen/flow steps change for tracking, bus registration, route management, or trips.
 - Helper/lib behavior changes (formatters, locationUtils, errors, queryKeys).
 - Error-handling or permission UX changes (InlineError, ErrorState, OfflineBanner, tracking
   status, permission state).

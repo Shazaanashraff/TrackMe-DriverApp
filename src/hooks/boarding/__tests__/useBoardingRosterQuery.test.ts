@@ -27,9 +27,9 @@ function makeWrapper() {
 }
 
 const ROSTER = {
-  busId: 'BUS-1',
+  vehicleId: 'VEH-1',
   routeId: 'RT-1',
-  tripId: 'BUS-1#2026-07-22',
+  tripId: 'VEH-1#2026-07-22',
   enrolledCount: 3,
   onBoardCount: 1,
   roster: [{ studentId: 's1', studentName: 'Anna', status: 'ON', lastEventAt: '2026-07-22T08:00:00Z' }],
@@ -43,16 +43,16 @@ describe('useBoardingRosterQuery', () => {
     (mockApi.getBoardingRoster as jest.Mock).mockResolvedValueOnce({ success: true, data: ROSTER });
 
     const { wrapper } = makeWrapper();
-    const { result } = renderHook(() => useBoardingRosterQuery('BUS-1'), { wrapper });
+    const { result } = renderHook(() => useBoardingRosterQuery('VEH-1'), { wrapper });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockApi.getBoardingRoster).toHaveBeenCalledWith('tok', { busId: 'BUS-1' });
+    expect(mockApi.getBoardingRoster).toHaveBeenCalledWith('tok', { vehicleId: 'VEH-1' });
     expect(result.current.data?.enrolledCount).toBe(3);
     expect(result.current.data?.onBoardCount).toBe(1);
     expect(result.current.data?.roster[0].studentName).toBe('Anna');
   });
 
-  it('is disabled (no fetch) when busId is empty', async () => {
+  it('is disabled (no fetch) when vehicleId is empty', async () => {
     const { wrapper } = makeWrapper();
     const { result } = renderHook(() => useBoardingRosterQuery(''), { wrapper });
 
@@ -64,7 +64,7 @@ describe('useBoardingRosterQuery', () => {
     (mockApi.getBoardingRoster as jest.Mock).mockRejectedValueOnce(new Error('403'));
 
     const { wrapper } = makeWrapper();
-    const { result } = renderHook(() => useBoardingRosterQuery('BUS-1'), { wrapper });
+    const { result } = renderHook(() => useBoardingRosterQuery('VEH-1'), { wrapper });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
   });

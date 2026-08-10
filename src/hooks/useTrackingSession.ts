@@ -10,8 +10,8 @@ export interface UseTrackingSessionResult {
   // True while `status` is 'tracking' but the socket has dropped — coordinates with
   // useLocationBroadcast (019) and the offline buffer (073) to show "reconnecting, buffering".
   isReconnecting: boolean;
-  start: (busId: string) => Promise<void>;
-  stop: (busId: string) => void;
+  start: (vehicleId: string) => Promise<void>;
+  stop: (vehicleId: string) => Promise<void>;
 }
 
 export function useTrackingSession(): UseTrackingSessionResult {
@@ -19,7 +19,7 @@ export function useTrackingSession(): UseTrackingSessionResult {
   const [error, setError] = useState<AppError | undefined>(undefined);
   const [isReconnecting, setIsReconnecting] = useState(false);
   const statusRef = useRef<TrackingStatus>('idle');
-  const activeBusIdRef = useRef<string | null>(null);
+  const activeVehicleIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     statusRef.current = status;
@@ -35,36 +35,54 @@ export function useTrackingSession(): UseTrackingSessionResult {
   }, []);
 
   // Stop cleanly on unmount (covers logout / navigating away mid-session).
+  // Fire-and-forget: the component is gone, so there's nothing left to
+  // update the ack result into.
   useEffect(() => {
     return () => {
-      if (activeBusIdRef.current) {
-        stopTracking(activeBusIdRef.current);
+      if (activeVehicleIdRef.current) {
+        void stopTracking(activeVehicleIdRef.current);
       }
     };
   }, []);
 
-  const start = useCallback(async (busId: string) => {
+  const start = useCallback(async (vehicleId: string) => {
     setStatus('starting');
     setError(undefined);
     setIsReconnecting(false);
 
-    const ack = await startTracking(busId);
+    const ack = await startTracking(vehicleId);
 
     if (ack.success) {
-      activeBusIdRef.current = busId;
+      activeVehicleIdRef.current = vehicleId;
       setStatus('tracking');
     } else {
+      const reason = ack.error || 'Failed to start tracking';
+      // No crash-reporting SDK wired up yet — console.error is the floor so a
+      // "go on duty" failure is at least visible in device/Metro logs (issue #20).
+      console.error(`[useTrackingSession] start('${vehicleId}') refused:`, reason);
       setStatus('error');
-      setError(new AppError('tracking', ack.error || 'Failed to start tracking'));
+      setError(new AppError('tracking', reason));
     }
   }, []);
 
-  const stop = useCallback((busId: string) => {
-    stopTracking(busId);
-    activeBusIdRef.current = null;
-    setIsReconnecting(false);
+  const stop = useCallback(async (vehicleId: string) => {
     setError(undefined);
-    setStatus('idle');
+
+    const ack = await stopTracking(vehicleId);
+
+    if (ack.success) {
+      activeVehicleIdRef.current = null;
+      setIsReconnecting(false);
+      setStatus('idle');
+    } else {
+      // Don't show "off duty" as confirmed until the server has actually
+      // acknowledged the stop (issue #12) — status stays 'tracking' so the
+      // driver knows to retry, and location keeps broadcasting in the
+      // meantime rather than going dark on an unconfirmed stop.
+      const reason = ack.error || "Failed to confirm you're off duty";
+      console.error(`[useTrackingSession] stop('${vehicleId}') unconfirmed:`, reason);
+      setError(new AppError('tracking', reason));
+    }
   }, []);
 
   return { status, error, isReconnecting, start, stop };

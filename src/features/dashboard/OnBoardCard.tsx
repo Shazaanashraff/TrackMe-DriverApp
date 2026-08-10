@@ -8,15 +8,15 @@ import Skeleton from '../../components/ui/Skeleton';
 import { useBoardingRosterQuery } from '../../hooks/boarding';
 
 type Props = {
-  busId: string;
+  vehicleId: string;
   onPress: () => void;
 };
 
-// Home-screen "X / Y on board" card. Y = riders enrolled on the bus's route. Tapping opens
+// Home-screen "X / Y on board" card. Y = riders enrolled with this driver. Tapping opens
 // the full roster page. Hidden entirely when the route isn't QR-enabled (the query errors)
 // so it never shows a broken/zero card on ordinary public routes.
-export default function OnBoardCard({ busId, onPress }: Props) {
-  const { data, isLoading, isError } = useBoardingRosterQuery(busId);
+export default function OnBoardCard({ vehicleId, onPress }: Props) {
+  const { data, isLoading, isError } = useBoardingRosterQuery(vehicleId);
 
   if (isError) return null;
 
@@ -47,7 +47,7 @@ export default function OnBoardCard({ busId, onPress }: Props) {
       <View style={styles.textBlock}>
         <AppText variant="body">On board</AppText>
         <AppText variant="label" color={theme.color.text.muted}>
-          {hasEnrolled ? 'Enrolled riders on this route' : 'No enrolled riders yet'}
+          {hasEnrolled ? 'Enrolled riders' : 'No enrolled riders yet'}
         </AppText>
       </View>
       {hasEnrolled ? (

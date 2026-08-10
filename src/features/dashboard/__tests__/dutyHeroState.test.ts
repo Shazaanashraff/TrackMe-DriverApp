@@ -5,32 +5,44 @@ const base = {
   isReconnecting: false,
   connecting: false,
   permission: 'granted' as const,
-  hasBus: true,
+  hasVehicle: true,
+  hadVehicleBefore: false,
   secondsSinceFix: null,
 };
 
 describe('deriveDutyHeroState', () => {
-  it('off duty with a bus', () => {
+  it('off duty with a vehicle', () => {
     const state = deriveDutyHeroState(base);
     expect(state).toEqual({
       headline: "You're off duty",
-      subline: "Riders can't see your bus yet",
+      subline: "Riders can't see you yet",
       dot: 'off',
       showAllowLocation: false,
       goDisabled: false,
     });
   });
 
-  it('off duty without a bus disables GO', () => {
-    const state = deriveDutyHeroState({ ...base, hasBus: false });
-    expect(state.subline).toBe('Register your bus to go live');
+  it('off duty without a vehicle disables GO', () => {
+    const state = deriveDutyHeroState({ ...base, hasVehicle: false });
+    expect(state.subline).toBe('Register your vehicle to go live');
     expect(state.goDisabled).toBe(true);
+  });
+
+  it('shows a distinct message when a manager unassigned a previously-held vehicle (issue #21)', () => {
+    const state = deriveDutyHeroState({ ...base, hasVehicle: false, hadVehicleBefore: true });
+    expect(state.subline).toBe('Your vehicle assignment was removed — contact your manager');
+    expect(state.goDisabled).toBe(true);
+  });
+
+  it('hadVehicleBefore is ignored once a vehicle is present again', () => {
+    const state = deriveDutyHeroState({ ...base, hasVehicle: true, hadVehicleBefore: true });
+    expect(state.subline).toBe("Riders can't see you yet");
   });
 
   it('off duty while the socket is still connecting', () => {
     const state = deriveDutyHeroState({ ...base, connecting: true });
     expect(state.headline).toBe("You're off duty");
-    expect(state.subline).toBe('Hang tight — finding the server');
+    expect(state.subline).toBe('Hang tight, finding the server');
   });
 
   it('live and broadcasting', () => {
@@ -41,7 +53,7 @@ describe('deriveDutyHeroState', () => {
     });
     expect(state).toEqual({
       headline: "You're live",
-      subline: 'Riders can see your bus · updated 4s ago',
+      subline: 'Riders can see your vehicle · updated 4s ago',
       dot: 'on',
       showAllowLocation: false,
       goDisabled: false,
@@ -50,7 +62,7 @@ describe('deriveDutyHeroState', () => {
 
   it('live with no fix yet omits the "updated Ns ago" suffix', () => {
     const state = deriveDutyHeroState({ ...base, status: 'tracking', secondsSinceFix: null });
-    expect(state.subline).toBe('Riders can see your bus');
+    expect(state.subline).toBe('Riders can see your vehicle');
   });
 
   it('reconnecting while tracking', () => {
@@ -61,7 +73,7 @@ describe('deriveDutyHeroState', () => {
     });
     expect(state).toEqual({
       headline: 'Reconnecting…',
-      subline: 'Hang tight — finding the server',
+      subline: 'Hang tight, finding the server',
       dot: 'warn',
       showAllowLocation: false,
       goDisabled: false,
@@ -76,7 +88,7 @@ describe('deriveDutyHeroState', () => {
     });
     expect(state).toEqual({
       headline: "You're live",
-      subline: 'Allow location so riders can see your bus',
+      subline: 'Allow location so riders can see your vehicle',
       dot: 'warn',
       showAllowLocation: true,
       goDisabled: false,

@@ -21,7 +21,7 @@ export type RosterGuest = {
 };
 
 export type BoardingRoster = {
-  busId: string;
+  vehicleId: string;
   routeId: string;
   tripId: string;
   enrolledCount: number;
@@ -36,16 +36,16 @@ function unwrap<T>(response: unknown): T {
   return ((response as { data?: T })?.data ?? response) as T;
 }
 
-// Enrolled roster + live on-board count for the driver's assigned bus. Powers the
+// Enrolled roster + live on-board count for the driver's assigned vehicle. Powers the
 // dashboard "X / Y on board" card and the BoardingRoster screen. Kept short-lived so a
 // return to the Home tab after scanning reflects the latest counts; the scanner also
 // invalidates this query on a successful scan (see useBoardingScan).
-export function useBoardingRosterQuery(busId: string) {
+export function useBoardingRosterQuery(vehicleId: string) {
   const { token } = useAuth() as AuthCtx;
   return useQuery<BoardingRoster>({
-    queryKey: qk.boardingRoster(busId),
-    queryFn: async () => unwrap<BoardingRoster>(await api.getBoardingRoster(token!, { busId })),
-    enabled: !!token && !!busId,
+    queryKey: qk.boardingRoster(vehicleId),
+    queryFn: async () => unwrap<BoardingRoster>(await api.getBoardingRoster(token!, { vehicleId })),
+    enabled: !!token && !!vehicleId,
     staleTime: THIRTY_SECONDS,
   });
 }

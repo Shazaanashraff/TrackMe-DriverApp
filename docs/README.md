@@ -44,3 +44,5 @@ touching it:
 - **[../CHANGELOG.md](../CHANGELOG.md)** · **[PROGRESS.md](PROGRESS.md)** · **[SELF_CONTAINED_CHECKLIST.md](SELF_CONTAINED_CHECKLIST.md)**
 - **Enforcement:** [`../scripts/check-docs.mjs`](../scripts/check-docs.mjs) + `.githooks/pre-push`.
   Enable with `git config core.hooksPath .githooks`.
+
+> Canonical backend integration/CRUD matrix: `../../backend/docs/TEST_PLAN_INTEGRATION.md`.

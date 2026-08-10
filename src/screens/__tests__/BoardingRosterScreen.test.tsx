@@ -3,9 +3,9 @@ import { render, fireEvent } from '@testing-library/react-native';
 import BoardingRosterScreen from '../BoardingRosterScreen';
 import { useBoardingRosterQuery } from '../../hooks/boarding';
 
-jest.mock('../../hooks/bus', () => ({
+jest.mock('../../hooks/vehicle', () => ({
   __esModule: true,
-  useMyBusQuery: () => ({ data: { data: { busId: 'BUS-1' } } }),
+  useMyVehicleQuery: () => ({ data: { data: { vehicleId: 'VEH-1' } } }),
 }));
 
 jest.mock('../../hooks/boarding', () => ({
@@ -16,11 +16,11 @@ jest.mock('../../hooks/boarding', () => ({
 const mockUse = useBoardingRosterQuery as jest.Mock;
 
 const nav = { goBack: jest.fn() };
-const routeParams = { params: { busId: 'BUS-1' } };
+const routeParams = { params: { vehicleId: 'VEH-1' } };
 
 function fullRoster() {
   return {
-    busId: 'BUS-1', routeId: 'RT-1', tripId: 'BUS-1#2026-07-22',
+    vehicleId: 'VEH-1', routeId: 'RT-1', tripId: 'VEH-1#2026-07-22',
     enrolledCount: 3, onBoardCount: 1,
     roster: [
       { studentId: 's1', studentName: 'Anna', status: 'ON', lastEventAt: '2026-07-22T08:00:00Z' },

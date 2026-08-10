@@ -10,6 +10,8 @@ interface FormInputProps {
   placeholder?: string;
   keyboardType?: string;
   autoCapitalize?: string;
+  // Forwarded to the underlying TextInput along with the rest of the props.
+  autoCorrect?: boolean;
   secureTextEntry?: boolean;
   style?: ViewStyle;
 }

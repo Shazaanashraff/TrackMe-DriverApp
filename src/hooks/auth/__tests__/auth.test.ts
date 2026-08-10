@@ -1,7 +1,7 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
-import { useLogin, useRegister, useLogout } from '../index';
+import { useLogin, useRegister, useLogout, useMeQuery, useMyEnrollmentKeyQuery } from '../index';
 
 jest.mock('../../../services/api', () => ({
   __esModule: true,
@@ -9,6 +9,8 @@ jest.mock('../../../services/api', () => ({
     login: jest.fn(),
     register: jest.fn(),
     logout: jest.fn(),
+    getMe: jest.fn(),
+    getMyEnrollmentKey: jest.fn(),
   },
 }));
 
@@ -25,6 +27,7 @@ jest.mock('../../../context/AuthContext', () => ({
   useAuth: () => ({
     login: mockLogin,
     logout: mockLogout,
+    token: 'tok',
   }),
 }));
 
@@ -56,13 +59,37 @@ describe('useLogin', () => {
 
     const { result } = renderHook(() => useLogin(), { wrapper: makeWrapper() });
     act(() => {
-      result.current.mutate({ email: 'a@b.com', password: 'pass' });
+      result.current.mutate({ identifier: 'a@b.com', password: 'pass' });
     });
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockApi.login).toHaveBeenCalledWith('a@b.com', 'pass');
     expect(mockLogin).toHaveBeenCalledWith(
       { _id: '1', name: 'Driver One', email: 'a@b.com', role: 'driver' },
+      'tok',
+      'ref'
+    );
+  });
+
+  it('signs in with a driver ID and keeps it on the saved account', async () => {
+    const fakeData = {
+      user: {
+        _id: '3', name: 'Code Driver', email: '', driverCode: 'DRV-4K7P-9XQ2', role: 'driver',
+      },
+      accessToken: 'tok',
+      refreshToken: 'ref',
+    };
+    (mockApi.login as jest.Mock).mockResolvedValueOnce(fakeData);
+
+    const { result } = renderHook(() => useLogin(), { wrapper: makeWrapper() });
+    act(() => {
+      result.current.mutate({ identifier: 'DRV-4K7P-9XQ2', password: 'pass' });
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockApi.login).toHaveBeenCalledWith('DRV-4K7P-9XQ2', 'pass');
+    expect(mockLogin).toHaveBeenCalledWith(
+      { _id: '3', name: 'Code Driver', email: '', driverCode: 'DRV-4K7P-9XQ2', role: 'driver' },
       'tok',
       'ref'
     );
@@ -78,7 +105,7 @@ describe('useLogin', () => {
 
     const { result } = renderHook(() => useLogin(), { wrapper: makeWrapper() });
     act(() => {
-      result.current.mutate({ email: 'p@b.com', password: 'pass' });
+      result.current.mutate({ identifier: 'p@b.com', password: 'pass' });
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -91,7 +118,7 @@ describe('useLogin', () => {
 
     const { result } = renderHook(() => useLogin(), { wrapper: makeWrapper() });
     act(() => {
-      result.current.mutate({ email: 'a@b.com', password: 'wrong' });
+      result.current.mutate({ identifier: 'a@b.com', password: 'wrong' });
     });
 
     await waitFor(() => expect(result.current.isError).toBe(true));
@@ -110,6 +137,108 @@ describe('useRegister', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockApi.register).toHaveBeenCalledWith('Alice', 'a@b.com', 'pass', 'driver');
+  });
+});
+
+describe('useLogin — manager-maintained details', () => {
+  it('keeps the phone number on the saved account', async () => {
+    // The stored account is built field by field, so anything left out of that
+    // list is simply absent afterwards. The profile screen showed "-" for every
+    // driver's phone because phoneNumber was never carried over.
+    (mockApi.login as jest.Mock).mockResolvedValueOnce({
+      user: {
+        _id: '4', name: 'Phoned Driver', email: '', driverCode: 'DRV-1111-2222',
+        phoneNumber: '0766518388', role: 'driver',
+      },
+      accessToken: 'tok',
+      refreshToken: 'ref',
+    });
+
+    const { result } = renderHook(() => useLogin(), { wrapper: makeWrapper() });
+    act(() => {
+      result.current.mutate({ identifier: 'DRV-1111-2222', password: 'pass' });
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockLogin).toHaveBeenCalledWith(
+      expect.objectContaining({ phoneNumber: '0766518388' }),
+      'tok',
+      'ref'
+    );
+  });
+});
+
+describe('useMeQuery', () => {
+  it('reads the account back from the server', async () => {
+    (mockApi.getMe as jest.Mock).mockResolvedValueOnce({
+      user: { _id: '1', name: 'Driver One', phoneNumber: '0766518388', role: 'driver' },
+    });
+
+    const { result } = renderHook(() => useMeQuery(), { wrapper: makeWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockApi.getMe).toHaveBeenCalledWith('tok');
+    expect((result.current.data as { user: { phoneNumber: string } }).user.phoneNumber)
+      .toBe('0766518388');
+  });
+
+  it('refetches on mount rather than trusting what is already cached', async () => {
+    // A manager edits these details on their own device, so a cached copy has
+    // no way of knowing it is out of date.
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    qc.setQueryData(['me'], { user: { phoneNumber: '0000000000' } });
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: qc }, children);
+
+    (mockApi.getMe as jest.Mock).mockResolvedValueOnce({
+      user: { phoneNumber: '0771234567' },
+    });
+
+    const { result } = renderHook(() => useMeQuery(), { wrapper });
+
+    await waitFor(() => expect(mockApi.getMe).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect((result.current.data as { user: { phoneNumber: string } }).user.phoneNumber)
+        .toBe('0771234567')
+    );
+  });
+});
+
+describe('useMyEnrollmentKeyQuery', () => {
+  it('reads the driver own key', async () => {
+    (mockApi.getMyEnrollmentKey as jest.Mock).mockResolvedValueOnce({
+      data: { enrollmentKey: 'TMD-QMCZ-9NL2-TJNQ', isPrivate: true },
+    });
+
+    const { result } = renderHook(() => useMyEnrollmentKeyQuery(), { wrapper: makeWrapper() });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockApi.getMyEnrollmentKey).toHaveBeenCalledWith('tok');
+  });
+
+  it('refetches on mount, since a rotation silently voids the cached key', async () => {
+    // Handing out a key the manager has already replaced is worse than a
+    // spinner: the passenger's redeem just fails.
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    qc.setQueryData(['me', 'enrollment-key'], { data: { enrollmentKey: 'TMD-OLD0-OLD0-OLD0' } });
+    const wrapper = ({ children }: { children: React.ReactNode }) =>
+      React.createElement(QueryClientProvider, { client: qc }, children);
+
+    (mockApi.getMyEnrollmentKey as jest.Mock).mockResolvedValueOnce({
+      data: { enrollmentKey: 'TMD-P44B-X3RF-YGNX' },
+    });
+
+    const { result } = renderHook(() => useMyEnrollmentKeyQuery(), { wrapper });
+
+    await waitFor(() => expect(mockApi.getMyEnrollmentKey).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect((result.current.data as { data: { enrollmentKey: string } }).data.enrollmentKey)
+        .toBe('TMD-P44B-X3RF-YGNX')
+    );
   });
 });
 

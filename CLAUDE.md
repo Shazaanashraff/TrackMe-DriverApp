@@ -55,14 +55,17 @@ git config core.hooksPath .githooks
 
 ```
 src/
-  screens/            One file per screen (Dashboard, QRScanner, BoardingRoster,
-                      BusRegistration, RouteManagement, DriverEarnings, TripHistory,
-                      DriverProfile, Login)
-  features/<domain>/  dashboard (DutyHero, GoButton, dutyHeroState.ts, useSocketConnection),
-                      boarding, bus-registration, route-management, earnings
-  components/ui/       Signal Ink primitives; OfflineScreen; CustomRouteRecorder
+  screens/            One file per screen (DriverDashboard, QRScanner, BoardingRoster,
+                      VehicleRegistration, TripHistory, DriverProfile, Login)
+  features/<domain>/  dashboard (DutyHero, GoButton, OnBoardCard, TripProgressCard,
+                      dutyHeroState.ts, useSocketConnection), boarding, vehicle-registration,
+                      profile
+  components/         ErrorBoundary, OfflineScreen, PermissionDeniedState, ShiftVehicleIcon (SVG
+                      logo mark); components/ui/ = Signal Ink primitives
+  context/
+    AuthContext.js    Auth state, login/logout, token refresh, authenticatedRequest()
   navigation/          AppNavigator — auth gate → MainTabs + pushed screens
-  hooks/<domain>/      auth, boarding, bus, earnings, routes (TanStack Query)
+  hooks/<domain>/      auth, boarding, vehicle, route (TanStack Query)
   services/
     api/ + api.js      HTTP calls
     socket.ts          Socket.IO — emitLocation, start/stopTracking
@@ -75,16 +78,23 @@ src/
 ### Navigation flow
 
 ```
-App.js → AppNavigator (root native stack)
-  ├── [offline]     OfflineScreen
-  ├── [logged out]  Login            (only role `driver` may sign in — enforced in LoginScreen)
-  └── [logged in]   MainTabs + pushed: BusRegistration, RouteManagement, QRScanner, BoardingRoster
-        MainTabs: Dashboard (Home) · DriverEarnings · TripHistory · DriverProfile
+App.js
+└── AppNavigator (root native stack)
+    ├── [offline]      → OfflineScreen
+    ├── [logged out]   → Login            (only role `driver` may sign in — enforced in LoginScreen)
+    └── [logged in]    → MainTabs (bottom tabs) + pushed: VehicleRegistration, QRScanner, BoardingRoster
+                           MainTabs:
+                           ├── Dashboard      ("Home" tab — DutyHero + VehicleCard + OnBoardCard + TripProgressCard)
+                           ├── TripHistory    ("Trips" tab)
+                           └── DriverProfile  ("Profile" tab)
 ```
 
-Tab screen names stay `Dashboard`/`DriverEarnings`/`TripHistory`/`DriverProfile` so existing
-`navigation.navigate('…')` call sites keep working; pushed screens are registered on the root
-stack above the tabs, so navigating to them from a tab bubbles up automatically.
+`AppNavigator` receives `backendOnline` prop from `App.js`.
+Tab screen names stay `Dashboard`/`TripHistory`/`DriverProfile` so existing
+`navigation.navigate('…')` call sites keep working; pushed screens (`VehicleRegistration`,
+`QRScanner`, `BoardingRoster`) are registered on the root stack above the tabs, so navigating to
+them from a tab bubbles up automatically.
+See `docs/redesign/SIGNAL_INK_PLAN.md` for the in-progress "Signal Ink" reskin driving this.
 
 ---
 
@@ -102,7 +112,44 @@ stack above the tabs, so navigating to them from a tab bubbles up automatically.
 
 ---
 
-## Running
+## UI components (`src/components/ui/`)
+
+| Component      | Purpose |
+|----------------|---------|
+| `AppText`      | Text with a type-scale `variant` (display/h1/h2/body/label/caption/overline); `onInk` for white-on-navy, `weight` to override the role's default weight |
+| `Card`         | White card, radius 12, hairline border, optional `title` |
+| `ListRow`      | Icon-badge + title/subtitle/value row, optional `onPress` + chevron |
+| `StatusPill`   | Pill badge; variants neutral/live/warn/danger |
+| `EmptyState`   | Centered icon + title/subtitle + optional action Button |
+| `Skeleton`     | Pulsing placeholder block (reduce-motion aware) — replaces full-screen spinners in lists |
+| `ConfirmSheet` | Bottom-sheet confirm/cancel modal (End journey, Log out) |
+| `FormInput`    | Labeled text input; `icon`, `error` props; focus ring in signal blue |
+| `PrimaryButton`| `variant` = primary/secondary/danger; `loading`/`disabled`; override style via `style` prop |
+| `ScreenHeader` | Back (chevron-back) + left-aligned title + right placeholder |
+| `InfoRow`      | Horizontal label/value row with bottom border (used in DriverProfile) |
+| `LoadingScreen`| Full-screen centered ActivityIndicator, page bg + signal-blue spinner |
+| `OfflineBanner` / `InlineError` / `ErrorState` | Status/error surfaces recolored to theme tokens |
+
+All primitives read colors/type/spacing from `src/theme/` only (no hardcoded hex). See
+`docs/redesign/STYLEGUIDE.md` §6.1 for the full spec each one implements.
+
+---
+
+## Helpers (`src/helpers/formatters.js`)
+
+| Function | Returns |
+|----------|---------|
+| `formatCurrency(amount)` | `"Rs. 0.00"` format |
+| `formatDate(dateString)` | `"15 Jun 2024"` format |
+| `formatTime(dateString)` | `"02:30 PM"` format |
+| `formatDateTime(dateString)` | date + time combined |
+
+Used across `TripHistoryScreen` and `DriverProfileScreen`. `formatCurrency` is retained for
+future use; the driver app no longer displays money anywhere (earnings removed 2026-08-07).
+
+---
+
+## Running tests
 
 ```bash
 npm start          # expo

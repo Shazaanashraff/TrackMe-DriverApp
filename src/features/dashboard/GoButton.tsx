@@ -3,7 +3,9 @@ import { Animated, AccessibilityInfo, Pressable, StyleSheet, Text, View } from '
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../theme';
 
-const SIZE = 86;
+// Going on duty is the single thing this app exists to do, so the control gets
+// real presence rather than sitting as a small chip beside the headline.
+const SIZE = 112;
 
 type Props = {
   isLive: boolean;
@@ -77,8 +79,8 @@ export default function GoButton({ isLive, disabled = false, busy = false, onPre
           accessibilityState={{ disabled, busy }}
           style={[styles.button, { backgroundColor: bg, borderColor: ring }]}
         >
-          <View style={disabled ? styles.disabledContent : undefined}>
-            <Ionicons name={isLive ? 'stop' : 'play'} size={20} color={theme.color.white} style={styles.icon} />
+          <View style={disabled ? styles.disabledContent : styles.content}>
+            <Ionicons name={isLive ? 'stop' : 'play'} size={26} color={theme.color.white} style={styles.icon} />
             <Text style={styles.label}>{isLive ? 'END' : 'GO'}</Text>
           </View>
         </Pressable>
@@ -109,6 +111,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  content: {
+    alignItems: 'center',
+  },
   disabledContent: {
     opacity: 0.4,
     alignItems: 'center',
@@ -117,7 +122,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   label: {
-    ...theme.textStyle('caption', { weight: 'medium', color: theme.color.white }),
-    letterSpacing: 1,
+    ...theme.textStyle('label', { weight: 'medium', color: theme.color.white }),
+    letterSpacing: 1.5,
   },
 });

@@ -51,7 +51,7 @@ src/
     api/
       transport.ts        # requestJson: timeout, size guard, single read, error normalize
       authHeaders.ts
-      auth.ts  bus.ts  routes.ts  earnings.ts
+      auth.ts  bus.ts  routes.ts  trips.ts
       index.ts            # re-export as `api` (stable surface)
     socket.ts             # Socket.IO: connect + driver:location/start-tracking/stop-tracking
     location.ts           # expo-location watch wrapper (permissions, throttle, buffer)
@@ -63,7 +63,6 @@ src/
     auth/                 # useLogin (driver-gated), useRegister, useLogout
     bus/                  # useMyBusQuery, useRegisterBus, useUpdateBus
     routes/               # useRoutesQuery, useRoutesManagementQuery, useCreateRoute
-    earnings/             # useEarningsStatsQuery, useEarningsHistoryQuery, useDailyBreakdownQuery, useRequestPayout
     useTrackingSession.ts # start/stop tracking lifecycle (socket acks)
     useLocationBroadcast.ts # watch position → throttle/batch → emit; offline buffer
   helpers/
@@ -75,7 +74,6 @@ src/
     ShiftBusIcon.tsx, OfflineScreen.tsx, ErrorBoundary.tsx
   features/
     dashboard/            # TrackingToggle, TrackingStatusCard, AssignedBusCard, LiveStatsBar
-    earnings/             # EarningsSummary, PayoutRequestForm, EarningsHistoryList, DailyBreakdownChart
     route-management/     # RouteForm, RouteList, RouteListItem
     bus-registration/     # BusRegistrationForm, RoutePicker
   navigation/AppNavigator.tsx
@@ -87,7 +85,6 @@ src/
 | Screen | Current LOC | Target | Action |
 |---|---|---|---|
 | DriverDashboard | 657 | ≤250 | split into `features/dashboard/*` + tracking hooks |
-| DriverEarningsScreen | 613 | ≤250 | split into `features/earnings/*` |
 | RouteManagementScreen | 490 | ≤250 | split into `features/route-management/*` |
 | BusRegistrationScreen | 335 | ≤250 | split into `features/bus-registration/*` |
 | TripHistoryScreen | 253 | ≤250 | migrate to hooks; trim |

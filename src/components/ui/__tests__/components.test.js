@@ -1,5 +1,7 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
+import { theme } from '../../../theme';
 import FormInput from '../FormInput';
 import PrimaryButton from '../PrimaryButton';
 import InfoRow from '../InfoRow';
@@ -56,9 +58,9 @@ describe('PrimaryButton', () => {
   it('does not fire onPress when disabled', () => {
     const onPress = jest.fn();
     const { getByText } = render(
-      <PrimaryButton title="Save bus" onPress={onPress} disabled />
+      <PrimaryButton title="Save vehicle" onPress={onPress} disabled />
     );
-    fireEvent.press(getByText('Save bus'));
+    fireEvent.press(getByText('Save vehicle'));
     expect(onPress).not.toHaveBeenCalled();
   });
 
@@ -93,5 +95,30 @@ describe('ScreenHeader', () => {
       <ScreenHeader title="Trip History" onBack={() => {}} />
     );
     expect(getByText('Trip History')).toBeTruthy();
+  });
+
+  it('exposes a back control that calls onBack', () => {
+    const onBack = jest.fn();
+    const { getByLabelText } = render(
+      <ScreenHeader title="Trip History" onBack={onBack} />
+    );
+    fireEvent.press(getByLabelText('Go back'));
+    expect(onBack).toHaveBeenCalled();
+  });
+
+  it('renders the title in white on ink so it is legible on the dark background', () => {
+    const { getByText } = render(
+      <ScreenHeader title="Scan rider QR" onBack={() => {}} onInk />
+    );
+    expect(StyleSheet.flatten(getByText('Scan rider QR').props.style).color)
+      .toBe(theme.color.white);
+  });
+
+  it('renders the title in ink navy by default (light screens)', () => {
+    const { getByText } = render(
+      <ScreenHeader title="Your vehicle" onBack={() => {}} />
+    );
+    expect(StyleSheet.flatten(getByText('Your vehicle').props.style).color)
+      .toBe(theme.color.text.primary);
   });
 });

@@ -8,12 +8,20 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 );
 
 jest.mock('../../services/api', () => ({
-  getMyBus: jest.fn(),
-  getMyCustomRoute: jest.fn(),
+  getMyVehicle: jest.fn(),
 }));
 
 const mockAuthenticatedRequest = jest.fn((fn, ...args) => fn(...args));
 const mockLogoutMutate = jest.fn();
+// The screen re-reads the account from the server; by default that read has not
+// resolved, so these tests exercise the stored-account fallback.
+const mockMeQuery = jest.fn(() => ({ data: undefined }));
+const mockKeyQuery = jest.fn(() => ({
+  data: { data: { enrollmentKey: 'TMD-QMCZ-9NL2-TJNQ', isPrivate: false } },
+  isPending: false,
+  isError: false,
+  refetch: jest.fn(),
+}));
 
 jest.mock('../../context/AuthContext', () => ({
   useAuth: () => ({
@@ -24,19 +32,27 @@ jest.mock('../../context/AuthContext', () => ({
 
 jest.mock('../../hooks/auth', () => ({
   useLogout: () => ({ mutate: mockLogoutMutate, isPending: false }),
+  useMeQuery: () => mockMeQuery(),
+  useMyEnrollmentKeyQuery: () => mockKeyQuery(),
 }));
 
 const navigation = { navigate: jest.fn(), reset: jest.fn() };
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockMeQuery.mockReturnValue({ data: undefined });
+  mockKeyQuery.mockReturnValue({
+    data: { data: { enrollmentKey: 'TMD-QMCZ-9NL2-TJNQ', isPrivate: false } },
+    isPending: false,
+    isError: false,
+    refetch: jest.fn(),
+  });
   mockAuthenticatedRequest.mockImplementation((fn, ...args) => fn(...args));
-  api.getMyBus.mockResolvedValue({
-    busName: 'Shuttle 1',
+  api.getMyVehicle.mockResolvedValue({
+    vehicleName: 'Shuttle 1',
     registrationNumber: 'ABC-123',
     seatCapacity: 20,
   });
-  api.getMyCustomRoute.mockResolvedValue({ isCustomRoute: false });
 });
 
 describe('DriverProfileScreen', () => {
@@ -50,18 +66,74 @@ describe('DriverProfileScreen', () => {
     expect(await findByText('Shuttle 1')).toBeTruthy();
   });
 
-  it('navigates to My routes', async () => {
+  it('shows the phone number the manager put on the account', async () => {
+    // The row read `user.phone`, a field the account has never had, so every
+    // driver saw "-" no matter what their manager had entered.
+    mockMeQuery.mockReturnValue({
+      data: { user: { name: 'Nadia Perera', email: 'nadia@test.com', phoneNumber: '0766518388' } },
+    });
+
     const { getByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
     await findByText('Shuttle 1');
-    fireEvent.press(getByText('My routes'));
-    expect(navigation.navigate).toHaveBeenCalledWith('RouteManagement');
+    expect(getByText('0766518388')).toBeTruthy();
   });
 
-  it('navigates to Bus registration from the vehicle card CTA when there is no bus', async () => {
-    api.getMyBus.mockRejectedValue(new Error('not found'));
+  it('prefers the server copy over the details stored at sign-in', async () => {
+    // A manager changing the number is the whole reason the screen re-reads it.
+    mockMeQuery.mockReturnValue({
+      data: { user: { name: 'Nadia Perera', phoneNumber: '0771234567' } },
+    });
+
+    const { getByText, queryByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
+    await findByText('Shuttle 1');
+    expect(getByText('0771234567')).toBeTruthy();
+    expect(queryByText('0766518388')).toBeNull();
+  });
+
+  it('shows an email the manager added after sign-in', async () => {
+    mockMeQuery.mockReturnValue({
+      data: { user: { name: 'Nadia Perera', email: 'nadia@ananda.lk' } },
+    });
+
+    const { getByText, queryByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
+    await findByText('Shuttle 1');
+    expect(getByText('nadia@ananda.lk')).toBeTruthy();
+    expect(queryByText('nadia@test.com')).toBeNull();
+  });
+
+  it('drops an email the manager cleared, rather than keeping the stored one', async () => {
+    // Removal is the case a merge gets wrong: the server sends an empty string
+    // and the account stored at sign-in still holds the old address. Whichever
+    // way round the merge goes decides whether a removed email lingers.
+    mockMeQuery.mockReturnValue({
+      // A phone is present so the only empty row is the email one.
+      data: { user: { name: 'Nadia Perera', email: '', phoneNumber: '0766518388' } },
+    });
+
+    const { getAllByText, queryByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
+    await findByText('Shuttle 1');
+    expect(queryByText('nadia@test.com')).toBeNull();
+    expect(getAllByText('-')).toHaveLength(1);
+  });
+
+  it('falls back to the stored account while the server read is in flight', async () => {
+    const { getAllByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
+    await findByText('Shuttle 1');
+    // Still named, not blank, before /me resolves.
+    expect(getAllByText('Nadia Perera').length).toBe(2);
+  });
+
+  it('no longer lists My routes', async () => {
+    const { queryByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
+    await findByText('Shuttle 1');
+    expect(queryByText('My routes')).toBeNull();
+  });
+
+  it('navigates to Vehicle registration from the vehicle card CTA when there is no vehicle', async () => {
+    api.getMyVehicle.mockRejectedValue(new Error('not found'));
     const { getByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
-    fireEvent.press(await findByText('Add my bus'));
-    expect(navigation.navigate).toHaveBeenCalledWith('BusRegistration');
+    fireEvent.press(await findByText('Add my vehicle'));
+    expect(navigation.navigate).toHaveBeenCalledWith('VehicleRegistration');
   });
 
   it('opens a ConfirmSheet before logging out, and confirming calls the mutation', async () => {
@@ -77,15 +149,10 @@ describe('DriverProfileScreen', () => {
     expect(mockLogoutMutate).toHaveBeenCalledTimes(1);
   });
 
-  it('does not show "Replay tutorial" when the driver has no custom route', async () => {
+  // The tutorial only ever reset the route-recording walkthrough, which is gone.
+  it('no longer shows "Replay tutorial"', async () => {
     const { queryByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
     await findByText('Shuttle 1');
     expect(queryByText('Replay tutorial')).toBeNull();
-  });
-
-  it('shows "Replay tutorial" when the driver has a custom route', async () => {
-    api.getMyCustomRoute.mockResolvedValue({ isCustomRoute: true });
-    const { findByText } = render(<DriverProfileScreen navigation={navigation} />);
-    expect(await findByText('Replay tutorial')).toBeTruthy();
   });
 });

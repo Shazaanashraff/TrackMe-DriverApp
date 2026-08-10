@@ -4,9 +4,9 @@ import ListRow from '../ListRow';
 
 describe('ListRow', () => {
   it('renders title and subtitle', () => {
-    const { getByText } = render(<ListRow title="My routes" subtitle="2 routes" icon="map-outline" />);
-    expect(getByText('My routes')).toBeTruthy();
-    expect(getByText('2 routes')).toBeTruthy();
+    const { getByText } = render(<ListRow title="Your vehicle" subtitle="2 seats" icon="bus-outline" />);
+    expect(getByText('Your vehicle')).toBeTruthy();
+    expect(getByText('2 seats')).toBeTruthy();
   });
 
   it('renders an optional trailing value', () => {

@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { isOfflineError } from '../lib/errors';
 
-const PERSIST_PREFIXES = ['bus', 'routes', 'earnings'];
+const PERSIST_PREFIXES = ['vehicle', 'routes', 'trips'];
 const MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 export const queryClient = new QueryClient({

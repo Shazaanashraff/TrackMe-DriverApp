@@ -1,32 +1,42 @@
 import React from 'react';
+import { Alert } from 'react-native';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import DriverDashboard from '../DriverDashboard';
 import api from '../../services/api';
+import { AppError } from '../../lib/errors';
 
-// Covers only the Phase-2 "Update Route" banner behavior; the rest of the screen
-// (live tracking, logout, etc.) is covered by the feature-component tests + hook tests.
+// Covers the quick-actions block; the rest of the screen (live tracking, logout, etc.)
+// is covered by the feature-component tests + hook tests.
+
+jest.mock('@react-native-async-storage/async-storage', () =>
+  require('@react-native-async-storage/async-storage/jest/async-storage-mock')
+);
 
 jest.mock('../../services/api', () => ({
-  getMyCustomRoute: jest.fn(),
-  reportJourney: jest.fn(() => Promise.resolve({ flagged: false })),
+  getMyVehicle: jest.fn(),
 }));
 
-jest.mock('../../hooks/bus', () => ({
-  useMyBusQuery: () => ({
-    data: { busId: 'BUS-1', busName: 'Shuttle', seatCapacity: 20 },
-    isLoading: false,
-    error: null,
-  }),
+const mockUseMyVehicleQuery = jest.fn(() => ({
+  data: { vehicleId: 'VEHICLE-1', vehicleName: 'Shuttle', seatCapacity: 20 },
+  isLoading: false,
+  error: null,
+}));
+
+jest.mock('../../hooks/vehicle', () => ({
+  useMyVehicleQuery: () => mockUseMyVehicleQuery(),
+}));
+
+const mockUseTrackingSession = jest.fn(() => ({
+  status: 'idle',
+  error: undefined,
+  isReconnecting: false,
+  start: jest.fn(),
+  stop: jest.fn(),
 }));
 
 jest.mock('../../hooks/useTrackingSession', () => ({
-  useTrackingSession: () => ({
-    status: 'idle',
-    error: undefined,
-    isReconnecting: false,
-    start: jest.fn(),
-    stop: jest.fn(),
-  }),
+  useTrackingSession: () => mockUseTrackingSession(),
 }));
 
 jest.mock('../../hooks/useLocationBroadcast', () => ({
@@ -35,6 +45,12 @@ jest.mock('../../hooks/useLocationBroadcast', () => ({
 
 jest.mock('../../hooks/auth', () => ({
   useLogout: () => ({ mutate: jest.fn(), isPending: false }),
+}));
+
+// TripProgressCard fetches route geometry via react-query; stub it so the dashboard
+// test needs no QueryClientProvider (undefined data => the card renders nothing).
+jest.mock('../../hooks/route', () => ({
+  useRouteDetailsQuery: () => ({ data: undefined }),
 }));
 
 jest.mock('../../features/dashboard/useSocketConnection', () => ({
@@ -56,61 +72,140 @@ jest.mock('../../context/AuthContext', () => ({
   }),
 }));
 
-jest.mock('react-native-copilot', () => ({
-  CopilotProvider: ({ children }) => children,
-}));
 
-jest.mock('../../components/CustomRouteRecorder', () => {
-  const { Text } = require('react-native');
-  return function MockCustomRouteRecorder({ mode, routeId }) {
-    return <Text testID="mock-recorder">{`recorder:${mode}:${routeId}`}</Text>;
-  };
-});
-
-beforeEach(() => {
+beforeEach(async () => {
   jest.clearAllMocks();
+  await AsyncStorage.clear();
+  mockUseTrackingSession.mockReturnValue({
+    status: 'idle',
+    error: undefined,
+    isReconnecting: false,
+    start: jest.fn(),
+    stop: jest.fn(),
+  });
+  mockUseMyVehicleQuery.mockReturnValue({
+    data: { vehicleId: 'VEHICLE-1', vehicleName: 'Shuttle', seatCapacity: 20 },
+    isLoading: false,
+    error: null,
+  });
 });
 
-describe('DriverDashboard — Update Route banner (Phase 2)', () => {
-  it('does not show the banner for a normal (non-custom) route', async () => {
-    api.getMyCustomRoute.mockResolvedValue({ data: { isCustomRoute: false } });
-    const { queryByTestId } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+describe('DriverDashboard — quick actions', () => {
+  it('offers the QR scanner and nothing else', () => {
+    const { getByTestId, queryByTestId, queryByText } = render(
+      <DriverDashboard navigation={{ navigate: jest.fn() }} />
+    );
 
-    await waitFor(() => expect(api.getMyCustomRoute).toHaveBeenCalled());
+    expect(getByTestId('scan-rider-qr-row')).toBeTruthy();
+
+    // My Routes and custom-route recording were both removed from this screen.
+    expect(queryByTestId('my-routes-row')).toBeNull();
+    expect(queryByText('My routes')).toBeNull();
     expect(queryByTestId('update-route-banner')).toBeNull();
+    expect(queryByTestId('mock-recorder')).toBeNull();
   });
 
-  it('does not show the banner for an ACTIVE custom route with no pending change request', async () => {
-    api.getMyCustomRoute.mockResolvedValue({
-      data: { isCustomRoute: true, status: 'ACTIVE', routeId: 'ROUTE-1', hasPendingChangeRequest: false },
-    });
-    const { queryByTestId } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+  it('does not call the deleted custom-route endpoints', () => {
+    render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+    expect(api.getMyCustomRoute).toBeUndefined();
+  });
+});
 
-    await waitFor(() => expect(api.getMyCustomRoute).toHaveBeenCalled());
-    expect(queryByTestId('update-route-banner')).toBeNull();
+describe('DriverDashboard — Go on duty failure surfaced (issue #20)', () => {
+  it('shows the specific server-refusal reason to the driver', async () => {
+    mockUseTrackingSession.mockReturnValue({
+      status: 'error',
+      error: new AppError('tracking', 'This bus is already being tracked elsewhere'),
+      isReconnecting: false,
+      start: jest.fn(),
+      stop: jest.fn(),
+    });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith(
+        "Couldn't go on duty",
+        'This bus is already being tracked elsewhere'
+      )
+    );
   });
 
-  it('shows the banner when an ACTIVE custom route has a pending change request', async () => {
-    api.getMyCustomRoute.mockResolvedValue({
-      data: { isCustomRoute: true, status: 'ACTIVE', routeId: 'ROUTE-1', hasPendingChangeRequest: true },
-    });
-    const { findByTestId } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+  it('does not alert while idle (no false positives)', async () => {
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
-    expect(await findByTestId('update-route-banner')).toBeTruthy();
+    const { findByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+    // Wait for the screen to settle instead: the custom-route call this used to
+    // wait on was removed with the feature, so any alert effect has run by the
+    // time the dashboard has painted.
+    await findByText('Your vehicle');
+
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('DriverDashboard — stop-tracking ack failure surfaced (issue #12)', () => {
+  it('alerts and stays on "You\'re live" when the server never confirms the stop', async () => {
+    mockUseTrackingSession.mockReturnValue({
+      status: 'tracking',
+      error: new AppError('tracking', 'No response from server'),
+      isReconnecting: false,
+      start: jest.fn(),
+      stop: jest.fn(),
+    });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+
+    await waitFor(() =>
+      expect(alertSpy).toHaveBeenCalledWith("Couldn't confirm you're off duty", 'No response from server')
+    );
   });
 
-  it('opens the recorder in update mode with the correct routeId when tapped', async () => {
-    api.getMyCustomRoute.mockResolvedValue({
-      data: { isCustomRoute: true, status: 'ACTIVE', routeId: 'ROUTE-1', hasPendingChangeRequest: true },
+  it('does not alert while tracking cleanly with no error', async () => {
+    mockUseTrackingSession.mockReturnValue({
+      status: 'tracking',
+      error: undefined,
+      isReconnecting: false,
+      start: jest.fn(),
+      stop: jest.fn(),
     });
-    const { findByTestId, getByTestId } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
-    const banner = await findByTestId('update-route-banner');
-    expect(banner).toBeTruthy();
+    const { findByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+    await findByText('Your vehicle');
 
-    fireEvent.press(getByTestId('update-route-button'));
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+});
 
-    const recorder = await findByTestId('mock-recorder');
-    expect(recorder.props.children).toBe('recorder:update:ROUTE-1');
+describe('DriverDashboard — unassigned-vehicle messaging (issue #21)', () => {
+  it('shows the generic register-vehicle message for a driver who never had one', async () => {
+    mockUseMyVehicleQuery.mockReturnValue({ data: null, isLoading: false, error: null });
+
+    const { findByText, queryByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+
+    expect(await findByText('Register your vehicle to go live')).toBeTruthy();
+    expect(queryByText('Your vehicle assignment was removed — contact your manager')).toBeNull();
+  });
+
+  it('shows the removed-assignment message once a previously-seen vehicle disappears', async () => {
+    await AsyncStorage.setItem('driver_had_vehicle_before', 'true');
+    mockUseMyVehicleQuery.mockReturnValue({ data: null, isLoading: false, error: null });
+
+    const { findByText, queryByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+
+    expect(await findByText('Your vehicle assignment was removed — contact your manager')).toBeTruthy();
+    expect(queryByText('Register your vehicle to go live')).toBeNull();
+  });
+
+  it('persists that this driver has had a vehicle once one is seen', async () => {
+
+    render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+
+    await waitFor(async () => {
+      expect(await AsyncStorage.getItem('driver_had_vehicle_before')).toBe('true');
+    });
   });
 });

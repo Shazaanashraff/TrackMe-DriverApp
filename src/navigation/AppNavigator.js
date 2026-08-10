@@ -6,11 +6,9 @@ import { useAuth } from '../context/AuthContext';
 
 import LoginScreen from '../screens/LoginScreen';
 import DriverDashboard from '../screens/DriverDashboard';
-import BusRegistrationScreen from '../screens/BusRegistrationScreen';
-import DriverEarningsScreen from '../screens/DriverEarningsScreen';
+import VehicleRegistrationScreen from '../screens/VehicleRegistrationScreen';
 import TripHistoryScreen from '../screens/TripHistoryScreen';
 import DriverProfileScreen from '../screens/DriverProfileScreen';
-import RouteManagementScreen from '../screens/RouteManagementScreen';
 import QRScannerScreen from '../screens/QRScannerScreen';
 import BoardingRosterScreen from '../screens/BoardingRosterScreen';
 import OfflineScreen from '../components/OfflineScreen';
@@ -22,14 +20,12 @@ const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
   Dashboard: { outline: 'home-outline', filled: 'home' },
-  DriverEarnings: { outline: 'wallet-outline', filled: 'wallet' },
   TripHistory: { outline: 'time-outline', filled: 'time' },
   DriverProfile: { outline: 'person-outline', filled: 'person' },
 };
 
 const TAB_LABELS = {
   Dashboard: 'Home',
-  DriverEarnings: 'Earnings',
   TripHistory: 'Trips',
   DriverProfile: 'Profile',
 };
@@ -59,7 +55,6 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Dashboard" component={DriverDashboard} />
-      <Tab.Screen name="DriverEarnings" component={DriverEarningsScreen} />
       <Tab.Screen name="TripHistory" component={TripHistoryScreen} />
       <Tab.Screen name="DriverProfile" component={DriverProfileScreen} />
     </Tab.Navigator>
@@ -90,8 +85,7 @@ const AppNavigator = ({ backendOnline }) => {
       ) : (
         <>
           <Stack.Screen name="MainTabs" component={MainTabs} />
-          <Stack.Screen name="BusRegistration" component={BusRegistrationScreen} />
-          <Stack.Screen name="RouteManagement" component={RouteManagementScreen} />
+          <Stack.Screen name="VehicleRegistration" component={VehicleRegistrationScreen} />
           <Stack.Screen name="QRScanner" component={QRScannerScreen} />
           <Stack.Screen name="BoardingRoster" component={BoardingRosterScreen} />
         </>

@@ -28,12 +28,12 @@ describe('useTrackingSession', () => {
     const { result } = renderHook(() => useTrackingSession());
 
     act(() => {
-      result.current.start('bus-1');
+      result.current.start('vehicle-1');
     });
     expect(result.current.status).toBe('starting');
 
     await waitFor(() => expect(result.current.status).toBe('tracking'));
-    expect(mockStartTracking).toHaveBeenCalledWith('bus-1');
+    expect(mockStartTracking).toHaveBeenCalledWith('vehicle-1');
     expect(result.current.error).toBeUndefined();
   });
 
@@ -42,7 +42,7 @@ describe('useTrackingSession', () => {
     const { result } = renderHook(() => useTrackingSession());
 
     act(() => {
-      result.current.start('bus-1');
+      result.current.start('vehicle-1');
     });
 
     await waitFor(() => expect(result.current.status).toBe('error'));
@@ -50,34 +50,78 @@ describe('useTrackingSession', () => {
     expect(result.current.error?.message).toBe('Socket not connected');
   });
 
-  it('stop() calls stopTracking and resets to idle', async () => {
-    mockStartTracking.mockResolvedValueOnce({ success: true });
+  it('logs the specific failure reason so it is not silently lost (issue #20)', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    mockStartTracking.mockResolvedValueOnce({ success: false, error: 'This bus is already being tracked elsewhere' });
     const { result } = renderHook(() => useTrackingSession());
 
     act(() => {
-      result.current.start('bus-1');
+      result.current.start('vehicle-1');
+    });
+
+    await waitFor(() => expect(result.current.status).toBe('error'));
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("start('vehicle-1')"),
+      'This bus is already being tracked elsewhere'
+    );
+    errorSpy.mockRestore();
+  });
+
+  it('stop() awaits the server ack before resetting to idle (issue #12)', async () => {
+    mockStartTracking.mockResolvedValueOnce({ success: true });
+    mockStopTracking.mockResolvedValueOnce({ success: true });
+    const { result } = renderHook(() => useTrackingSession());
+
+    act(() => {
+      result.current.start('vehicle-1');
     });
     await waitFor(() => expect(result.current.status).toBe('tracking'));
 
     act(() => {
-      result.current.stop('bus-1');
+      result.current.stop('vehicle-1');
+    });
+    expect(mockStopTracking).toHaveBeenCalledWith('vehicle-1');
+
+    await waitFor(() => expect(result.current.status).toBe('idle'));
+    expect(result.current.error).toBeUndefined();
+  });
+
+  it('stays in tracking and surfaces an error when the stop ack fails (issue #12)', async () => {
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    mockStartTracking.mockResolvedValueOnce({ success: true });
+    mockStopTracking.mockResolvedValueOnce({ success: false, error: 'No response from server' });
+    const { result } = renderHook(() => useTrackingSession());
+
+    act(() => {
+      result.current.start('vehicle-1');
+    });
+    await waitFor(() => expect(result.current.status).toBe('tracking'));
+
+    act(() => {
+      result.current.stop('vehicle-1');
     });
 
-    expect(mockStopTracking).toHaveBeenCalledWith('bus-1');
-    expect(result.current.status).toBe('idle');
+    await waitFor(() => expect(result.current.error?.message).toBe('No response from server'));
+    expect(result.current.status).toBe('tracking');
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("stop('vehicle-1')"),
+      'No response from server'
+    );
+    errorSpy.mockRestore();
   });
 
   it('stops the active session on unmount', async () => {
     mockStartTracking.mockResolvedValueOnce({ success: true });
+    mockStopTracking.mockResolvedValue({ success: true });
     const { result, unmount } = renderHook(() => useTrackingSession());
 
     act(() => {
-      result.current.start('bus-1');
+      result.current.start('vehicle-1');
     });
     await waitFor(() => expect(result.current.status).toBe('tracking'));
 
     unmount();
-    expect(mockStopTracking).toHaveBeenCalledWith('bus-1');
+    expect(mockStopTracking).toHaveBeenCalledWith('vehicle-1');
   });
 
   it('reflects a connection drop as isReconnecting while tracking', async () => {
@@ -90,7 +134,7 @@ describe('useTrackingSession', () => {
 
     const { result } = renderHook(() => useTrackingSession());
     act(() => {
-      result.current.start('bus-1');
+      result.current.start('vehicle-1');
     });
     await waitFor(() => expect(result.current.status).toBe('tracking'));
 

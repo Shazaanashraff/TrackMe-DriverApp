@@ -9,14 +9,14 @@ describe('ConfirmSheet', () => {
       <ConfirmSheet
         visible
         title="End this journey?"
-        message="Riders will stop seeing your bus."
+        message="Riders will stop seeing your vehicle."
         confirmLabel="End journey"
         onConfirm={() => {}}
         onCancel={() => {}}
       />
     );
     expect(getByText('End this journey?')).toBeTruthy();
-    expect(getByText('Riders will stop seeing your bus.')).toBeTruthy();
+    expect(getByText('Riders will stop seeing your vehicle.')).toBeTruthy();
   });
 
   it('fires onConfirm when the confirm button is pressed', () => {
@@ -56,7 +56,7 @@ describe('ConfirmSheet', () => {
       <ConfirmSheet
         visible
         title="End this journey?"
-        message="Riders will stop seeing your bus."
+        message="Riders will stop seeing your vehicle."
         confirmLabel="End journey"
         onConfirm={() => {}}
         onCancel={() => {}}
@@ -73,7 +73,7 @@ describe('ConfirmSheet', () => {
       <ConfirmSheet
         visible
         title="End this journey?"
-        message="Riders will stop seeing your bus."
+        message="Riders will stop seeing your vehicle."
         confirmLabel="End journey"
         onConfirm={() => {}}
         onCancel={() => {}}

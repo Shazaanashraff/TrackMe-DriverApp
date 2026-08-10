@@ -12,7 +12,7 @@ const mockUse = useBoardingRosterQuery as jest.Mock;
 
 function roster(over: Partial<Record<string, unknown>> = {}) {
   return {
-    busId: 'BUS-1', routeId: 'RT-1', tripId: 'BUS-1#2026-07-22',
+    vehicleId: 'VEH-1', routeId: 'RT-1', tripId: 'VEH-1#2026-07-22',
     enrolledCount: 20, onBoardCount: 17, roster: [], guests: [], ...over,
   };
 }
@@ -24,7 +24,7 @@ describe('OnBoardCard', () => {
     mockUse.mockReturnValue({ data: roster(), isLoading: false, isError: false });
     const onPress = jest.fn();
 
-    const { getByText, getByTestId } = render(<OnBoardCard busId="BUS-1" onPress={onPress} />);
+    const { getByText, getByTestId } = render(<OnBoardCard vehicleId="VEH-1" onPress={onPress} />);
 
     expect(getByText('17 / 20')).toBeTruthy();
     fireEvent.press(getByTestId('on-board-card-pressable'));
@@ -35,7 +35,7 @@ describe('OnBoardCard', () => {
     mockUse.mockReturnValue({ data: roster({ enrolledCount: 0, onBoardCount: 0 }), isLoading: false, isError: false });
     const onPress = jest.fn();
 
-    const { getByText, queryByTestId } = render(<OnBoardCard busId="BUS-1" onPress={onPress} />);
+    const { getByText, queryByTestId } = render(<OnBoardCard vehicleId="VEH-1" onPress={onPress} />);
 
     expect(getByText('No enrolled riders yet')).toBeTruthy();
     expect(queryByTestId('on-board-card-pressable')).toBeNull();
@@ -43,13 +43,13 @@ describe('OnBoardCard', () => {
 
   it('renders a skeleton while loading', () => {
     mockUse.mockReturnValue({ data: undefined, isLoading: true, isError: false });
-    const { getByTestId } = render(<OnBoardCard busId="BUS-1" onPress={jest.fn()} />);
+    const { getByTestId } = render(<OnBoardCard vehicleId="VEH-1" onPress={jest.fn()} />);
     expect(getByTestId('on-board-skeleton')).toBeTruthy();
   });
 
   it('renders nothing when the roster query errors (route not QR-enabled)', () => {
     mockUse.mockReturnValue({ data: undefined, isLoading: false, isError: true });
-    const { queryByTestId } = render(<OnBoardCard busId="BUS-1" onPress={jest.fn()} />);
+    const { queryByTestId } = render(<OnBoardCard vehicleId="VEH-1" onPress={jest.fn()} />);
     expect(queryByTestId('on-board-card')).toBeNull();
   });
 });

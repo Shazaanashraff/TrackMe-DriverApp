@@ -1,38 +1,29 @@
 import * as auth from './auth';
-import * as bus from './bus';
+import * as vehicle from './vehicle';
 import * as routes from './routes';
-import * as earnings from './earnings';
-import * as customRoutes from './customRoutes';
+import * as trips from './trips';
 import * as boarding from './boarding';
 
 const api = {
   // auth
   login: auth.login,
   register: auth.register,
+  getMe: auth.getMe,
+  getMyEnrollmentKey: auth.getMyEnrollmentKey,
   refreshToken: auth.refreshToken,
   logout: auth.logout,
 
-  // bus
-  getMyBus: bus.getMyBus,
-  registerBus: bus.registerBus,
-  updateBus: bus.updateBus,
+  // vehicle
+  getMyVehicle: vehicle.getMyVehicle,
+  registerVehicle: vehicle.registerVehicle,
+  updateVehicle: vehicle.updateVehicle,
 
   // routes
-  getRoutes: routes.getRoutes,
-  getRoutesManagementList: routes.getRoutesManagementList,
-  createRoute: routes.createRoute,
+  getRouteById: routes.getRouteById,
 
-  // earnings
-  getDriverEarningsStats: earnings.getDriverEarningsStats,
-  getDriverEarningsHistory: earnings.getDriverEarningsHistory,
-  getDriverDailyBreakdown: earnings.getDriverDailyBreakdown,
-  requestDriverPayout: earnings.requestDriverPayout,
-
-  // custom routes
-  getMyCustomRoute: customRoutes.getMyCustomRoute,
-  recordCustomRoute: customRoutes.recordCustomRoute,
-  reportJourney: customRoutes.reportJourney,
-  recordRouteUpdate: customRoutes.recordRouteUpdate,
+  // trips
+  getDriverTrips: trips.getDriverTrips,
+  getDriverTripDetails: trips.getDriverTripDetails,
 
   // boarding
   submitBoardingScan: boarding.submitBoardingScan,
