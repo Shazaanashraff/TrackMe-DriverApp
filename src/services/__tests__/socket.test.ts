@@ -55,6 +55,62 @@ describe('emitLocation', () => {
     emitLocation('vehicle-1', 'route-1', 6.9, 79.8, jest.fn());
     expect(mockSocket.emit).not.toHaveBeenCalled();
   });
+
+  it('calls back with a NACK-shaped response if the ack never arrives (issue #13)', () => {
+    jest.useFakeTimers();
+    const { connectSocket, emitLocation } = getModule();
+    connectSocket('tok');
+
+    // No cb invocation — simulates a dropped ack on a spotty connection.
+    mockSocket.emit.mockImplementationOnce(() => {});
+    const callback = jest.fn();
+    emitLocation('vehicle-1', 'route-1', 6.9, 79.8, callback);
+
+    expect(callback).not.toHaveBeenCalled();
+    jest.advanceTimersByTime(5000);
+
+    expect(callback).toHaveBeenCalledWith({ success: false, error: 'Ack timeout' });
+    jest.useRealTimers();
+  });
+
+  it('ignores a late ack that arrives after the timeout already fired', () => {
+    jest.useFakeTimers();
+    const { connectSocket, emitLocation } = getModule();
+    connectSocket('tok');
+
+    let ackCallback: ((r: unknown) => void) | undefined;
+    mockSocket.emit.mockImplementationOnce((_event: string, _payload: unknown, cb: (r: unknown) => void) => {
+      ackCallback = cb;
+    });
+    const callback = jest.fn();
+    emitLocation('vehicle-1', 'route-1', 6.9, 79.8, callback);
+
+    jest.advanceTimersByTime(5000);
+    expect(callback).toHaveBeenCalledTimes(1);
+
+    ackCallback?.({ success: true });
+    expect(callback).toHaveBeenCalledTimes(1);
+    jest.useRealTimers();
+  });
+
+  it('does not fire the timeout once a timely ack has already resolved it', () => {
+    jest.useFakeTimers();
+    const { connectSocket, emitLocation } = getModule();
+    connectSocket('tok');
+
+    mockSocket.emit.mockImplementationOnce(
+      (_event: string, _payload: unknown, cb: (r: unknown) => void) => cb({ success: true })
+    );
+    const callback = jest.fn();
+    emitLocation('vehicle-1', 'route-1', 6.9, 79.8, callback);
+
+    expect(callback).toHaveBeenCalledWith({ success: true });
+    callback.mockClear();
+
+    jest.advanceTimersByTime(5000);
+    expect(callback).not.toHaveBeenCalled();
+    jest.useRealTimers();
+  });
 });
 
 describe('startTracking', () => {
