@@ -17,6 +17,8 @@ one doc you need. Deep detail lives in [`docs/`](docs/README.md) — do not dupl
    - **Adding a feature** → [`docs/guides/ADDING_A_FEATURE.md`](docs/guides/ADDING_A_FEATURE.md)
    - **Adding a test** → [`docs/guides/ADDING_A_TEST.md`](docs/guides/ADDING_A_TEST.md)
    - **Cutting a release** → [`docs/guides/RELEASING.md`](docs/guides/RELEASING.md)
+   - **Working a GitHub issue** (agent routine/schedule or manual "finish up #N") →
+     [`docs/guides/WORKING_AN_ISSUE.md`](docs/guides/WORKING_AN_ISSUE.md)
 4. Before you push, append an entry to [`docs/CHANGES.md`](docs/CHANGES.md).
 
 **One-time setup per clone:**

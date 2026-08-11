@@ -23,6 +23,8 @@ touching it:
 - **[guides/ADDING_A_FEATURE.md](guides/ADDING_A_FEATURE.md)** — the ship-a-feature loop.
 - **[guides/ADDING_A_TEST.md](guides/ADDING_A_TEST.md)** — which layer, plus the GPS/socket cases.
 - **[guides/RELEASING.md](guides/RELEASING.md)** — ⚠️ release tooling is **not set up yet**; read before assuming.
+- **[guides/WORKING_AN_ISSUE.md](guides/WORKING_AN_ISSUE.md)** — issue → regression tests → PR →
+  merge, for agents and manual sessions alike.
 - **[guides/_MODULE_TEMPLATE.md](guides/_MODULE_TEMPLATE.md)** — copy to start a module doc.
 
 ## Architecture (cross-cutting)
