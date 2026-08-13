@@ -93,15 +93,16 @@ function CameraPermissionDeniedState({
 function feedbackFor(status: string, lastResult: ReturnType<typeof useBoardingScan>['lastResult'], errorMessage: string | null) {
   if (status === 'success') {
     const name = lastResult?.studentName;
+    const riderCode = lastResult?.riderCode;
     const type = lastResult?.type;
     const time = lastResult?.timestamp ? new Date(lastResult.timestamp).toLocaleTimeString() : '';
     return {
       variant: 'success' as const,
-      message: [name, type, time].filter(Boolean).join(' · ') || 'Scan recorded',
+      message: [name, riderCode, type, time].filter(Boolean).join(' · ') || 'Scan recorded',
     };
   }
   if (status === 'debounced') {
-    return { variant: 'neutral' as const, message: 'Already recorded' };
+    return { variant: 'neutral' as const, message: [lastResult?.studentName, lastResult?.riderCode, 'Already recorded'].filter(Boolean).join(' · ') };
   }
   if (status === 'error') {
     return { variant: 'error' as const, message: errorMessage || 'Something went wrong. Please try again.' };

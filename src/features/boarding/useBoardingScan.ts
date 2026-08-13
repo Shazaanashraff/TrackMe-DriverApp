@@ -11,6 +11,7 @@ export type BoardingScanResult = {
   eventId?: string;
   studentId?: string;
   studentName?: string;
+  riderCode?: string;
   vehicleId?: string;
   routeId?: string;
   type?: BoardingEventType;
