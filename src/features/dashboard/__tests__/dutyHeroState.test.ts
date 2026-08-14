@@ -105,6 +105,42 @@ describe('deriveDutyHeroState', () => {
     expect(state.headline).toBe('Reconnecting…');
     expect(state.showAllowLocation).toBe(false);
   });
+
+  it('warns when the server keeps rejecting updates while tracking (issue #30)', () => {
+    const state = deriveDutyHeroState({
+      ...base,
+      status: 'tracking',
+      lostConnection: true,
+    });
+    expect(state).toEqual({
+      headline: "You're live",
+      subline: "Losing connection — recent updates may not be reaching the server",
+      dot: 'warn',
+      showAllowLocation: false,
+      goDisabled: false,
+    });
+  });
+
+  it('reconnecting takes priority over the lost-connection warning', () => {
+    const state = deriveDutyHeroState({
+      ...base,
+      status: 'tracking',
+      isReconnecting: true,
+      lostConnection: true,
+    });
+    expect(state.headline).toBe('Reconnecting…');
+  });
+
+  it('the lost-connection warning takes priority over permission denied', () => {
+    const state = deriveDutyHeroState({
+      ...base,
+      status: 'tracking',
+      lostConnection: true,
+      permission: 'denied',
+    });
+    expect(state.subline).toBe('Losing connection — recent updates may not be reaching the server');
+    expect(state.showAllowLocation).toBe(false);
+  });
 });
 
 describe('gpsQualityLabel', () => {

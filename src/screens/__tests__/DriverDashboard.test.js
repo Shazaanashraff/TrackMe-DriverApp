@@ -39,8 +39,15 @@ jest.mock('../../hooks/useTrackingSession', () => ({
   useTrackingSession: () => mockUseTrackingSession(),
 }));
 
+const mockUseLocationBroadcast = jest.fn(() => ({
+  permission: 'granted',
+  bufferedCount: 0,
+  lastFix: null,
+  lostConnection: false,
+}));
+
 jest.mock('../../hooks/useLocationBroadcast', () => ({
-  useLocationBroadcast: () => ({ permission: 'granted', bufferedCount: 0, lastFix: null }),
+  useLocationBroadcast: () => mockUseLocationBroadcast(),
 }));
 
 jest.mock('../../hooks/auth', () => ({
@@ -81,6 +88,51 @@ beforeEach(async () => {
     data: { vehicleId: 'VEHICLE-1', vehicleName: 'Shuttle', seatCapacity: 20 },
     isLoading: false,
     error: null,
+  });
+  mockUseLocationBroadcast.mockReturnValue({
+    permission: 'granted',
+    bufferedCount: 0,
+    lastFix: null,
+    lostConnection: false,
+  });
+});
+
+describe('DriverDashboard — lost connection warning (issue #30)', () => {
+  it('surfaces the warning on the hero while tracking with a rejection streak', () => {
+    mockUseTrackingSession.mockReturnValue({
+      status: 'tracking',
+      error: undefined,
+      isReconnecting: false,
+      start: jest.fn(),
+      stop: jest.fn(),
+    });
+    mockUseLocationBroadcast.mockReturnValue({
+      permission: 'granted',
+      bufferedCount: 5,
+      lastFix: null,
+      lostConnection: true,
+    });
+
+    const { getByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+
+    expect(
+      getByText('Losing connection — recent updates may not be reaching the server')
+    ).toBeTruthy();
+  });
+
+  it('does not surface the warning while off duty even if the hook reports a stale streak', () => {
+    mockUseLocationBroadcast.mockReturnValue({
+      permission: 'granted',
+      bufferedCount: 0,
+      lastFix: null,
+      lostConnection: true,
+    });
+
+    const { queryByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+
+    expect(
+      queryByText('Losing connection — recent updates may not be reaching the server')
+    ).toBeNull();
   });
 });
 

@@ -9,6 +9,11 @@ export type LocationPermissionStatus = 'granted' | 'denied' | 'undetermined';
 const MIN_DISTANCE_METERS = 3;
 const MIN_INTERVAL_MS = 2500;
 const MAX_BUFFER_SIZE = 50;
+// Consecutive NACKs (server rejecting an update while the socket believes it's
+// connected — e.g. repeated ack timeouts, issue #13) before surfacing a "lost
+// connection" warning to the driver (issue #30). A single rejection is common
+// and already handled by re-buffering; only a run of them is worth alarming on.
+const REJECTION_STREAK_THRESHOLD = 5;
 
 // expo-location's web build can throw on subscription.remove()
 // ("LocationEventEmitter.removeSubscription is not a function") depending on the
@@ -32,6 +37,10 @@ export interface UseLocationBroadcastResult {
   permission: LocationPermissionStatus;
   bufferedCount: number;
   lastFix: LocationFix | null;
+  // True once the server has rejected REJECTION_STREAK_THRESHOLD updates in a row —
+  // a signal distinct from bufferedCount/offline, since these rejections happen while
+  // the socket believes it's connected (issue #30).
+  lostConnection: boolean;
 }
 
 function isNackResponse(response: unknown): boolean {
@@ -46,10 +55,12 @@ export function useLocationBroadcast({
   const [permission, setPermission] = useState<LocationPermissionStatus>('undetermined');
   const [bufferedCount, setBufferedCount] = useState(0);
   const [lastFix, setLastFix] = useState<LocationFix | null>(null);
+  const [lostConnection, setLostConnection] = useState(false);
 
   const subscriptionRef = useRef<{ remove: () => void } | null>(null);
   const lastFixRef = useRef<LocationFix | null>(null);
   const bufferRef = useRef<LocationFix[]>([]);
+  const rejectionStreakRef = useRef(0);
 
   const pushToBuffer = useCallback((fix: LocationFix) => {
     bufferRef.current.push(fix);
@@ -62,6 +73,13 @@ export function useLocationBroadcast({
       emitLocation(vehicleId, routeId, fix.lat, fix.lng, (response: unknown) => {
         if (isNackResponse(response)) {
           pushToBuffer(fix);
+          rejectionStreakRef.current += 1;
+          if (rejectionStreakRef.current >= REJECTION_STREAK_THRESHOLD) {
+            setLostConnection(true);
+          }
+        } else {
+          rejectionStreakRef.current = 0;
+          setLostConnection(false);
         }
       });
     },
@@ -143,6 +161,8 @@ export function useLocationBroadcast({
       }
       lastFixRef.current = null;
       setLastFix(null);
+      rejectionStreakRef.current = 0;
+      setLostConnection(false);
     };
   }, [active, beginWatching]);
 
@@ -190,5 +210,5 @@ export function useLocationBroadcast({
     };
   }, [active, beginWatching]);
 
-  return { permission, bufferedCount, lastFix };
+  return { permission, bufferedCount, lastFix, lostConnection };
 }
