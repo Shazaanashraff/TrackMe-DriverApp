@@ -4,6 +4,13 @@ import { shouldEmit, LocationFix } from '../helpers/locationUtils';
 
 export const MIN_DISTANCE_METERS = 3;
 export const MIN_INTERVAL_MS = 2500;
+// A fix this old is sent even if the vehicle hasn't moved. The backend ends a
+// session it hasn't heard from for LIVE_STALE_AFTER_MS (90s, see the backend's
+// docs/modules/REALTIME.md §7), and the distance gate below is silent for as
+// long as a shuttle sits at a stop — so without this a parked-but-on-duty
+// vehicle goes OFFLINE for every rider. Comfortably inside 90s, so two lost
+// heartbeats in a row still don't end the shift.
+export const MAX_INTERVAL_MS = 30_000;
 // Matches the burst the backend's driver:location rate limit is sized for
 // (60/s) — a larger buffer would NACK its own tail on replay and livelock.
 export const MAX_BUFFER_SIZE = 50;
@@ -25,6 +32,34 @@ let buffer: LocationFix[] = [];
 let fixListeners: FixListener[] = [];
 let bufferListeners: BufferListener[] = [];
 let replayUnsubscribe: (() => void) | null = null;
+let keepaliveTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearKeepalive() {
+  if (!keepaliveTimer) return;
+  clearTimeout(keepaliveTimer);
+  keepaliveTimer = null;
+}
+
+/**
+ * Re-sends the last known fix when the GPS has gone quiet — see MAX_INTERVAL_MS.
+ * It can go quiet for two reasons: the platform stops delivering callbacks for a
+ * stationary device (guaranteed in a browser, where the position only changes
+ * when the network location does), or it delivers them and the distance gate
+ * drops every one.
+ *
+ * Timer-based, so it only covers a running JS runtime. A suspended iOS app is
+ * still held up by the OS background task's own fixes, and by the backend's
+ * 30s disconnect grace.
+ */
+function scheduleKeepalive() {
+  clearKeepalive();
+  if (!target) return;
+  keepaliveTimer = setTimeout(() => {
+    keepaliveTimer = null;
+    if (!target || !lastEmitted) return;
+    dispatchFix({ ...lastEmitted, timestamp: Date.now() });
+  }, MAX_INTERVAL_MS);
+}
 
 function notifyBuffer() {
   bufferListeners.forEach((cb) => {
@@ -72,8 +107,11 @@ function emitFix(fix: LocationFix) {
  * Returns false when the fix was throttled away.
  */
 export function dispatchFix(fix: LocationFix): boolean {
-  if (!shouldEmit(lastEmitted, fix, MIN_DISTANCE_METERS, MIN_INTERVAL_MS)) return false;
+  if (!shouldEmit(lastEmitted, fix, MIN_DISTANCE_METERS, MIN_INTERVAL_MS, MAX_INTERVAL_MS)) {
+    return false;
+  }
   lastEmitted = fix;
+  scheduleKeepalive();
 
   fixListeners.forEach((cb) => {
     try {
@@ -104,6 +142,7 @@ export function replayBuffer() {
 
 export async function setTrackingTarget(next: TrackingTarget | null) {
   target = next;
+  if (!next) clearKeepalive();
   try {
     if (next) await AsyncStorage.setItem(TARGET_KEY, JSON.stringify(next));
     else await AsyncStorage.removeItem(TARGET_KEY);
@@ -173,6 +212,7 @@ export function getBufferedCount(): number {
 
 /** Clears throttle + buffer at the end of a shift so the next one starts fresh. */
 export async function resetDispatch() {
+  clearKeepalive();
   lastEmitted = null;
   buffer = [];
   notifyBuffer();

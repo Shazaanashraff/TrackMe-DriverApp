@@ -60,4 +60,14 @@ describe('shouldEmit', () => {
     const next = { lat: 6.93, lng: 79.87, timestamp: 5000 };
     expect(shouldEmit(base, next, 10, 3000)).toBe(true);
   });
+
+  it('emits a stationary fix once maxMs has elapsed', () => {
+    const next = { lat: base.lat, lng: base.lng, timestamp: 31000 };
+    expect(shouldEmit(base, next, 10, 3000, 30000)).toBe(true);
+  });
+
+  it('still respects minMs when maxMs is given', () => {
+    const next = { lat: base.lat, lng: base.lng, timestamp: 1500 };
+    expect(shouldEmit(base, next, 10, 3000, 30000)).toBe(false);
+  });
 });

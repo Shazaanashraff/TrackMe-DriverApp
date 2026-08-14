@@ -31,14 +31,22 @@ export function isValidCoord(lat: number, lng: number): boolean {
  * Skips fixes that arrive too soon (minMs) or haven't moved far enough (minMeters) —
  * the min-distance + min-time battery policy from docs/LOCATION_TRACKING.md.
  * Always emits when there is no prior fix.
+ *
+ * `maxMs` overrides the distance gate once that much time has passed: a shuttle
+ * waiting at a stop is still on duty, but the distance gate alone would let the
+ * backend's staleness sweeper end the session under it. Defaults to Infinity so
+ * a caller that doesn't care keeps the pure min-distance behaviour.
  */
 export function shouldEmit(
   last: LocationFix | null,
   next: LocationFix,
   minMeters: number,
-  minMs: number
+  minMs: number,
+  maxMs: number = Infinity
 ): boolean {
   if (!last) return true;
-  if (next.timestamp - last.timestamp < minMs) return false;
+  const elapsed = next.timestamp - last.timestamp;
+  if (elapsed < minMs) return false;
+  if (elapsed >= maxMs) return true;
   return distanceMeters(last.lat, last.lng, next.lat, next.lng) >= minMeters;
 }

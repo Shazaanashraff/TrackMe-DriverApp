@@ -48,6 +48,14 @@ The dashboard composes: `useMyBusQuery` (which bus) → `useTrackingSession` →
 - Use `Accuracy.High` (not `BestForNavigation`) by default; allow a "high-accuracy" toggle.
 - Adaptive interval: faster updates when moving, slower when stationary (compare last fix
   distance via `locationUtils`); skip emits below a min distance delta.
+- **A min-distance gate alone silently ends a shift.** The distance filter emits nothing while a
+  shuttle waits at a stop, and the backend ends any session it has not heard from for 90s
+  (`LIVE_STALE_AFTER_MS`) — a parked, on-duty vehicle used to flip to OFFLINE for every rider
+  after ~2 minutes. So `MAX_INTERVAL_MS` (30s) overrides the distance gate in `shouldEmit()`, and
+  `locationDispatch` runs a keepalive timer that re-sends the last known fix if the platform has
+  stopped producing callbacks entirely. The latter is the only path on web, where the browser's
+  `watchPosition` fires once for a device that never moves. Any change here must stay well inside
+  the backend's stale window — see the backend's `docs/modules/REALTIME.md` §7.
 - Batch multiple fixes into one emit per N seconds when the backend accepts arrays (else emit
   the latest and drop intermediate). Document which the backend supports.
 - Stop the watcher immediately on `stop()` — a running GPS watcher is the #1 battery drain.

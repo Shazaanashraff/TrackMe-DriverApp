@@ -12,6 +12,7 @@ import {
   subscribeToBufferCount,
   subscribeToFixes,
   MAX_BUFFER_SIZE,
+  MAX_INTERVAL_MS,
 } from '../locationDispatch';
 
 const mockEmitLocation = jest.fn();
@@ -63,6 +64,56 @@ describe('throttle', () => {
     dispatchFix(fix(6.9271, 79.8612, 1000));
     expect(dispatchFix(fix(6.94, 79.88, 5000))).toBe(true);
     expect(mockEmitLocation).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('keepalive', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(async () => {
+    await resetDispatch();
+    jest.clearAllTimers();
+    jest.useRealTimers();
+  });
+
+  it('re-sends the last fix when the vehicle sits still', () => {
+    // A parked shuttle produces no new fix that clears the distance gate, and in
+    // a browser produces no callback at all — without this the backend's 90s
+    // sweeper ends the shift and every rider sees OFFLINE.
+    dispatchFix(fix(6.9271, 79.8612, 1000));
+    expect(mockEmitLocation).toHaveBeenCalledTimes(1);
+
+    jest.advanceTimersByTime(MAX_INTERVAL_MS);
+    expect(mockEmitLocation).toHaveBeenCalledTimes(2);
+    expect(mockEmitLocation.mock.calls[1].slice(0, 4)).toEqual(['VH-1', 'R-1', 6.9271, 79.8612]);
+
+    jest.advanceTimersByTime(MAX_INTERVAL_MS);
+    expect(mockEmitLocation).toHaveBeenCalledTimes(3);
+  });
+
+  it('does not fire while real fixes keep arriving', () => {
+    dispatchFix(fix(6.9271, 79.8612, 1000));
+    jest.advanceTimersByTime(MAX_INTERVAL_MS - 1000);
+    dispatchFix(fix(6.94, 79.88, 5000));
+
+    jest.advanceTimersByTime(1000);
+    expect(mockEmitLocation).toHaveBeenCalledTimes(2);
+  });
+
+  it('stops at the end of a shift', async () => {
+    dispatchFix(fix(6.9271, 79.8612, 1000));
+    await resetDispatch();
+
+    jest.advanceTimersByTime(MAX_INTERVAL_MS * 3);
+    expect(mockEmitLocation).toHaveBeenCalledTimes(1);
+  });
+
+  it('lets a stationary fix through once the keepalive window has passed', () => {
+    dispatchFix(fix(6.9271, 79.8612, 1000));
+    // Same spot, well past MAX_INTERVAL_MS: the distance gate would drop it.
+    expect(dispatchFix(fix(6.9271, 79.8612, 1000 + MAX_INTERVAL_MS))).toBe(true);
   });
 });
 
