@@ -77,7 +77,8 @@
 ## Trips tab (Signal Ink)
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
-| TripHistoryScreen (Card+ListRow pattern) | unit | screens/__tests__/TripHistoryScreen.test.js | header copy, row render (route/date/start time), no money or payment status rendered even for legacy records, empty state (incl. on fetch failure), pull-to-refresh reload | STYLEGUIDE §7.2 Trips spec or copy changes |
+| TripHistoryScreen (Card+ListRow pattern) | unit | screens/__tests__/TripHistoryScreen.test.js | header copy, row render (route/date/start time), no money or payment status rendered even for legacy records, empty state (incl. on fetch failure with nothing cached), pull-to-refresh reload, **previously loaded trips stay on screen when a pull-to-refresh fails instead of clearing to the empty state (issue #15)** | STYLEGUIDE §7.2 Trips spec or copy changes |
+| useDriverTripsQuery — TanStack Query migration (issue #15) | unit | hooks/trips/__tests__/trips.test.ts | returns `api.getDriverTrips(token, {page:1, limit:30})` data, loading only until first response resolves, cached data renders instantly on remount and survives a later background fetch error | trips query key/shape or caching policy changes |
 
 ## Profile / Bus registration / My routes / Login (Signal Ink)
 | Item | Type | Test file | Cases | Update when |
