@@ -87,7 +87,7 @@ src/
 | DriverDashboard | 657 | ≤250 | split into `features/dashboard/*` + tracking hooks |
 | RouteManagementScreen | 490 | ≤250 | split into `features/route-management/*` |
 | BusRegistrationScreen | 335 | ≤250 | split into `features/bus-registration/*` |
-| TripHistoryScreen | 253 | ≤250 | migrate to hooks; trim |
+| TripHistoryScreen | 253 | ≤250 | migrated to `useDriverTripsQuery` (issue #15); still slightly over budget, trim remains open |
 
 ## Industry-standard bar
 Same as user-app: UI/data separation, one cache/fetch layer, typed contracts, test pyramid,
