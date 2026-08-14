@@ -125,7 +125,7 @@ describe('useTrackingSession', () => {
   });
 
   it('reflects a connection drop as isReconnecting while tracking', async () => {
-    mockStartTracking.mockResolvedValueOnce({ success: true });
+    mockStartTracking.mockResolvedValue({ success: true });
     let stateListener: (state: { status: string }) => void = () => {};
     mockOnConnectionStateChange.mockImplementation((cb) => {
       stateListener = cb;
@@ -146,6 +146,34 @@ describe('useTrackingSession', () => {
     act(() => {
       stateListener({ status: 'connected' });
     });
-    expect(result.current.isReconnecting).toBe(false);
+    await waitFor(() => expect(result.current.isReconnecting).toBe(false));
+    expect(mockStartTracking).toHaveBeenCalledTimes(2);
+    expect(mockStartTracking).toHaveBeenLastCalledWith('vehicle-1');
+  });
+
+  it('keeps reconnecting visible when restoring the server-side session fails', async () => {
+    mockStartTracking
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({ success: false, error: 'No response from server' });
+    let stateListener: (state: { status: string }) => void = () => {};
+    mockOnConnectionStateChange.mockImplementation((cb) => {
+      stateListener = cb;
+      return () => {};
+    });
+
+    const { result } = renderHook(() => useTrackingSession());
+    act(() => {
+      result.current.start('vehicle-1');
+    });
+    await waitFor(() => expect(result.current.status).toBe('tracking'));
+
+    act(() => {
+      stateListener({ status: 'disconnected' });
+      stateListener({ status: 'connected' });
+    });
+
+    await waitFor(() => expect(result.current.error?.message).toBe('No response from server'));
+    expect(result.current.isReconnecting).toBe(true);
+    expect(result.current.status).toBe('tracking');
   });
 });

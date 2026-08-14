@@ -20,6 +20,7 @@ export function useTrackingSession(): UseTrackingSessionResult {
   const [isReconnecting, setIsReconnecting] = useState(false);
   const statusRef = useRef<TrackingStatus>('idle');
   const activeVehicleIdRef = useRef<string | null>(null);
+  const reassertingRef = useRef(false);
 
   useEffect(() => {
     statusRef.current = status;
@@ -27,9 +28,32 @@ export function useTrackingSession(): UseTrackingSessionResult {
 
   useEffect(() => {
     const unsubscribe = onConnectionStateChange((state) => {
-      if (statusRef.current === 'tracking') {
-        setIsReconnecting(state.status !== 'connected');
+      if (statusRef.current !== 'tracking') return;
+
+      if (state.status !== 'connected') {
+        setIsReconnecting(true);
+        return;
       }
+
+      const vehicleId = activeVehicleIdRef.current;
+      if (!vehicleId || reassertingRef.current) return;
+
+      // The backend may have restarted while this screen stayed mounted. Its
+      // in-memory live registry is then empty even though the driver still sees
+      // an active trip. Re-announce the session as soon as the socket returns;
+      // waiting for the next GPS movement can leave riders on "WAITING" forever.
+      reassertingRef.current = true;
+      void startTracking(vehicleId).then((ack) => {
+        reassertingRef.current = false;
+        if (statusRef.current !== 'tracking' || activeVehicleIdRef.current !== vehicleId) return;
+        if (ack.success) {
+          setIsReconnecting(false);
+          setError(undefined);
+        } else {
+          setIsReconnecting(true);
+          setError(new AppError('tracking', ack.error || 'Failed to restore live tracking'));
+        }
+      });
     });
     return unsubscribe;
   }, []);
