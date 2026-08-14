@@ -35,6 +35,17 @@ export class AppError extends Error {
       const b = body as Record<string, unknown>;
       if (typeof b.code === 'string') code = b.code;
       if (typeof b.message === 'string') message = b.message;
+
+      // A validation response's top-level message is only the category
+      // ("Validation failed"); the actionable text is the first field error
+      // ("Enter a valid email address or driver ID"). Prefer the specific one.
+      if (Array.isArray(b.errors)) {
+        const firstFieldMessage = b.errors
+          .map((entry) => (entry as { message?: unknown } | null)?.message)
+          .find((entry): entry is string => typeof entry === 'string' && entry.length > 0);
+        if (firstFieldMessage) message = firstFieldMessage;
+      }
+
       if ('fields' in b) details = b;
     }
 
@@ -98,12 +109,29 @@ const KIND_MESSAGES: Record<AppErrorKind, string> = {
   tracking: "Couldn't confirm you're online with the server. Please try again.",
 };
 
+// fromHttp falls back to this when the response body carried no message — it is
+// a debugging string, never something to show a driver.
+const isPlaceholderMessage = (err: AppError) =>
+  !err.message || err.message === `HTTP ${err.status}`;
+
 export function userMessage(err: AppError): string {
   if (err.code && CODE_MESSAGES[err.code]) {
     return CODE_MESSAGES[err.code];
   }
-  if (err.kind === 'http' && err.status && err.status >= 500) {
+
+  if (err.kind === 'http') {
+    // A 5xx body can carry stack traces and internal detail — stay generic.
+    if (err.status && err.status >= 500) return KIND_MESSAGES.http;
+
+    // A 4xx message is written for the person reading it ("Invalid driver ID or
+    // password", "That vehicle is already tracked"). Dropping it was why every
+    // rejected sign-in read "Something went wrong" with no way to tell a typo
+    // from an outage.
+    if (err.status && err.status >= 400 && !isPlaceholderMessage(err)) {
+      return err.message;
+    }
     return KIND_MESSAGES.http;
   }
+
   return KIND_MESSAGES[err.kind];
 }

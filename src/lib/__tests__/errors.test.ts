@@ -117,6 +117,45 @@ describe('userMessage', () => {
     expect(userMessage(err)).toContain('driver');
   });
 
+  // The backend answers a bad driver-code sign-in with a 401 and a message
+  // written for the driver. Swallowing it left every rejected sign-in reading
+  // "Something went wrong", with no way to tell a typo from an outage.
+  it('surfaces the server message on a 4xx instead of a generic string', () => {
+    const err = AppError.fromHttp(401, { success: false, message: 'Invalid driver ID or password' });
+    expect(userMessage(err)).toBe('Invalid driver ID or password');
+  });
+
+  // Typing an enrollment key (TMD-…) into the driver sign-in field produces
+  // exactly this shape. "Validation failed" alone does not tell the driver the
+  // ID is the wrong kind of code.
+  it('prefers a specific field error over the generic validation category', () => {
+    const err = AppError.fromHttp(400, {
+      success: false,
+      message: 'Validation failed',
+      errors: [{ message: 'Enter a valid email address or driver ID' }],
+    });
+    expect(userMessage(err)).toBe('Enter a valid email address or driver ID');
+  });
+
+  it('ignores a malformed errors array and keeps the top-level message', () => {
+    const err = AppError.fromHttp(400, {
+      message: 'Validation failed',
+      errors: [null, {}, { message: 42 }],
+    });
+    expect(userMessage(err)).toBe('Validation failed');
+  });
+
+  it('prefers a known code over the server message', () => {
+    const err = AppError.fromHttp(401, { code: 'INVALID_CREDENTIALS', message: 'Unauthorized' });
+    expect(userMessage(err)).toBe('Wrong email or password. Try again.');
+  });
+
+  it('falls back to the generic message when a 4xx body carries none', () => {
+    const err = AppError.fromHttp(400, {});
+    expect(userMessage(err)).toBe('Something went wrong. Please try again.');
+    expect(userMessage(err)).not.toContain('HTTP 400');
+  });
+
   it('never leaks raw 500 body — returns generic message for 5xx', () => {
     const err = AppError.fromHttp(500, { message: 'Internal server error trace: pg.connect ...' });
     const msg = userMessage(err);
