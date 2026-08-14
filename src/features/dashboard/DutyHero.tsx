@@ -21,6 +21,7 @@ type Props = {
   lastFix: LocationFix | null;
   hasVehicle: boolean;
   hadVehicleBefore: boolean;
+  lostConnection?: boolean;
   onGoPress: () => void;
   onEndPress: () => void;
 };
@@ -67,6 +68,7 @@ export default function DutyHero({
   lastFix,
   hasVehicle,
   hadVehicleBefore,
+  lostConnection = false,
   onGoPress,
   onEndPress,
 }: Props) {
@@ -110,6 +112,7 @@ export default function DutyHero({
     hasVehicle,
     hadVehicleBefore,
     secondsSinceFix,
+    lostConnection,
   });
 
   const dotColor =

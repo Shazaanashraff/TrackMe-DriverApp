@@ -69,6 +69,12 @@ The dashboard composes: `useMyBusQuery` (which bus) → `useTrackingSession` →
   disabled until granted.
 - GPS unavailable / location services off → actionable message.
 - Socket down while tracking → "reconnecting, buffering" state, not a crash.
+- **Lost-connection warning (issue #30)**: distinct from a dropped socket — `useLocationBroadcast`
+  tracks a streak of consecutive server-rejected (NACK) updates while the socket believes it's
+  connected (e.g. repeated ack timeouts, issue #13) and flips `lostConnection: true` once the
+  streak hits `REJECTION_STREAK_THRESHOLD` (5). DutyHero shows "Losing connection — recent updates
+  may not be reaching the server" while live; the streak/warning reset on any acknowledged update
+  or when tracking stops. Priority: reconnecting > lost-connection warning > permission denied.
 
 ## Testing
 - `useTrackingSession`: start success/failure (ack), stop, cleanup on unmount (mock socket).

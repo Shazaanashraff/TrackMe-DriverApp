@@ -140,6 +140,26 @@ describe('DutyHero', () => {
     });
   });
 
+  describe('lost connection warning (issue #30)', () => {
+    it('shows the warning subline while tracking', () => {
+      const { getByText, queryByText } = render(
+        <DutyHero {...baseProps} status="tracking" lostConnection />
+      );
+      expect(getByText("You're live")).toBeTruthy();
+      expect(
+        getByText('Losing connection — recent updates may not be reaching the server')
+      ).toBeTruthy();
+      expect(queryByText("Riders can't see you yet")).toBeNull();
+    });
+
+    it('defaults to false and does not warn when omitted', () => {
+      const { queryByText } = render(<DutyHero {...baseProps} status="tracking" />);
+      expect(
+        queryByText('Losing connection — recent updates may not be reaching the server')
+      ).toBeNull();
+    });
+  });
+
   it('sets accessibilityState busy while the session is starting', () => {
     const { getByLabelText } = render(<DutyHero {...baseProps} status="starting" />);
     expect(getByLabelText('Go online').props.accessibilityState.busy).toBe(true);
