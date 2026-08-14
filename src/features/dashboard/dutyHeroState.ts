@@ -25,6 +25,10 @@ export interface DeriveDutyHeroStateInput {
   // "a manager unassigned it" (issue #21). Ignored when hasVehicle is true.
   hadVehicleBefore: boolean;
   secondsSinceFix: number | null;
+  // True once the server has rejected several consecutive location updates in a row
+  // while the socket believed it was connected (issue #30) — a distinct warning from
+  // isReconnecting (a dropped socket) or permission === 'denied'.
+  lostConnection?: boolean;
 }
 
 export function deriveDutyHeroState({
@@ -35,12 +39,27 @@ export function deriveDutyHeroState({
   hasVehicle,
   hadVehicleBefore,
   secondsSinceFix,
+  lostConnection,
 }: DeriveDutyHeroStateInput): DutyHeroState {
   if (status === 'tracking') {
     if (isReconnecting) {
       return {
         headline: 'Reconnecting…',
         subline: 'Hang tight, finding the server',
+        dot: 'warn',
+        showAllowLocation: false,
+        goDisabled: false,
+      };
+    }
+
+    // A dropped socket (isReconnecting) and a rejected-but-connected socket
+    // (lostConnection) can't both be true — pushToBuffer's non-emit offline path
+    // is what covers a dropped socket, so this only fires for the issue #13/#30
+    // "connected but the server keeps NACKing" scenario.
+    if (lostConnection) {
+      return {
+        headline: "You're live",
+        subline: "Losing connection — recent updates may not be reaching the server",
         dot: 'warn',
         showAllowLocation: false,
         goDisabled: false,

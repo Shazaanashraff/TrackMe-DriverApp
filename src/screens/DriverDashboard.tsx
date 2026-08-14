@@ -141,6 +141,7 @@ const DriverDashboard = ({ navigation }: Props) => {
           connecting={connecting}
           permission={broadcast.permission}
           lastFix={session.status === 'tracking' ? broadcast.lastFix : null}
+          lostConnection={session.status === 'tracking' ? broadcast.lostConnection : false}
           hasVehicle={hasVehicle}
           hadVehicleBefore={hadVehicleBefore}
           onGoPress={handleStart}

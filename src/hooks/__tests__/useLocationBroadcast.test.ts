@@ -201,6 +201,27 @@ describe('offline buffer', () => {
     expect(result.current.bufferedCount).toBe(0);
   });
 
+  it('caps the offline buffer at 50 and drops the oldest fix once exceeded', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(0);
+    mockGetConnectionState.mockReturnValue({ status: 'disconnected' });
+
+    const { result } = renderHook(() =>
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
+    );
+    await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
+
+    // Each fix moves comfortably past MIN_DISTANCE_METERS/MIN_INTERVAL_MS so every
+    // one is accepted by shouldEmit and pushed to the buffer.
+    for (let i = 0; i < 55; i += 1) {
+      jest.setSystemTime(i * 5000);
+      act(() => fireFix(6.9 + i * 0.01, 79.8 + i * 0.01));
+    }
+
+    expect(result.current.bufferedCount).toBe(50);
+    jest.useRealTimers();
+  });
+
   it('re-buffers a fix whose ack times out even though the socket believed it was connected (issue #13)', async () => {
     // Connected per getConnectionState, but the real emitLocation (services/socket.ts)
     // resolves a dropped ack with a NACK-shaped response after its own timeout — simulate
@@ -220,6 +241,112 @@ describe('offline buffer', () => {
     act(() => fireFix(6.9271, 79.8612));
 
     expect(result.current.bufferedCount).toBe(1);
+  });
+});
+
+describe('lost connection warning (issue #30)', () => {
+  function mockNack() {
+    mockEmitLocation.mockImplementation(
+      (_vehicleId: string, _routeId: string, _lat: number, _lng: number, cb: (r: unknown) => void) => {
+        cb({ success: false, error: 'Ack timeout' });
+      }
+    );
+  }
+
+  function mockAck() {
+    mockEmitLocation.mockImplementation(
+      (_vehicleId: string, _routeId: string, _lat: number, _lng: number, cb: (r: unknown) => void) => {
+        cb({ success: true });
+      }
+    );
+  }
+
+  it('stays false below the rejection-streak threshold', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(0);
+    mockGetConnectionState.mockReturnValue({ status: 'connected' });
+    mockNack();
+
+    const { result } = renderHook(() =>
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
+    );
+    await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
+
+    for (let i = 0; i < 4; i += 1) {
+      jest.setSystemTime(i * 5000);
+      act(() => fireFix(6.9 + i * 0.01, 79.8 + i * 0.01));
+    }
+
+    expect(result.current.lostConnection).toBe(false);
+    jest.useRealTimers();
+  });
+
+  it('flips to true once the server rejects several updates in a row', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(0);
+    mockGetConnectionState.mockReturnValue({ status: 'connected' });
+    mockNack();
+
+    const { result } = renderHook(() =>
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
+    );
+    await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
+
+    for (let i = 0; i < 5; i += 1) {
+      jest.setSystemTime(i * 5000);
+      act(() => fireFix(6.9 + i * 0.01, 79.8 + i * 0.01));
+    }
+
+    expect(result.current.lostConnection).toBe(true);
+    jest.useRealTimers();
+  });
+
+  it('clears once an update is acknowledged again', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(0);
+    mockGetConnectionState.mockReturnValue({ status: 'connected' });
+    mockNack();
+
+    const { result } = renderHook(() =>
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
+    );
+    await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
+
+    for (let i = 0; i < 5; i += 1) {
+      jest.setSystemTime(i * 5000);
+      act(() => fireFix(6.9 + i * 0.01, 79.8 + i * 0.01));
+    }
+    expect(result.current.lostConnection).toBe(true);
+
+    mockAck();
+    jest.setSystemTime(5 * 5000);
+    act(() => fireFix(6.95, 79.85));
+
+    expect(result.current.lostConnection).toBe(false);
+    jest.useRealTimers();
+  });
+
+  it('resets the streak and warning when tracking stops', async () => {
+    jest.useFakeTimers();
+    jest.setSystemTime(0);
+    mockGetConnectionState.mockReturnValue({ status: 'connected' });
+    mockNack();
+
+    const { result, rerender } = renderHook(
+      ({ active }) => useLocationBroadcast({ active, vehicleId: 'b1', routeId: 'r1' }),
+      { initialProps: { active: true } }
+    );
+    await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
+
+    for (let i = 0; i < 5; i += 1) {
+      jest.setSystemTime(i * 5000);
+      act(() => fireFix(6.9 + i * 0.01, 79.8 + i * 0.01));
+    }
+    expect(result.current.lostConnection).toBe(true);
+
+    rerender({ active: false });
+    expect(result.current.lostConnection).toBe(false);
+    jest.useRealTimers();
   });
 });
 

@@ -14,6 +14,13 @@ export const MAX_INTERVAL_MS = 30_000;
 // Matches the burst the backend's driver:location rate limit is sized for
 // (60/s) — a larger buffer would NACK its own tail on replay and livelock.
 export const MAX_BUFFER_SIZE = 50;
+// Consecutive NACKs (the server rejecting an update while the socket believes
+// it's connected — e.g. repeated ack timeouts, issue #13) before surfacing a
+// "lost connection" warning to the driver (issue #30). A single rejection is
+// common and already handled by re-buffering; only a run of them is worth
+// alarming on. The streak lives here rather than in the hook because the
+// background task emits through this module with no React tree mounted.
+export const REJECTION_STREAK_THRESHOLD = 5;
 
 const BUFFER_KEY = 'driver_location_buffer';
 const TARGET_KEY = 'driver_tracking_target';
@@ -25,12 +32,16 @@ export interface TrackingTarget {
 
 type FixListener = (fix: LocationFix) => void;
 type BufferListener = (count: number) => void;
+type LostConnectionListener = (lost: boolean) => void;
 
 let target: TrackingTarget | null = null;
 let lastEmitted: LocationFix | null = null;
 let buffer: LocationFix[] = [];
 let fixListeners: FixListener[] = [];
 let bufferListeners: BufferListener[] = [];
+let lostConnectionListeners: LostConnectionListener[] = [];
+let rejectionStreak = 0;
+let lostConnection = false;
 let replayUnsubscribe: (() => void) | null = null;
 let keepaliveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -79,6 +90,29 @@ async function persistBuffer() {
   }
 }
 
+function setLostConnection(next: boolean) {
+  if (lostConnection === next) return;
+  lostConnection = next;
+  lostConnectionListeners.forEach((cb) => {
+    try {
+      cb(next);
+    } catch {
+      /* see notifyBuffer */
+    }
+  });
+}
+
+/** Folds one ack outcome into the rejection streak behind the warning. */
+function noteAckOutcome(nacked: boolean) {
+  if (!nacked) {
+    rejectionStreak = 0;
+    setLostConnection(false);
+    return;
+  }
+  rejectionStreak += 1;
+  if (rejectionStreak >= REJECTION_STREAK_THRESHOLD) setLostConnection(true);
+}
+
 function isNackResponse(response: unknown): boolean {
   return (
     !!response &&
@@ -97,7 +131,9 @@ function pushToBuffer(fix: LocationFix) {
 function emitFix(fix: LocationFix) {
   if (!target) return;
   emitLocation(target.vehicleId, target.routeId, fix.lat, fix.lng, (response: unknown) => {
-    if (isNackResponse(response)) pushToBuffer(fix);
+    const nacked = isNackResponse(response);
+    if (nacked) pushToBuffer(fix);
+    noteAckOutcome(nacked);
   });
 }
 
@@ -210,11 +246,29 @@ export function getBufferedCount(): number {
   return buffer.length;
 }
 
+/**
+ * Whether the server has rejected REJECTION_STREAK_THRESHOLD updates in a row —
+ * distinct from the offline buffer, since these rejections happen while the
+ * socket still believes it is connected (issue #30).
+ */
+export function subscribeToLostConnection(cb: LostConnectionListener): () => void {
+  lostConnectionListeners.push(cb);
+  return () => {
+    lostConnectionListeners = lostConnectionListeners.filter((listener) => listener !== cb);
+  };
+}
+
+export function getLostConnection(): boolean {
+  return lostConnection;
+}
+
 /** Clears throttle + buffer at the end of a shift so the next one starts fresh. */
 export async function resetDispatch() {
   clearKeepalive();
   lastEmitted = null;
   buffer = [];
+  rejectionStreak = 0;
+  setLostConnection(false);
   notifyBuffer();
   await setTrackingTarget(null);
   try {

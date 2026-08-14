@@ -4,12 +4,14 @@ import * as Location from 'expo-location';
 import {
   dispatchFix,
   getBufferedCount,
+  getLostConnection,
   resetDispatch,
   setTrackingTarget,
   startReplayOnReconnect,
   stopReplayOnReconnect,
   subscribeToBufferCount,
   subscribeToFixes,
+  subscribeToLostConnection,
 } from '../services/locationDispatch';
 import { LocationFix } from '../helpers/locationUtils';
 
@@ -40,6 +42,10 @@ export interface UseLocationBroadcastResult {
   permission: LocationPermissionStatus;
   bufferedCount: number;
   lastFix: LocationFix | null;
+  // True once the server has rejected REJECTION_STREAK_THRESHOLD updates in a row —
+  // a signal distinct from bufferedCount/offline, since these rejections happen while
+  // the socket believes it's connected (issue #30).
+  lostConnection: boolean;
 }
 
 export function useLocationBroadcast({
@@ -51,15 +57,22 @@ export function useLocationBroadcast({
   const [permission, setPermission] = useState<LocationPermissionStatus>('undetermined');
   const [bufferedCount, setBufferedCount] = useState(getBufferedCount());
   const [lastFix, setLastFix] = useState<LocationFix | null>(null);
+  const [lostConnection, setLostConnection] = useState(getLostConnection());
 
   const subscriptionRef = useRef<{ remove: () => void } | null>(null);
 
   useEffect(() => {
     const unsubscribeFixes = subscribeToFixes(setLastFix);
     const unsubscribeBuffer = subscribeToBufferCount(setBufferedCount);
+    // The rejection streak is counted in locationDispatch, not here: the
+    // background task emits through the same pipeline with no React tree
+    // mounted, so a warning owned by this hook would miss every NACK a
+    // backgrounded shift collects.
+    const unsubscribeLost = subscribeToLostConnection(setLostConnection);
     return () => {
       unsubscribeFixes();
       unsubscribeBuffer();
+      unsubscribeLost();
     };
   }, []);
 
@@ -125,6 +138,9 @@ export function useLocationBroadcast({
         subscriptionRef.current = null;
       }
       setLastFix(null);
+      // resetDispatch() clears the streak itself on the !active branch above;
+      // this covers unmount, where nothing else runs.
+      setLostConnection(false);
     };
   }, [active, beginWatching, backgroundActive]);
 
@@ -172,5 +188,5 @@ export function useLocationBroadcast({
     };
   }, [active, beginWatching, backgroundActive]);
 
-  return { permission, bufferedCount, lastFix };
+  return { permission, bufferedCount, lastFix, lostConnection };
 }
