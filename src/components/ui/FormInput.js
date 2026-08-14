@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../theme';
 
@@ -78,6 +78,12 @@ const styles = StyleSheet.create({
     flex: 1,
     ...theme.textStyle('body'),
     color: theme.color.text.primary,
+    backgroundColor: 'transparent',
+    ...Platform.select({
+      web: {
+        outlineStyle: 'none',
+      },
+    }),
   },
   error: {
     ...theme.textStyle('label', { color: theme.color.danger.text }),
