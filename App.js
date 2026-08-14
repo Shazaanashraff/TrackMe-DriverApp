@@ -11,6 +11,9 @@ import * as notificationService from './src/services/notificationService';
 import { View } from 'react-native';
 import { getBackendOnline, subscribeBackendStatus, startBackendHealthMonitor } from './src/services/backendStatus';
 import { queryClient, persistOptions } from './src/app/queryClient';
+// Registers the background location task. Must be imported at app entry, not from
+// a screen — the OS can launch this process headless, with no navigation mounted.
+import './src/services/backgroundLocation';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();

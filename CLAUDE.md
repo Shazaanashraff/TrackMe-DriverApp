@@ -38,6 +38,9 @@ src/
     backendStatus.js  # Health-check poller, pub/sub for online/offline state
     notificationService.js
     socket.js         # Socket.IO — emit GPS location, manage tracking session
+    locationDispatch.ts    # Shared GPS pipeline: throttle + offline buffer + emit.
+                           # Both the foreground watcher and the background task feed this.
+    backgroundLocation.ts  # TaskManager background location task (registered from App.js)
   theme/
     tokens.js         # Signal Ink design tokens (color/type/space/radius/motion) — ported
                        # from user-app, plus driver-only `ink` (duty hero) and `duty` (status) groups
@@ -78,7 +81,15 @@ See `docs/redesign/SIGNAL_INK_PLAN.md` for the in-progress "Signal Ink" reskin d
 
 ### Location tracking (DriverDashboard / DutyHero)
 - `expo-location` `watchPositionAsync` at 3 s / 3 m intervals while tracking.
-- Each location update calls `emitLocation()` from `services/socket.js` which emits a `update-location` socket event to the backend.
+- Every fix — foreground watcher **or** background task — goes through
+  `services/locationDispatch.ts`, which owns the throttle, the offline buffer, and the
+  `driver:location` emit. Never emit location from a screen or hook directly; the two producers
+  must share one buffer and one last-emitted fix.
+- **Background tracking is implemented** (`services/backgroundLocation.ts`): the shift keeps
+  broadcasting with the screen locked. Its `TaskManager.defineTask` is registered from `App.js`
+  at module scope because the OS can launch the process headless — do not move it into a screen.
+  Background permission is a **two-step** flow gated on an in-app disclosure that Google Play
+  requires to come before the system prompt. See `docs/LOCATION_TRACKING.md`.
 - `startTracking()` / `stopTracking()` are socket calls that tell the backend to mark the bus as live or offline.
 - `useLocationBroadcast`'s `LocationFix` also carries `accuracy` (meters, from
   `location.coords.accuracy`) — UI-only, never sent over the wire or used by the emit throttle.

@@ -136,6 +136,48 @@ describe('startTracking', () => {
     });
     expect(mockSocket.emit).not.toHaveBeenCalled();
   });
+
+  it('resolves success:false when the ack never arrives, instead of hanging on GO', async () => {
+    jest.useFakeTimers();
+    const { connectSocket, startTracking } = getModule();
+    connectSocket('tok');
+
+    // No cb invocation — the pre-fix behaviour left this promise pending
+    // forever, so the GO button spun with no way to retry.
+    mockSocket.emit.mockImplementationOnce(() => {});
+
+    const pending = startTracking('vehicle-1');
+    jest.advanceTimersByTime(5000);
+
+    await expect(pending).resolves.toEqual({
+      success: false,
+      error: 'No response from server',
+    });
+    jest.useRealTimers();
+  });
+
+  it('ignores a late ack that arrives after the timeout already resolved', async () => {
+    jest.useFakeTimers();
+    const { connectSocket, startTracking } = getModule();
+    connectSocket('tok');
+
+    const late: { ack?: (r: unknown) => void } = {};
+    mockSocket.emit.mockImplementationOnce(
+      (_event: string, _payload: unknown, cb: (r: unknown) => void) => {
+        late.ack = cb;
+      }
+    );
+
+    const pending = startTracking('vehicle-1');
+    jest.advanceTimersByTime(5000);
+    late.ack?.({ success: true });
+
+    await expect(pending).resolves.toEqual({
+      success: false,
+      error: 'No response from server',
+    });
+    jest.useRealTimers();
+  });
 });
 
 describe('stopTracking', () => {

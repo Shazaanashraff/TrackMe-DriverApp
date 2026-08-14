@@ -43,6 +43,18 @@ jest.mock('../../hooks/useLocationBroadcast', () => ({
   useLocationBroadcast: () => ({ permission: 'granted', bufferedCount: 0, lastFix: null }),
 }));
 
+const mockUseBackgroundTracking = jest.fn(() => ({
+  permission: 'granted',
+  isActive: true,
+  shouldOfferUpgrade: false,
+  enableBackground: jest.fn(),
+  dismissOffer: jest.fn(),
+}));
+
+jest.mock('../../hooks/useBackgroundTracking', () => ({
+  useBackgroundTracking: () => mockUseBackgroundTracking(),
+}));
+
 jest.mock('../../hooks/auth', () => ({
   useLogout: () => ({ mutate: jest.fn(), isPending: false }),
 }));

@@ -1,5 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { useLocationBroadcast } from '../useLocationBroadcast';
+import { resetDispatch } from '../../services/locationDispatch';
 
 const mockEmitLocation = jest.fn();
 const mockGetConnectionState = jest.fn();
@@ -52,8 +53,11 @@ let watchCallback:
   | ((location: { coords: { latitude: number; longitude: number; accuracy?: number | null } }) => void)
   | null;
 
-beforeEach(() => {
+beforeEach(async () => {
   jest.clearAllMocks();
+  // The emit throttle and offline buffer live in the shared dispatch module now
+  // (the background task feeds the same pipeline), so they outlive each hook.
+  await resetDispatch();
   watchCallback = null;
   appStateListener = null;
   mockGetConnectionState.mockReturnValue({ status: 'connected' });

@@ -1,14 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import * as Location from 'expo-location';
-import { emitLocation, getConnectionState, onConnectionStateChange } from '../services/socket';
-import { shouldEmit, LocationFix } from '../helpers/locationUtils';
+import {
+  dispatchFix,
+  getBufferedCount,
+  resetDispatch,
+  setTrackingTarget,
+  startReplayOnReconnect,
+  stopReplayOnReconnect,
+  subscribeToBufferCount,
+  subscribeToFixes,
+} from '../services/locationDispatch';
+import { LocationFix } from '../helpers/locationUtils';
 
 export type LocationPermissionStatus = 'granted' | 'denied' | 'undetermined';
-
-const MIN_DISTANCE_METERS = 3;
-const MIN_INTERVAL_MS = 2500;
-const MAX_BUFFER_SIZE = 50;
 
 // expo-location's web build can throw on subscription.remove()
 // ("LocationEventEmitter.removeSubscription is not a function") depending on the
@@ -26,6 +31,9 @@ export interface UseLocationBroadcastOptions {
   active: boolean;
   vehicleId: string;
   routeId: string;
+  // When the OS-managed background task is delivering fixes, the foreground
+  // watcher is redundant — both feed the same dispatcher.
+  backgroundActive?: boolean;
 }
 
 export interface UseLocationBroadcastResult {
@@ -34,67 +42,39 @@ export interface UseLocationBroadcastResult {
   lastFix: LocationFix | null;
 }
 
-function isNackResponse(response: unknown): boolean {
-  return !!response && typeof response === 'object' && (response as { success?: boolean }).success === false;
-}
-
 export function useLocationBroadcast({
   active,
   vehicleId,
   routeId,
+  backgroundActive = false,
 }: UseLocationBroadcastOptions): UseLocationBroadcastResult {
   const [permission, setPermission] = useState<LocationPermissionStatus>('undetermined');
-  const [bufferedCount, setBufferedCount] = useState(0);
+  const [bufferedCount, setBufferedCount] = useState(getBufferedCount());
   const [lastFix, setLastFix] = useState<LocationFix | null>(null);
 
   const subscriptionRef = useRef<{ remove: () => void } | null>(null);
-  const lastFixRef = useRef<LocationFix | null>(null);
-  const bufferRef = useRef<LocationFix[]>([]);
 
-  const pushToBuffer = useCallback((fix: LocationFix) => {
-    bufferRef.current.push(fix);
-    if (bufferRef.current.length > MAX_BUFFER_SIZE) bufferRef.current.shift();
-    setBufferedCount(bufferRef.current.length);
+  useEffect(() => {
+    const unsubscribeFixes = subscribeToFixes(setLastFix);
+    const unsubscribeBuffer = subscribeToBufferCount(setBufferedCount);
+    return () => {
+      unsubscribeFixes();
+      unsubscribeBuffer();
+    };
   }, []);
 
-  const emitFix = useCallback(
-    (fix: LocationFix) => {
-      emitLocation(vehicleId, routeId, fix.lat, fix.lng, (response: unknown) => {
-        if (isNackResponse(response)) {
-          pushToBuffer(fix);
-        }
-      });
-    },
-    [vehicleId, routeId, pushToBuffer]
-  );
-
-  const handleFix = useCallback(
-    (fix: LocationFix) => {
-      if (!shouldEmit(lastFixRef.current, fix, MIN_DISTANCE_METERS, MIN_INTERVAL_MS)) return;
-      lastFixRef.current = fix;
-      setLastFix(fix);
-
-      if (getConnectionState().status !== 'connected') {
-        pushToBuffer(fix);
-        return;
-      }
-      emitFix(fix);
-    },
-    [emitFix, pushToBuffer]
-  );
-
-  // Replay buffered fixes in order once the socket reconnects.
   useEffect(() => {
-    const unsubscribe = onConnectionStateChange((state) => {
-      if (state.status === 'connected' && bufferRef.current.length > 0) {
-        const queued = bufferRef.current;
-        bufferRef.current = [];
-        setBufferedCount(0);
-        queued.forEach(emitFix);
-      }
-    });
-    return unsubscribe;
-  }, [emitFix]);
+    if (!active) return undefined;
+    void setTrackingTarget({ vehicleId, routeId });
+    startReplayOnReconnect();
+    return () => {
+      stopReplayOnReconnect();
+    };
+  }, [active, vehicleId, routeId]);
+
+  const handleFix = useCallback((fix: LocationFix) => {
+    dispatchFix(fix);
+  }, []);
 
   const beginWatching = useCallback(() => {
     return Location.watchPositionAsync(
@@ -122,6 +102,7 @@ export function useLocationBroadcast({
       if (cancelled) return;
       setPermission(status === 'granted' ? 'granted' : 'denied');
       if (status !== 'granted') return;
+      if (backgroundActive) return;
 
       const subscription = await beginWatching();
       if (cancelled) {
@@ -133,6 +114,8 @@ export function useLocationBroadcast({
 
     if (active) {
       start();
+    } else {
+      void resetDispatch();
     }
 
     return () => {
@@ -141,10 +124,9 @@ export function useLocationBroadcast({
         safeRemove(subscriptionRef.current);
         subscriptionRef.current = null;
       }
-      lastFixRef.current = null;
       setLastFix(null);
     };
-  }, [active, beginWatching]);
+  }, [active, beginWatching, backgroundActive]);
 
   // Permission can change in either direction while a driver is on duty: granted
   // later via the OS Settings app after an earlier denial (issue #26), or revoked
@@ -173,7 +155,7 @@ export function useLocationBroadcast({
         }
 
         setPermission('granted');
-        if (subscriptionRef.current) return;
+        if (backgroundActive || subscriptionRef.current) return;
 
         const watcher = await beginWatching();
         if (cancelled || subscriptionRef.current) {
@@ -188,7 +170,7 @@ export function useLocationBroadcast({
       cancelled = true;
       subscription.remove();
     };
-  }, [active, beginWatching]);
+  }, [active, beginWatching, backgroundActive]);
 
   return { permission, bufferedCount, lastFix };
 }

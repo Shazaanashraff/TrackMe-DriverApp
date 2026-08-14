@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, SafeAreaView, StatusBar, View, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useAuth } from '../context/AuthContext';
 import { useMyVehicleQuery } from '../hooks/vehicle';
 import { useTrackingSession } from '../hooks/useTrackingSession';
 import { useLocationBroadcast } from '../hooks/useLocationBroadcast';
+import { useBackgroundTracking } from '../hooks/useBackgroundTracking';
+import BackgroundLocationDisclosure from '../features/dashboard/BackgroundLocationDisclosure';
 import { theme } from '../theme';
 import AppText from '../components/ui/AppText';
 import Card from '../components/ui/Card';
@@ -33,6 +36,8 @@ function unwrap<T>(response: unknown): T {
 // reopen, rather than only within the session that saw it happen — issue #21.
 const HAD_VEHICLE_KEY = 'driver_had_vehicle_before';
 
+const KEEP_AWAKE_TAG = 'driver-on-duty';
+
 type Props = {
   navigation: { navigate: (screen: string, params?: Record<string, unknown>) => void };
 };
@@ -60,10 +65,28 @@ const DriverDashboard = ({ navigation }: Props) => {
   }, [hasVehicle]);
 
   const session = useTrackingSession();
-  const broadcast = useLocationBroadcast({ active: session.status === 'tracking', vehicleId, routeId });
+  const tracking = session.status === 'tracking';
+  const background = useBackgroundTracking(tracking);
+  const broadcast = useLocationBroadcast({
+    active: tracking,
+    vehicleId,
+    routeId,
+    backgroundActive: background.isActive,
+  });
   const { connecting } = useSocketConnection(token);
 
+  // While on duty in the foreground, don't let the screen sleep and silently
+  // demote a foreground-only shift into no shift at all.
+  useEffect(() => {
+    if (!tracking || background.isActive) return undefined;
+    activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => {});
+    return () => {
+      deactivateKeepAwake(KEEP_AWAKE_TAG);
+    };
+  }, [tracking, background.isActive]);
+
   const [showEndConfirm, setShowEndConfirm] = useState(false);
+  const [enablingBackground, setEnablingBackground] = useState(false);
 
   // "Go on duty" failing server-side (e.g. bus already tracked elsewhere) was captured
   // in session.error but never shown to the driver — see issue #20. Fires once per new
@@ -85,6 +108,19 @@ const DriverDashboard = ({ navigation }: Props) => {
 
 
   const handleStart = () => session.start(vehicleId);
+
+  const handleEnableBackground = async () => {
+    setEnablingBackground(true);
+    const granted = await background.enableBackground();
+    setEnablingBackground(false);
+    if (!granted) {
+      background.dismissOffer();
+      Alert.alert(
+        'Location sharing will pause',
+        "Without background access your vehicle stops broadcasting when your screen locks. You can turn this on later in your phone's settings.",
+      );
+    }
+  };
 
   const handleStop = () => {
     session.stop(vehicleId);
@@ -140,6 +176,13 @@ const DriverDashboard = ({ navigation }: Props) => {
           />
         </Card>
       </ScrollView>
+
+      <BackgroundLocationDisclosure
+        visible={background.shouldOfferUpgrade && broadcast.permission === 'granted'}
+        loading={enablingBackground}
+        onAllow={handleEnableBackground}
+        onDismiss={background.dismissOffer}
+      />
 
       <ConfirmSheet
         visible={showEndConfirm}

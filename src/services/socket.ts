@@ -159,6 +159,8 @@ export const emitLocation = (
   }
 };
 
+const START_ACK_TIMEOUT_MS = 5000;
+
 export const startTracking = (vehicleId: string): Promise<TrackingAck> => {
   return new Promise((resolve) => {
     if (!socket || !socket.connected) {
@@ -166,7 +168,19 @@ export const startTracking = (vehicleId: string): Promise<TrackingAck> => {
       return;
     }
 
+    // Without a timeout this promise never settles if the ack is lost, leaving
+    // the driver on a GO button that spins forever with no way to retry.
+    let settled = false;
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve({ success: false, error: 'No response from server' });
+    }, START_ACK_TIMEOUT_MS);
+
     socket.emit('driver:start-tracking', { vehicleId }, (response: TrackingAck) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       resolve(response || { success: false, error: 'No response from server' });
     });
   });
