@@ -137,4 +137,11 @@ describe('LoginScreen', () => {
     const { getByTestId } = render(<LoginScreen />);
     expect(getByTestId('primary-btn').props.accessibilityState?.disabled).toBe(true);
   });
+
+  it('navigates to ForgotPassword when the forgot-password link is pressed', () => {
+    const navigate = jest.fn();
+    const { getByText } = render(<LoginScreen navigation={{ navigate }} />);
+    fireEvent.press(getByText('Forgot password?'));
+    expect(navigate).toHaveBeenCalledWith('ForgotPassword');
+  });
 });

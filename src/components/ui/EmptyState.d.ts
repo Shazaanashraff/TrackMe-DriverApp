@@ -7,6 +7,8 @@ interface EmptyStateProps {
   subtitle?: string;
   actionLabel?: string;
   onAction?: () => void;
+  fill?: boolean;
+  testID?: string;
   style?: ViewStyle;
 }
 

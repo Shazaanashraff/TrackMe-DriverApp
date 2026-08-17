@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StatusBar, KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
+import { View, ScrollView, StatusBar, KeyboardAvoidingView, Platform, StyleSheet, Pressable } from 'react-native';
 import { useLogin } from '../hooks/auth';
 import { AppError, normalizeError } from '../lib/errors';
 import { theme } from '../theme';
@@ -14,7 +14,7 @@ function asAppError(error: unknown): AppError {
   return error instanceof AppError ? error : normalizeError(error);
 }
 
-const LoginScreen = () => {
+const LoginScreen = ({ navigation }: { navigation?: { navigate: (screen: string) => void } }) => {
   // Drivers sign in with the ID on their slip or, if they were given one, an
   // email, so the field takes either.
   const [identifier, setIdentifier] = useState('');
@@ -81,6 +81,15 @@ const LoginScreen = () => {
           {login.isError && <ErrorState error={asAppError(login.error)} variant="compact" />}
 
           <PrimaryButton title="Sign in" onPress={handleLogin} loading={login.isPending} style={styles.loginButton} />
+
+          <Pressable
+            onPress={() => navigation?.navigate('ForgotPassword')}
+            accessibilityRole="button"
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={styles.forgotPasswordLink}
+          >
+            <AppText variant="label" color={theme.color.primary[500]}>Forgot password?</AppText>
+          </Pressable>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -115,6 +124,10 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     marginTop: theme.space[2],
+  },
+  forgotPasswordLink: {
+    marginTop: theme.space[4],
+    alignItems: 'center',
   },
 });
 

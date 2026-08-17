@@ -5,6 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 
 import LoginScreen from '../screens/LoginScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import ForgotPasswordOtpScreen from '../screens/ForgotPasswordOtpScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import DriverDashboard from '../screens/DriverDashboard';
 import VehicleRegistrationScreen from '../screens/VehicleRegistrationScreen';
 import TripHistoryScreen from '../screens/TripHistoryScreen';
@@ -80,7 +83,12 @@ const AppNavigator = ({ backendOnline }) => {
       }}
     >
       {!user ? (
-        <Stack.Screen name="Login" component={LoginScreen} />
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="ForgotPasswordOtp" component={ForgotPasswordOtpScreen} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+        </>
       ) : (
         <>
           <Stack.Screen name="MainTabs" component={MainTabs} />

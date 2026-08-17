@@ -109,6 +109,33 @@ export function useRegister() {
   });
 }
 
+export function useRequestPasswordResetOtp() {
+  return useMutation({
+    mutationFn: ({ email }: { email: string }) => api.requestPasswordResetOtp(email),
+  });
+}
+
+export function useVerifyPasswordResetOtp() {
+  return useMutation({
+    mutationFn: ({ email, otp }: { email: string; otp: string }) =>
+      api.verifyPasswordResetOtp(email, otp),
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: ({
+      email,
+      resetToken,
+      password,
+    }: {
+      email: string;
+      resetToken: string;
+      password: string;
+    }) => api.resetPassword(email, resetToken, password),
+  });
+}
+
 export function useLogout() {
   const { logout } = useAuth() as AuthCtx;
 

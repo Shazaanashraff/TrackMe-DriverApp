@@ -12,6 +12,9 @@ const api = {
   getMyEnrollmentKey: auth.getMyEnrollmentKey,
   refreshToken: auth.refreshToken,
   logout: auth.logout,
+  requestPasswordResetOtp: auth.requestPasswordResetOtp,
+  verifyPasswordResetOtp: auth.verifyPasswordResetOtp,
+  resetPassword: auth.resetPassword,
 
   // vehicle
   getMyVehicle: vehicle.getMyVehicle,

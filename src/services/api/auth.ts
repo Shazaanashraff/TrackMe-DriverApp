@@ -58,3 +58,27 @@ export async function logout(token: string) {
     headers: { Authorization: `Bearer ${token}` },
   });
 }
+
+export async function requestPasswordResetOtp(email: string) {
+  return requestJson(`${API_URL}/api/auth/forgot-password/request-otp`, {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function verifyPasswordResetOtp(email: string, otp: string) {
+  return requestJson(`${API_URL}/api/auth/forgot-password/verify-otp`, {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ email, otp }),
+  });
+}
+
+export async function resetPassword(email: string, resetToken: string, password: string) {
+  return requestJson(`${API_URL}/api/auth/forgot-password/reset`, {
+    method: 'POST',
+    headers: JSON_HEADERS,
+    body: JSON.stringify({ email, resetToken, password }),
+  });
+}

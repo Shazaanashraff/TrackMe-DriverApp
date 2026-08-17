@@ -37,6 +37,34 @@ describe('FormInput', () => {
     );
     expect(getByLabelText('Email')).toBeTruthy();
   });
+
+  it('does not render a show/hide toggle unless secureTextEntry + showToggle are both set', () => {
+    const { queryByLabelText } = render(
+      <FormInput label="Password" value="" onChangeText={() => {}} secureTextEntry />
+    );
+    expect(queryByLabelText('Show password')).toBeNull();
+  });
+
+  it('reveals and re-masks a password field via the show/hide toggle', () => {
+    const { getByLabelText, getByPlaceholderText } = render(
+      <FormInput
+        label="Password"
+        placeholder="Password"
+        value="secret123"
+        onChangeText={() => {}}
+        secureTextEntry
+        showToggle
+      />
+    );
+    const input = getByPlaceholderText('Password');
+    expect(input.props.secureTextEntry).toBe(true);
+
+    fireEvent.press(getByLabelText('Show password'));
+    expect(getByPlaceholderText('Password').props.secureTextEntry).toBe(false);
+
+    fireEvent.press(getByLabelText('Hide password'));
+    expect(getByPlaceholderText('Password').props.secureTextEntry).toBe(true);
+  });
 });
 
 describe('PrimaryButton', () => {

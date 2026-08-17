@@ -1,7 +1,16 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
-import { useLogin, useRegister, useLogout, useMeQuery, useMyEnrollmentKeyQuery } from '../index';
+import {
+  useLogin,
+  useRegister,
+  useLogout,
+  useMeQuery,
+  useMyEnrollmentKeyQuery,
+  useRequestPasswordResetOtp,
+  useVerifyPasswordResetOtp,
+  useResetPassword,
+} from '../index';
 
 jest.mock('../../../services/api', () => ({
   __esModule: true,
@@ -11,6 +20,9 @@ jest.mock('../../../services/api', () => ({
     logout: jest.fn(),
     getMe: jest.fn(),
     getMyEnrollmentKey: jest.fn(),
+    requestPasswordResetOtp: jest.fn(),
+    verifyPasswordResetOtp: jest.fn(),
+    resetPassword: jest.fn(),
   },
 }));
 
@@ -239,6 +251,48 @@ describe('useMyEnrollmentKeyQuery', () => {
       expect((result.current.data as { data: { enrollmentKey: string } }).data.enrollmentKey)
         .toBe('TMD-P44B-X3RF-YGNX')
     );
+  });
+});
+
+describe('useRequestPasswordResetOtp', () => {
+  it('calls api.requestPasswordResetOtp with the email', async () => {
+    (mockApi.requestPasswordResetOtp as jest.Mock).mockResolvedValueOnce({ message: 'sent' });
+
+    const { result } = renderHook(() => useRequestPasswordResetOtp(), { wrapper: makeWrapper() });
+    act(() => {
+      result.current.mutate({ email: 'driver@company.com' });
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockApi.requestPasswordResetOtp).toHaveBeenCalledWith('driver@company.com');
+  });
+});
+
+describe('useVerifyPasswordResetOtp', () => {
+  it('calls api.verifyPasswordResetOtp with email and otp', async () => {
+    (mockApi.verifyPasswordResetOtp as jest.Mock).mockResolvedValueOnce({ resetToken: 'tok' });
+
+    const { result } = renderHook(() => useVerifyPasswordResetOtp(), { wrapper: makeWrapper() });
+    act(() => {
+      result.current.mutate({ email: 'driver@company.com', otp: '123456' });
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockApi.verifyPasswordResetOtp).toHaveBeenCalledWith('driver@company.com', '123456');
+  });
+});
+
+describe('useResetPassword', () => {
+  it('calls api.resetPassword with email, resetToken, and password', async () => {
+    (mockApi.resetPassword as jest.Mock).mockResolvedValueOnce({ message: 'reset' });
+
+    const { result } = renderHook(() => useResetPassword(), { wrapper: makeWrapper() });
+    act(() => {
+      result.current.mutate({ email: 'driver@company.com', resetToken: 'tok', password: 'newpass1' });
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(mockApi.resetPassword).toHaveBeenCalledWith('driver@company.com', 'tok', 'newpass1');
   });
 });
 
