@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Platform } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../theme';
 
@@ -13,12 +13,17 @@ const FormInput = ({
   keyboardType = 'default',
   autoCapitalize = 'sentences',
   secureTextEntry = false,
+  // Adds a "Show"/"Hide" toggle next to a secureTextEntry field so the driver
+  // can confirm what they typed before submitting (issue #10).
+  showToggle = false,
   style,
   onFocus,
   onBlur,
   ...rest
 }) => {
   const [focused, setFocused] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const canToggle = secureTextEntry && showToggle;
 
   return (
     <View style={[styles.group, style]}>
@@ -34,13 +39,23 @@ const FormInput = ({
           onChangeText={onChangeText}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
-          secureTextEntry={secureTextEntry}
+          secureTextEntry={canToggle ? !revealed : secureTextEntry}
           placeholderTextColor={theme.color.text.muted}
           onFocus={(e) => { setFocused(true); onFocus?.(e); }}
           onBlur={(e) => { setFocused(false); onBlur?.(e); }}
           accessibilityLabel={label || placeholder}
           {...rest}
         />
+        {canToggle ? (
+          <Pressable
+            onPress={() => setRevealed((r) => !r)}
+            accessibilityRole="button"
+            accessibilityLabel={revealed ? 'Hide password' : 'Show password'}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={styles.toggleText}>{revealed ? 'Hide' : 'Show'}</Text>
+          </Pressable>
+        ) : null}
       </View>
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
@@ -88,6 +103,10 @@ const styles = StyleSheet.create({
   error: {
     ...theme.textStyle('label', { color: theme.color.danger.text }),
     marginTop: theme.space[1],
+  },
+  toggleText: {
+    ...theme.textStyle('label', { weight: 'medium', color: theme.color.primary[500] }),
+    marginLeft: theme.space[2],
   },
 });
 
