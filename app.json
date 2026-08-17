@@ -16,6 +16,7 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app needs location access to track the bus position",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs location access to track the bus position",
+        "NSCameraUsageDescription": "TrackMe uses the camera to scan a passenger's QR pass when they board or alight.",
         "UIBackgroundModes": [
           "location"
         ]
@@ -30,6 +31,7 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
         "WAKE_LOCK"
       ]
     },
@@ -48,7 +50,13 @@
           "isAndroidForegroundServiceEnabled": true
         }
       ],
-      "expo-task-manager"
+      "expo-task-manager",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "TrackMe uses the camera to scan a passenger's QR pass when they board or alight."
+        }
+      ]
     ]
   }
 }
