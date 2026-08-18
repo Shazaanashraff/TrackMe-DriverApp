@@ -88,6 +88,26 @@ export function deriveDutyHeroState({
     };
   }
 
+  if (status === 'starting') {
+    return {
+      headline: "You're off duty",
+      subline: 'Starting…',
+      dot: 'off',
+      showAllowLocation: false,
+      goDisabled: true,
+    };
+  }
+
+  if (status === 'error') {
+    return {
+      headline: "You're off duty",
+      subline: "Couldn't go live — tap GO to try again",
+      dot: 'warn',
+      showAllowLocation: false,
+      goDisabled: !hasVehicle,
+    };
+  }
+
   if (connecting) {
     return {
       headline: "You're off duty",
