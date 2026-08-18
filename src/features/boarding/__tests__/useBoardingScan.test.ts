@@ -294,6 +294,57 @@ describe('useBoardingScan', () => {
     expect(mockSubmitBoardingScan).toHaveBeenCalledTimes(2);
   });
 
+  it('completes a manual scan and an in-flight replay concurrently without duplication or corruption', async () => {
+    await AsyncStorage.setItem(
+      'boarding_scan_queue',
+      JSON.stringify([{ qrToken: 'queued-1', vehicleId: 'VEHICLE-1', timestamp: 1 }])
+    );
+
+    let resolveReplayCall: (value: unknown) => void = () => {};
+    const replayCallPromise = new Promise((resolve) => {
+      resolveReplayCall = resolve;
+    });
+
+    mockSubmitBoardingScan.mockImplementationOnce(
+      () => replayCallPromise // first call: the queued replay, held open
+    );
+    mockSubmitBoardingScan.mockResolvedValueOnce({
+      success: true,
+      debounced: false,
+      data: { eventId: 'manual-1' },
+    }); // second call: the manual scan, resolves immediately
+
+    const { result } = renderHook(() => useBoardingScan('VEHICLE-1'));
+    await waitFor(() => expect(result.current.pendingCount).toBe(1));
+
+    let replayPromise: Promise<void> = Promise.resolve();
+    act(() => {
+      replayPromise = result.current.replayQueuedScans();
+    });
+    await waitFor(() => expect(mockSubmitBoardingScan).toHaveBeenCalledTimes(1));
+
+    // A manual scan fires while the replay is still awaiting its response —
+    // the cooldownRef/replayingRef guards are independent, so both proceed.
+    await act(async () => {
+      await result.current.submitScan('manual-token');
+    });
+
+    expect(result.current.status).toBe('success');
+    expect(result.current.lastResult).toEqual({ eventId: 'manual-1' });
+    expect(mockSubmitBoardingScan).toHaveBeenCalledTimes(2);
+
+    await act(async () => {
+      resolveReplayCall({ success: true, debounced: false, data: { eventId: 'replayed-1' } });
+      await replayPromise;
+    });
+
+    // The replay's own result briefly overwrote the manual one when it settled
+    // last, but the queue itself ends up empty either way — no duplicate send.
+    expect(result.current.pendingCount).toBe(0);
+    const raw = await AsyncStorage.getItem('boarding_scan_queue');
+    expect(JSON.parse(raw as string)).toEqual([]);
+  });
+
   it('ignores a second submitScan call during the cooldown window', async () => {
     mockSubmitBoardingScan.mockResolvedValue({
       success: true,

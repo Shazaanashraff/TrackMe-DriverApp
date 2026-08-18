@@ -45,6 +45,33 @@ describe('deriveDutyHeroState', () => {
     expect(state.subline).toBe('Hang tight, finding the server');
   });
 
+  it('shows a starting subline and disables GO while the start ack is pending', () => {
+    const state = deriveDutyHeroState({ ...base, status: 'starting' });
+    expect(state).toEqual({
+      headline: "You're off duty",
+      subline: 'Starting…',
+      dot: 'off',
+      showAllowLocation: false,
+      goDisabled: true,
+    });
+  });
+
+  it('shows a retry subline when the start attempt was rejected', () => {
+    const state = deriveDutyHeroState({ ...base, status: 'error' });
+    expect(state).toEqual({
+      headline: "You're off duty",
+      subline: "Couldn't go live — tap GO to try again",
+      dot: 'warn',
+      showAllowLocation: false,
+      goDisabled: false,
+    });
+  });
+
+  it('keeps GO disabled after a start error if there is still no vehicle', () => {
+    const state = deriveDutyHeroState({ ...base, status: 'error', hasVehicle: false });
+    expect(state.goDisabled).toBe(true);
+  });
+
   it('live and broadcasting', () => {
     const state = deriveDutyHeroState({
       ...base,

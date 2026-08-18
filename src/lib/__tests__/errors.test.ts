@@ -163,6 +163,23 @@ describe('userMessage', () => {
     expect(msg.length).toBeLessThan(200);
   });
 
+  it('surfaces the server message for a 429 rate-limit response', () => {
+    const err = AppError.fromHttp(429, { message: 'Too many requests, try again later' });
+    expect(userMessage(err)).toBe('Too many requests, try again later');
+  });
+
+  it('falls back to the generic message for a 429 with no server message', () => {
+    const err = AppError.fromHttp(429, {});
+    expect(userMessage(err)).toBe('Something went wrong. Please try again.');
+  });
+
+  it.each([502, 503, 504])('maps a %i response to the same safe generic message as 500', (status) => {
+    const err = AppError.fromHttp(status, { message: `upstream failure trace: internal-host-${status}` });
+    const msg = userMessage(err);
+    expect(msg).toBe('Something went wrong. Please try again.');
+    expect(msg).not.toContain('internal-host');
+  });
+
   it('returns generic message for unknown kind', () => {
     const msg = userMessage(new AppError('unknown', 'Raw unexpected'));
     expect(msg).not.toContain('Raw unexpected');
