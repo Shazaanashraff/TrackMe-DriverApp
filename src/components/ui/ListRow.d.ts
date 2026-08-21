@@ -12,6 +12,7 @@ interface ListRowProps {
   divider?: boolean;
   testID?: string;
   style?: ViewStyle;
+  size?: number;
 }
 
 declare const ListRow: React.FC<ListRowProps>;

@@ -99,6 +99,7 @@ const DriverProfileScreen = ({ navigation }) => {
             icon="log-out-outline"
             title="Log out"
             destructive
+            size={42}
             onPress={() => setShowLogoutConfirm(true)}
             testID="logout-row"
           />
@@ -146,7 +147,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.space[3],
   },
   logoutCard: {
-    paddingHorizontal: theme.space[4],
+    paddingHorizontal: theme.space[3],
   },
   sectionTitle: {
     marginBottom: theme.space[3],
