@@ -40,7 +40,7 @@ export default function VehicleCard({ vehicle, onRegisterPress }: Props) {
   const isPrivate = typeof driver === 'object' && driver !== null && driver.isPrivate === true;
 
   return (
-    <Card>
+    <Card padding={theme.space[3]}>
       <View style={styles.row}>
         <View style={styles.iconBadge}>
           {/* "vehicle" is not an Ionicons glyph, so this badge was rendering the

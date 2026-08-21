@@ -94,7 +94,7 @@ const DriverProfileScreen = ({ navigation }) => {
           </View>
         )}
 
-        <Card style={styles.card}>
+        <Card padding={0} style={[styles.card, styles.logoutCard]}>
           <ListRow
             icon="log-out-outline"
             title="Log out"
@@ -143,7 +143,10 @@ const styles = StyleSheet.create({
     marginTop: theme.space[3],
   },
   card: {
-    marginBottom: theme.space[4],
+    marginBottom: theme.space[3],
+  },
+  logoutCard: {
+    paddingHorizontal: theme.space[4],
   },
   sectionTitle: {
     marginBottom: theme.space[3],
