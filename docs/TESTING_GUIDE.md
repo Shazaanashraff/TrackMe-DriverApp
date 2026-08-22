@@ -19,8 +19,8 @@
 ## Bus & Routes
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
-| useMyBusQuery / registerBus / updateBus | unit+int | hooks/bus/__tests__ + __integration__/bus.int.test.tsx | keys, duplicate plate, 403 other bus | bus schema changes |
-| routes (get/management/create) | unit+int | hooks/routes/__tests__ + __integration__/routes.int.test.tsx | public vs protected, create payload | route schema changes |
+| useMyVehicleQuery / registerVehicle / updateVehicle | unit+int | hooks/vehicle/__tests__ + __integration__/vehicle.int.test.tsx | keys, register/update request+response shape, duplicate plate (403 DUPLICATE_PLATE), 403 on another driver's vehicle | vehicle schema changes |
+| routes (getRouteById) | unit+int | hooks/route/__tests__ + __integration__/routes.int.test.tsx | public route resolves; a PRIVATE (manager-only custom) route 404s and surfaces as a query error. "My Routes" and custom-route creation/recording were removed from the app (commits e69eeac, eba9229) — there is no create/management payload left to contract-test | route schema changes, or getRouteById's auth rule changes |
 | Register bus / create route | e2e | .maestro/bus-registration.yaml, route-management.yaml | register→details, create→list | UI changes |
 
 ## Tracking (hero)
