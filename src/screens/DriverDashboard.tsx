@@ -15,6 +15,7 @@ import ListRow from '../components/ui/ListRow';
 import ConfirmSheet from '../components/ui/ConfirmSheet';
 import DutyHero from '../features/dashboard/DutyHero';
 import VehicleCard from '../features/dashboard/VehicleCard';
+import OnBoardCard from '../features/dashboard/OnBoardCard';
 import TripProgressCard from '../features/dashboard/TripProgressCard';
 import { useSocketConnection } from '../features/dashboard/useSocketConnection';
 
@@ -176,6 +177,10 @@ const DriverDashboard = ({ navigation }: Props) => {
             onPress={vehicle ? () => navigation.navigate('QRScanner', { vehicleId }) : undefined}
           />
         </Card>
+
+        {vehicle ? (
+          <OnBoardCard vehicleId={vehicleId} onPress={() => navigation.navigate('BoardingRoster', { vehicleId })} />
+        ) : null}
       </ScrollView>
 
       <BackgroundLocationDisclosure

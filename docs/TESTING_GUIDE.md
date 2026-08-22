@@ -128,8 +128,17 @@
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
 | useBoardingScan | unit | features/boarding/__tests__/useBoardingScan.test.ts | submit success/debounced/error, offline queueing + replay-on-reconnect, **replay retries back off exponentially after consecutive failures (1s, 2s, capped at 8s) instead of hammering the server, resets to no delay once one succeeds, and a fresh all-success replay after a prior success stays undelayed (issue #22)**, **a manual scan fired while a queued replay is still in flight completes independently of it — no duplication or corrupted state from the two independent cooldownRef/replayingRef guards (issue #31)** | scan submission, offline-queue, or retry/backoff logic changes |
+| useBoardingScan → roster invalidation | unit | src/features/boarding/__tests__/useBoardingScan.test.ts | invalidates `['boarding','roster',vehicleId]` on a non-debounced success; not on debounce | scan→roster refresh behaviour changes |
 | QRScannerScreen | unit (Jest+RTL) | screens/__tests__/QRScannerScreen.test.tsx | permission-denied state, submits scanned data, success/debounced/error feedback banners | scan screen UI or feedback copy changes |
 | QRScannerScreen cooldown feedback + queueing (issue #11) | unit (Jest+RTL) | screens/__tests__/QRScannerScreen.test.tsx | a scan landing during the 3s post-scan cooldown shows an explicit "Please wait a moment" banner instead of being silently dropped; it auto-fires the moment the cooldown clears, without a manual re-scan; a later scan during the same cooldown replaces an earlier queued one (only the latest fires); the lock clears cleanly with nothing queued | the cooldown window, queueing behavior, or feedback copy changes |
+
+## QR Attendance — on-board roster (todo 091)
+| Item | Type | Test file | Cases | Update when |
+|---|---|---|---|---|
+| api/boarding.getBoardingRoster + useBoardingRosterQuery | unit | src/hooks/boarding/__tests__/useBoardingRosterQuery.test.ts | GET URL/`{vehicleId}` arg, unwraps `{data}`, disabled without vehicleId, error surface | roster endpoint contract or query key/cache policy changes |
+| OnBoardCard (Home "X / Y on board") | unit (Jest+RTL) | src/features/dashboard/__tests__/OnBoardCard.test.tsx | count render + navigate on press, no-enrolled empty state (non-pressable), loading skeleton, hidden on query error | card copy, gating, or navigation target changes |
+| BoardingRosterScreen (enrolled roster page) | unit (Jest+RTL) | src/screens/__tests__/BoardingRosterScreen.test.tsx | count summary, every rider + status pill (ON/OFF/NOT_BOARDED), guests section, empty state, error state, back | roster page layout, status mapping, or guests handling changes |
+| On-board roster flow | e2e | .maestro/on-board-roster.yaml | login → tap "On board" card → assert roster page | Home card entry point or roster screen title changes |
 
 ## Existing tests (keep green)
 - helpers/__tests__/formatters.test.js ✓

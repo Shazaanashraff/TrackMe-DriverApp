@@ -30,6 +30,7 @@ const api = {
 
   // boarding
   submitBoardingScan: boarding.submitBoardingScan,
+  getBoardingRoster: boarding.getBoardingRoster,
 };
 
 export default api;

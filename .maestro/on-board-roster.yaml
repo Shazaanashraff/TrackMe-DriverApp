@@ -1,0 +1,13 @@
+appId: ${MAESTRO_APP_ID}
+---
+- launchApp
+- assertVisible: "Driver Portal"
+- tapOn: "Email"
+- inputText: ${DRIVER_TEST_EMAIL}
+- tapOn: "Password"
+- inputText: ${DRIVER_TEST_PASSWORD}
+- tapOn: "Sign in"
+# Home shows the on-board count card; tapping it opens the enrolled roster page.
+- assertVisible: "On board"
+- tapOn: "On board"
+- assertVisible: "On board today"

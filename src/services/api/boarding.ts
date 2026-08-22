@@ -12,3 +12,10 @@ export async function submitBoardingScan(
     body: JSON.stringify({ token: qrToken, vehicleId, ...(type ? { type } : {}) }),
   });
 }
+
+export async function getBoardingRoster(token: string, { vehicleId }: { vehicleId: string }) {
+  const query = new URLSearchParams({ vehicleId }).toString();
+  return requestJson(`${API_URL}/api/driver/boarding/roster?${query}`, {
+    headers: authHeaders(token),
+  });
+}
