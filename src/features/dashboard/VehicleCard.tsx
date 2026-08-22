@@ -60,7 +60,7 @@ export default function VehicleCard({ vehicle, onRegisterPress }: Props) {
         </View>
         <StatusPill
           testID="vehicle-privacy-pill"
-          label={isPrivate ? 'Approval req.' : 'Open'}
+          label={isPrivate ? 'Private' : 'Public'}
           variant={isPrivate ? 'warn' : 'live'}
         />
       </View>
@@ -90,10 +90,12 @@ const styles = StyleSheet.create({
   },
   textBlock: {
     flex: 1,
+    minWidth: 0,
   },
   vehicleName: {
     fontSize: 16,
     marginBottom: 2,
+    flexShrink: 1,
   },
   routeRow: {
     flexDirection: 'row',
