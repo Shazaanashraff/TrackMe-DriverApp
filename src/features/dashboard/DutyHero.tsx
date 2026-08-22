@@ -153,7 +153,7 @@ export default function DutyHero({
           <View style={styles.statusPill}>
             <LiveDot color={dotColor} pulsing={state.dot === 'on'} />
             {!state.showAllowLocation ? (
-              <AppText variant="caption" color={theme.color.primary[300]} style={styles.sublineText}>
+              <AppText variant="caption" color={theme.color.primary[300]} style={styles.sublineText} numberOfLines={1}>
                 {state.subline}
               </AppText>
             ) : null}
@@ -253,6 +253,7 @@ const styles = StyleSheet.create({
   textColumn: {
     flex: 1,
     paddingRight: theme.space[3],
+    minWidth: 0,
   },
   headline: {
     marginBottom: theme.space[3],
@@ -267,14 +268,18 @@ const styles = StyleSheet.create({
     borderRadius: theme.radius.pill,
     alignSelf: 'flex-start',
     gap: theme.space[2],
+    flexShrink: 1,
+    maxWidth: '100%',
   },
   dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
+    flexShrink: 0,
   },
   sublineText: {
     letterSpacing: 0.2,
+    flexShrink: 1,
   },
   buttonColumn: {
     alignItems: 'flex-end',
