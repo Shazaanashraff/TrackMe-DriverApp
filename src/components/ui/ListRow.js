@@ -22,7 +22,11 @@ const ListRow = ({
   const content = (
     <View style={styles.row}>
       {icon ? (
-        <View style={[styles.iconBadge, { width: size, height: size, borderRadius: theme.radius.control }]}>
+        <View style={[
+          styles.iconBadge, 
+          { width: size, height: size, borderRadius: theme.radius.control },
+          destructive && { backgroundColor: theme.color.danger.bg }
+        ]}>
           <Ionicons
             name={icon}
             size={20}

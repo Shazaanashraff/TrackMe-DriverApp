@@ -67,10 +67,6 @@ const AppNavigator = ({ backendOnline }) => {
     return <LoadingScreen />;
   }
 
-  if (!backendOnline) {
-    return <OfflineScreen />;
-  }
-
   return (
     <Stack.Navigator
       key={user ? 'app-stack' : 'auth-stack'}

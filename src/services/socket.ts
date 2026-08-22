@@ -156,6 +156,8 @@ export const emitLocation = (
       clearTimeout(timer);
       callback?.(response);
     });
+  } else {
+    callback?.({ success: false, error: 'Socket not connected' });
   }
 };
 

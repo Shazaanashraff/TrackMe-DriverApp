@@ -18,5 +18,5 @@ const resolveHost = () => {
 
 const API_HOST = resolveHost();
 
-export const API_URL = `http://${API_HOST}:5000`;
-export const SOCKET_URL = `http://${API_HOST}:5000`;
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || `http://${API_HOST}:5000`;
+export const SOCKET_URL = process.env.EXPO_PUBLIC_SOCKET_URL || process.env.EXPO_PUBLIC_API_URL || `http://${API_HOST}:5000`;

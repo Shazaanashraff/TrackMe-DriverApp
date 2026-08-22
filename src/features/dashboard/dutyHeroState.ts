@@ -78,10 +78,7 @@ export function deriveDutyHeroState({
 
     return {
       headline: "You're live",
-      subline:
-        secondsSinceFix != null
-          ? `Riders can see your vehicle · updated ${secondsSinceFix}s ago`
-          : 'Riders can see your vehicle',
+      subline: 'Riders can see your vehicle',
       dot: 'on',
       showAllowLocation: false,
       goDisabled: false,

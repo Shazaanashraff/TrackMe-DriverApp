@@ -34,15 +34,15 @@ describe('VehicleCard', () => {
     expect(UNSAFE_getByType(Ionicons).props.name).toBe('bus');
   });
 
-  it('reads Private when the driver gates enrolment, Public otherwise', () => {
+  it('reads Approval required when the driver gates enrolment, Open enrolment otherwise', () => {
     const gated = render(
       <VehicleCard
         vehicle={{ vehicleName: 'Shuttle 1', driverId: { isPrivate: true } }}
         onRegisterPress={jest.fn()}
       />
     );
-    expect(gated.getByText('Private')).toBeTruthy();
-    expect(gated.queryByText('Public')).toBeNull();
+    expect(gated.getByText('Approval required')).toBeTruthy();
+    expect(gated.queryByText('Open enrolment')).toBeNull();
 
     const open = render(
       <VehicleCard
@@ -50,11 +50,11 @@ describe('VehicleCard', () => {
         onRegisterPress={jest.fn()}
       />
     );
-    expect(open.getByText('Public')).toBeTruthy();
-    expect(open.queryByText('Private')).toBeNull();
+    expect(open.getByText('Open enrolment')).toBeTruthy();
+    expect(open.queryByText('Approval required')).toBeNull();
   });
 
-  it('reads Public when the driver is not populated, rather than guessing Private', () => {
+  it('reads Open enrolment when the driver is not populated, rather than guessing Approval required', () => {
     // my-vehicle can hand back an unpopulated ObjectId string. Defaulting to
     // Private there would tell a public driver their key is gated.
     const asId = render(
@@ -63,7 +63,7 @@ describe('VehicleCard', () => {
         onRegisterPress={jest.fn()}
       />
     );
-    expect(asId.getByText('Public')).toBeTruthy();
+    expect(asId.getByText('Open enrolment')).toBeTruthy();
   });
 
   it('shows no privacy pill when there is no vehicle', () => {
