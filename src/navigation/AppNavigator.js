@@ -10,7 +10,6 @@ import VehicleRegistrationScreen from '../screens/VehicleRegistrationScreen';
 import TripHistoryScreen from '../screens/TripHistoryScreen';
 import DriverProfileScreen from '../screens/DriverProfileScreen';
 import QRScannerScreen from '../screens/QRScannerScreen';
-import OfflineScreen from '../components/OfflineScreen';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import { theme } from '../theme';
 
@@ -60,7 +59,7 @@ function MainTabs() {
   );
 }
 
-const AppNavigator = ({ backendOnline }) => {
+const AppNavigator = () => {
   const { user, loading } = useAuth();
 
   if (loading) {

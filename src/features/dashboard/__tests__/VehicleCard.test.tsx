@@ -34,15 +34,18 @@ describe('VehicleCard', () => {
     expect(UNSAFE_getByType(Ionicons).props.name).toBe('bus');
   });
 
-  it('reads Approval required when the driver gates enrolment, Open enrolment otherwise', () => {
+  // The pill briefly read "Approval required"/"Open enrolment" to avoid colliding
+  // with serviceType, then was deliberately reverted to Public/Private. These
+  // assert the wording that actually ships. The behaviour below is the point.
+  it('reads Private when the driver gates enrolment, Public otherwise', () => {
     const gated = render(
       <VehicleCard
         vehicle={{ vehicleName: 'Shuttle 1', driverId: { isPrivate: true } }}
         onRegisterPress={jest.fn()}
       />
     );
-    expect(gated.getByText('Approval required')).toBeTruthy();
-    expect(gated.queryByText('Open enrolment')).toBeNull();
+    expect(gated.getByText('Private')).toBeTruthy();
+    expect(gated.queryByText('Public')).toBeNull();
 
     const open = render(
       <VehicleCard
@@ -50,11 +53,11 @@ describe('VehicleCard', () => {
         onRegisterPress={jest.fn()}
       />
     );
-    expect(open.getByText('Open enrolment')).toBeTruthy();
-    expect(open.queryByText('Approval required')).toBeNull();
+    expect(open.getByText('Public')).toBeTruthy();
+    expect(open.queryByText('Private')).toBeNull();
   });
 
-  it('reads Open enrolment when the driver is not populated, rather than guessing Approval required', () => {
+  it('reads Public when the driver is not populated, rather than guessing Private', () => {
     // my-vehicle can hand back an unpopulated ObjectId string. Defaulting to
     // Private there would tell a public driver their key is gated.
     const asId = render(
@@ -63,7 +66,7 @@ describe('VehicleCard', () => {
         onRegisterPress={jest.fn()}
       />
     );
-    expect(asId.getByText('Open enrolment')).toBeTruthy();
+    expect(asId.getByText('Public')).toBeTruthy();
   });
 
   it('shows no privacy pill when there is no vehicle', () => {
@@ -71,13 +74,15 @@ describe('VehicleCard', () => {
     expect(queryByTestId('vehicle-privacy-pill')).toBeNull();
   });
 
-  it('renders the no-vehicle EmptyState and fires onRegisterPress from its action', () => {
+  it('renders the no-vehicle empty state and fires onRegisterPress when it is tapped', () => {
     const onRegisterPress = jest.fn();
     const { getByText } = render(<VehicleCard vehicle={null} onRegisterPress={onRegisterPress} />);
 
     expect(getByText('No vehicle yet')).toBeTruthy();
     expect(getByText('Add your vehicle so riders can find it')).toBeTruthy();
-    fireEvent.press(getByText('Add my vehicle'));
+    // The redesign made the whole row pressable with a chevron, replacing the
+    // old EmptyState's labelled "Add my vehicle" button. Press bubbles to it.
+    fireEvent.press(getByText('No vehicle yet'));
     expect(onRegisterPress).toHaveBeenCalledTimes(1);
   });
 });
