@@ -16,3 +16,8 @@ jest.mock('expo-keep-awake', () => ({
   activateKeepAwakeAsync: jest.fn().mockResolvedValue(undefined),
   deactivateKeepAwake: jest.fn(),
 }));
+
+jest.mock('@react-native-community/netinfo', () => ({
+  addEventListener: jest.fn(() => () => {}),
+  fetch: jest.fn().mockResolvedValue({ isConnected: true }),
+}));
