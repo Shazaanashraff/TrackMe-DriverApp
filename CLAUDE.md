@@ -88,7 +88,6 @@ src/
 ```
 App.js
 └── AppNavigator (root native stack)
-    ├── [offline]      → OfflineScreen
     ├── [logged out]   → Login            (only role `driver` may sign in — enforced in LoginScreen)
     └── [logged in]    → MainTabs (bottom tabs) + pushed: VehicleRegistration, QRScanner, BoardingRoster
                            MainTabs:
@@ -97,7 +96,12 @@ App.js
                            └── DriverProfile  ("Profile" tab)
 ```
 
-`AppNavigator` receives `backendOnline` prop from `App.js`.
+Going offline no longer takes the app over: the navigators stay mounted so a driver keeps
+access to the vehicle enrollment code and the offline GPS buffer while the backend is
+unreachable. `startBackendHealthMonitor()` still runs in `App.js`, and `OfflineBanner` and the
+query layer subscribe to it, but no offline state is threaded into `AppNavigator`.
+`OfflineScreen.js` is currently an orphan: nothing renders it.
+Only `driver` role users may log in (enforced in `LoginScreen`).
 Tab screen names stay `Dashboard`/`TripHistory`/`DriverProfile` so existing
 `navigation.navigate('…')` call sites keep working; pushed screens (`VehicleRegistration`,
 `QRScanner`, `BoardingRoster`) are registered on the root stack above the tabs, so navigating to

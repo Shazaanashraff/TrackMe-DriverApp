@@ -14,7 +14,6 @@ import TripHistoryScreen from '../screens/TripHistoryScreen';
 import DriverProfileScreen from '../screens/DriverProfileScreen';
 import QRScannerScreen from '../screens/QRScannerScreen';
 import BoardingRosterScreen from '../screens/BoardingRosterScreen';
-import OfflineScreen from '../components/OfflineScreen';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import { theme } from '../theme';
 
@@ -64,15 +63,11 @@ function MainTabs() {
   );
 }
 
-const AppNavigator = ({ backendOnline }) => {
+const AppNavigator = () => {
   const { user, loading } = useAuth();
 
   if (loading) {
     return <LoadingScreen />;
-  }
-
-  if (!backendOnline) {
-    return <OfflineScreen />;
   }
 
   return (

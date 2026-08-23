@@ -31,6 +31,19 @@ const TripHistoryScreen = () => {
       year: 'numeric',
     });
 
+    const routeTitle = item.routeId?.source && item.routeId?.destination
+      ? `${item.routeId.source} → ${item.routeId.destination}`
+      : 'Route unavailable';
+
+    const metrics = [];
+    metrics.push(tripDate);
+    if (typeof item.totalPassengers === 'number') {
+      metrics.push(`${item.totalPassengers} ${item.totalPassengers === 1 ? 'passenger' : 'passengers'}`);
+    }
+    if (typeof item.totalDistance === 'number' && item.totalDistance > 0) {
+      metrics.push(`${item.totalDistance.toFixed(1)} km`);
+    }
+
     return (
       <Card style={styles.tripCard}>
         <View style={styles.tripRow}>
@@ -39,9 +52,11 @@ const TripHistoryScreen = () => {
           </View>
           <View style={styles.textBlock}>
             <AppText variant="body" weight="medium" numberOfLines={1}>
-              {item.routeId?.source || 'Origin'} → {item.routeId?.destination || 'Destination'}
+              {routeTitle}
             </AppText>
-            <AppText variant="caption" color={theme.color.text.muted}>{tripDate}</AppText>
+            <AppText variant="caption" color={theme.color.text.muted} numberOfLines={1}>
+              {metrics.join(' • ')}
+            </AppText>
           </View>
           {item.startTime ? (
             <AppText variant="caption" color={theme.color.text.muted}>{formatTime(item.startTime)}</AppText>

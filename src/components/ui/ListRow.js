@@ -15,13 +15,18 @@ const ListRow = ({
   divider = false,
   testID,
   style,
+  size = 36,
 }) => {
   const titleColor = destructive ? theme.color.danger.main : theme.color.text.primary;
 
   const content = (
     <View style={styles.row}>
       {icon ? (
-        <View style={styles.iconBadge}>
+        <View style={[
+          styles.iconBadge, 
+          { width: size, height: size, borderRadius: theme.radius.control },
+          destructive && { backgroundColor: theme.color.danger.bg }
+        ]}>
           <Ionicons
             name={icon}
             size={20}

@@ -21,7 +21,7 @@ export default function StatusPill({ label, variant = 'neutral', testID }: Props
   const v = VARIANTS[variant] || VARIANTS.neutral;
   return (
     <View testID={testID} style={[styles.pill, { backgroundColor: v.bg }]}>
-      <Text style={[styles.label, { color: v.text }]}>{label}</Text>
+      <Text style={[styles.label, { color: v.text }]} numberOfLines={1}>{label}</Text>
     </View>
   );
 }
@@ -32,8 +32,11 @@ const styles = StyleSheet.create({
     paddingVertical: theme.space[1],
     paddingHorizontal: theme.space[3],
     alignSelf: 'flex-start',
+    flexShrink: 1,
+    maxWidth: '100%',
   },
   label: {
     ...theme.textStyle('caption', { weight: 'medium' }),
+    flexShrink: 1,
   },
 });

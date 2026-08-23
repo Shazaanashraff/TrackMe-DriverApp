@@ -45,7 +45,7 @@ export function deriveDutyHeroState({
     if (isReconnecting) {
       return {
         headline: 'Reconnecting…',
-        subline: 'Hang tight, finding the server',
+        subline: 'Reconnecting...',
         dot: 'warn',
         showAllowLocation: false,
         goDisabled: false,
@@ -59,7 +59,7 @@ export function deriveDutyHeroState({
     if (lostConnection) {
       return {
         headline: "You're live",
-        subline: "Losing connection — recent updates may not be reaching the server",
+        subline: "Connection unstable",
         dot: 'warn',
         showAllowLocation: false,
         goDisabled: false,
@@ -69,7 +69,7 @@ export function deriveDutyHeroState({
     if (permission === 'denied') {
       return {
         headline: "You're live",
-        subline: 'Allow location so riders can see your vehicle',
+        subline: 'Location access required',
         dot: 'warn',
         showAllowLocation: true,
         goDisabled: false,
@@ -78,10 +78,7 @@ export function deriveDutyHeroState({
 
     return {
       headline: "You're live",
-      subline:
-        secondsSinceFix != null
-          ? `Riders can see your vehicle · updated ${secondsSinceFix}s ago`
-          : 'Riders can see your vehicle',
+      subline: 'Visible to riders',
       dot: 'on',
       showAllowLocation: false,
       goDisabled: false,
@@ -111,7 +108,7 @@ export function deriveDutyHeroState({
   if (connecting) {
     return {
       headline: "You're off duty",
-      subline: 'Hang tight, finding the server',
+      subline: 'Connecting...',
       dot: 'off',
       showAllowLocation: false,
       goDisabled: !hasVehicle,
@@ -122,8 +119,8 @@ export function deriveDutyHeroState({
     return {
       headline: "You're off duty",
       subline: hadVehicleBefore
-        ? 'Your vehicle assignment was removed — contact your manager'
-        : 'Register your vehicle to go live',
+        ? 'Vehicle assignment removed'
+        : 'Vehicle registration required',
       dot: 'off',
       showAllowLocation: false,
       goDisabled: true,
@@ -132,7 +129,7 @@ export function deriveDutyHeroState({
 
   return {
     headline: "You're off duty",
-    subline: "Riders can't see you yet",
+    subline: 'Hidden from riders',
     dot: 'off',
     showAllowLocation: false,
     goDisabled: false,

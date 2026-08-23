@@ -119,6 +119,7 @@ export const AuthProvider = ({ children }) => {
       setRefreshToken(null);
       setUser(null);
       disconnectSocket();
+      queryClient.clear();
 
       if (currentToken) {
         api.logout(currentToken).catch(() => {
@@ -132,6 +133,7 @@ export const AuthProvider = ({ children }) => {
       setRefreshToken(null);
       setUser(null);
       disconnectSocket();
+      queryClient.clear();
     }
   };
 

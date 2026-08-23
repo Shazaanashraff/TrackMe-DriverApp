@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { useFonts, Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
@@ -9,7 +9,7 @@ import { ErrorBoundary } from './src/components/ErrorBoundary';
 import AppNavigator from './src/navigation/AppNavigator';
 import * as notificationService from './src/services/notificationService';
 import { View } from 'react-native';
-import { getBackendOnline, subscribeBackendStatus, startBackendHealthMonitor } from './src/services/backendStatus';
+import { startBackendHealthMonitor } from './src/services/backendStatus';
 import { queryClient, persistOptions } from './src/app/queryClient';
 // Registers the background location task. Must be imported at app entry, not from
 // a screen — the OS can launch this process headless, with no navigation mounted.
@@ -19,7 +19,6 @@ import './src/services/backgroundLocation';
 SplashScreen.preventAutoHideAsync();
 
 function AppContent() {
-  const [backendOnline, setBackendOnline] = useState(getBackendOnline());
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_500Medium,
@@ -32,8 +31,10 @@ function AppContent() {
   }, [fontsLoaded]);
 
   useEffect(() => {
+    // The health poller still runs: it is the source OfflineBanner and the query
+    // layer read reachability from. Nothing at this level needs the value itself
+    // since the full-screen offline takeover was removed.
     const stopHealthMonitor = startBackendHealthMonitor();
-    const unsubscribeBackendStatus = subscribeBackendStatus(setBackendOnline);
 
     // Initialize notifications once on app start
     notificationService.initializePushNotifications().catch(err => 
@@ -47,7 +48,6 @@ function AppContent() {
 
     return () => {
       stopHealthMonitor();
-      unsubscribeBackendStatus();
       notificationSubscription?.remove();
     };
   }, []);
@@ -65,7 +65,7 @@ function AppContent() {
           }}
         >
           <StatusBar style="dark" />
-          <AppNavigator backendOnline={backendOnline} />
+          <AppNavigator />
         </NavigationContainer>
       </ErrorBoundary>
     </View>
