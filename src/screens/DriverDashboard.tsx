@@ -7,6 +7,7 @@ import { useMyVehicleQuery } from '../hooks/vehicle';
 import { useTrackingSession } from '../hooks/useTrackingSession';
 import { useLocationBroadcast } from '../hooks/useLocationBroadcast';
 import { useBackgroundTracking } from '../hooks/useBackgroundTracking';
+import { getBufferedCount, subscribeToBufferCount } from '../services/locationDispatch';
 import BackgroundLocationDisclosure from '../features/dashboard/BackgroundLocationDisclosure';
 import { theme } from '../theme';
 import AppText from '../components/ui/AppText';
@@ -76,6 +77,9 @@ const DriverDashboard = ({ navigation }: Props) => {
   });
   const { connecting } = useSocketConnection(token);
 
+  const [bufferedCount, setBufferedCount] = useState(getBufferedCount());
+  useEffect(() => subscribeToBufferCount(setBufferedCount), []);
+
   // While on duty in the foreground, don't let the screen sleep and silently
   // demote a foreground-only shift into no shift at all.
   useEffect(() => {
@@ -143,6 +147,7 @@ const DriverDashboard = ({ navigation }: Props) => {
           permission={broadcast.permission}
           lastFix={session.status === 'tracking' ? broadcast.lastFix : null}
           lostConnection={session.status === 'tracking' ? broadcast.lostConnection : false}
+          bufferedCount={bufferedCount}
           hasVehicle={hasVehicle}
           hadVehicleBefore={hadVehicleBefore}
           onGoPress={handleStart}

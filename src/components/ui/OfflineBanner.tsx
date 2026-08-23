@@ -1,23 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { subscribeBackendStatus, getBackendOnline } from '../../services/backendStatus';
+import { useNetworkStatus } from '../../context/NetworkStatusContext';
 import { theme } from '../../theme';
 
+// Device offline and backend-unreachable are different situations for a
+// driver mid-shift: one means "get signal", the other means "wait, it's not
+// you." Both still show cached data, so both still show a banner — worded apart.
 export default function OfflineBanner() {
-  const [online, setOnline] = useState<boolean>(getBackendOnline());
+  const { isOffline, isDegraded } = useNetworkStatus();
 
-  useEffect(() => {
-    const unsubscribe = subscribeBackendStatus((isOnline: boolean) => setOnline(isOnline));
-    return unsubscribe;
-  }, []);
+  if (!isOffline && !isDegraded) return null;
 
-  if (online) return null;
+  const message = isOffline
+    ? 'No connection — showing cached data'
+    : "Can't reach the server — showing saved data";
 
   return (
     <View style={styles.banner}>
       <Ionicons name="cloud-offline-outline" size={14} color={theme.color.warning.text} />
-      <Text style={styles.text}>No connection — showing cached data</Text>
+      <Text style={styles.text}>{message}</Text>
     </View>
   );
 }

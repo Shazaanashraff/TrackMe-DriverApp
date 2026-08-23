@@ -76,6 +76,17 @@ jest.mock('../../features/dashboard/useSocketConnection', () => ({
   useSocketConnection: () => ({ connecting: false }),
 }));
 
+let mockBufferedCount = 0;
+const mockGetBufferedCount = jest.fn(() => mockBufferedCount);
+const mockSubscribeToBufferCount = jest.fn((cb) => {
+  cb(mockBufferedCount);
+  return () => {};
+});
+jest.mock('../../services/locationDispatch', () => ({
+  getBufferedCount: (...args) => mockGetBufferedCount(...args),
+  subscribeToBufferCount: (...args) => mockSubscribeToBufferCount(...args),
+}));
+
 // OnBoardCard (Home "X / Y on board") owns its own roster query; stub it so this
 // banner-focused test needs no QueryClient. Its own behaviour is covered in OnBoardCard.test.tsx.
 jest.mock('../../hooks/boarding', () => ({
@@ -94,6 +105,7 @@ jest.mock('../../context/AuthContext', () => ({
 
 beforeEach(async () => {
   jest.clearAllMocks();
+  mockBufferedCount = 0;
   await AsyncStorage.clear();
   mockUseTrackingSession.mockReturnValue({
     status: 'idle',
@@ -241,6 +253,41 @@ describe('DriverDashboard — stop-tracking ack failure surfaced (issue #12)', (
     await findByText('Your vehicle');
 
     expect(alertSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('DriverDashboard — buffered GPS fixes surfaced (offline audit)', () => {
+  it('shows the buffered-fix count on the hero once fixes start piling up', () => {
+    mockUseTrackingSession.mockReturnValue({
+      status: 'tracking',
+      error: undefined,
+      isReconnecting: false,
+      start: jest.fn(),
+      stop: jest.fn(),
+    });
+    mockBufferedCount = 12;
+
+    const { getByText, getByTestId } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+
+    expect(getByTestId('buffered-count-chip')).toBeTruthy();
+    expect(getByText('12')).toBeTruthy();
+    expect(getByText('saved, not sent')).toBeTruthy();
+  });
+
+  it('shows the normal "updates sent" chip when nothing is buffered', () => {
+    mockUseTrackingSession.mockReturnValue({
+      status: 'tracking',
+      error: undefined,
+      isReconnecting: false,
+      start: jest.fn(),
+      stop: jest.fn(),
+    });
+    mockBufferedCount = 0;
+
+    const { getByText, queryByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+
+    expect(getByText('updates sent')).toBeTruthy();
+    expect(queryByText('saved, not sent')).toBeNull();
   });
 });
 

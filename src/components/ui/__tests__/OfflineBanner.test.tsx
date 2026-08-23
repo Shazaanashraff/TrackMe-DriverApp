@@ -1,25 +1,22 @@
 import React from 'react';
-import { render, act } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import OfflineBanner from '../OfflineBanner';
 
-let listener: ((online: boolean) => void) | null = null;
-const mockUnsubscribe = jest.fn();
+let mockNetworkState: 'online' | 'degraded' | 'offline' = 'online';
 
-jest.mock('../../../services/backendStatus', () => ({
+jest.mock('../../../context/NetworkStatusContext', () => ({
   __esModule: true,
-  getBackendOnline: jest.fn(() => true),
-  subscribeBackendStatus: jest.fn((cb: (online: boolean) => void) => {
-    listener = cb;
-    return mockUnsubscribe;
+  useNetworkStatus: () => ({
+    networkState: mockNetworkState,
+    isOnline: mockNetworkState === 'online',
+    isDegraded: mockNetworkState === 'degraded',
+    isOffline: mockNetworkState === 'offline',
+    retry: jest.fn(),
   }),
 }));
 
-import { getBackendOnline } from '../../../services/backendStatus';
-
 beforeEach(() => {
-  jest.clearAllMocks();
-  listener = null;
-  (getBackendOnline as jest.Mock).mockReturnValue(true);
+  mockNetworkState = 'online';
 });
 
 describe('OfflineBanner', () => {
@@ -28,29 +25,16 @@ describe('OfflineBanner', () => {
     expect(toJSON()).toBeNull();
   });
 
-  it('renders the offline message when backend status flips offline', () => {
+  it('renders the offline message when the device has no connection', () => {
+    mockNetworkState = 'offline';
     const { getByText, toJSON } = render(<OfflineBanner />);
-    act(() => {
-      listener?.(false);
-    });
     expect(getByText(/no connection/i)).toBeTruthy();
     expect(toJSON()).not.toBeNull();
   });
 
-  it('goes back to rendering nothing when back online', () => {
-    const { queryByText } = render(<OfflineBanner />);
-    act(() => {
-      listener?.(false);
-    });
-    act(() => {
-      listener?.(true);
-    });
-    expect(queryByText(/no connection/i)).toBeNull();
-  });
-
-  it('starts offline when getBackendOnline() is initially false', () => {
-    (getBackendOnline as jest.Mock).mockReturnValue(false);
+  it('shows a distinct message when online but the backend is unreachable', () => {
+    mockNetworkState = 'degraded';
     const { getByText } = render(<OfflineBanner />);
-    expect(getByText(/no connection/i)).toBeTruthy();
+    expect(getByText(/can't reach the server/i)).toBeTruthy();
   });
 });

@@ -1,17 +1,11 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import DriverProfileScreen from '../DriverProfileScreen';
-import api from '../../services/api';
 
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
 );
 
-jest.mock('../../services/api', () => ({
-  getMyVehicle: jest.fn(),
-}));
-
-const mockAuthenticatedRequest = jest.fn((fn, ...args) => fn(...args));
 const mockLogoutMutate = jest.fn();
 // The screen re-reads the account from the server; by default that read has not
 // resolved, so these tests exercise the stored-account fallback.
@@ -22,11 +16,18 @@ const mockKeyQuery = jest.fn(() => ({
   isError: false,
   refetch: jest.fn(),
 }));
+// Same cached, persisted query the Dashboard uses (audit fix — this used to be
+// a one-off uncached fetch that read "No vehicle yet" on any failure, offline
+// included).
+const mockVehicleQuery = jest.fn(() => ({
+  data: { vehicleName: 'Shuttle 1', registrationNumber: 'ABC-123', seatCapacity: 20 },
+  isLoading: false,
+  isError: false,
+}));
 
 jest.mock('../../context/AuthContext', () => ({
   useAuth: () => ({
     user: { name: 'Nadia Perera', email: 'nadia@test.com' },
-    authenticatedRequest: mockAuthenticatedRequest,
   }),
 }));
 
@@ -34,6 +35,10 @@ jest.mock('../../hooks/auth', () => ({
   useLogout: () => ({ mutate: mockLogoutMutate, isPending: false }),
   useMeQuery: () => mockMeQuery(),
   useMyEnrollmentKeyQuery: () => mockKeyQuery(),
+}));
+
+jest.mock('../../hooks/vehicle', () => ({
+  useMyVehicleQuery: () => mockVehicleQuery(),
 }));
 
 const navigation = { navigate: jest.fn(), reset: jest.fn() };
@@ -47,11 +52,10 @@ beforeEach(() => {
     isError: false,
     refetch: jest.fn(),
   });
-  mockAuthenticatedRequest.mockImplementation((fn, ...args) => fn(...args));
-  api.getMyVehicle.mockResolvedValue({
-    vehicleName: 'Shuttle 1',
-    registrationNumber: 'ABC-123',
-    seatCapacity: 20,
+  mockVehicleQuery.mockReturnValue({
+    data: { vehicleName: 'Shuttle 1', registrationNumber: 'ABC-123', seatCapacity: 20 },
+    isLoading: false,
+    isError: false,
   });
 });
 
@@ -130,8 +134,8 @@ describe('DriverProfileScreen', () => {
   });
 
   it('navigates to Vehicle registration from the vehicle card CTA when there is no vehicle', async () => {
-    api.getMyVehicle.mockRejectedValue(new Error('not found'));
-    const { getByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
+    mockVehicleQuery.mockReturnValue({ data: null, isLoading: false, isError: false });
+    const { findByText } = render(<DriverProfileScreen navigation={navigation} />);
     fireEvent.press(await findByText('Add my vehicle'));
     expect(navigation.navigate).toHaveBeenCalledWith('VehicleRegistration');
   });
@@ -154,5 +158,47 @@ describe('DriverProfileScreen', () => {
     const { queryByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
     await findByText('Shuttle 1');
     expect(queryByText('Replay tutorial')).toBeNull();
+  });
+
+  describe('offline / cached-data-beats-error (audit fixes)', () => {
+    it('keeps the enrollment key readable when a background refetch fails but the key is cached', async () => {
+      mockKeyQuery.mockReturnValue({
+        data: { data: { enrollmentKey: 'TMD-QMCZ-9NL2-TJNQ', isPrivate: false } },
+        isPending: false,
+        isError: true, // e.g. a failed background refetch while offline
+        refetch: jest.fn(),
+      });
+
+      const { getByTestId, queryByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
+      await findByText('Shuttle 1');
+
+      expect(getByTestId('toggle-enrollment-key')).toBeTruthy();
+      expect(queryByText('Could not load your key.')).toBeNull();
+    });
+
+    it('shows the real error state only when there truly is no cached key', async () => {
+      mockKeyQuery.mockReturnValue({
+        data: undefined,
+        isPending: false,
+        isError: true,
+        refetch: jest.fn(),
+      });
+
+      const { getByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
+      await findByText('Shuttle 1');
+      expect(getByText('Could not load your key.')).toBeTruthy();
+    });
+
+    it('keeps showing the cached vehicle when a background refetch fails', async () => {
+      mockVehicleQuery.mockReturnValue({
+        data: { vehicleName: 'Shuttle 1', registrationNumber: 'ABC-123', seatCapacity: 20 },
+        isLoading: false,
+        isError: true, // e.g. offline
+      });
+
+      const { getByText, queryByText } = render(<DriverProfileScreen navigation={navigation} />);
+      expect(getByText('Shuttle 1')).toBeTruthy();
+      expect(queryByText('Add my vehicle')).toBeNull();
+    });
   });
 });
