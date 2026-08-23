@@ -17,6 +17,13 @@ type Props = {
   onRetry?: () => void;
 };
 
+// Who is inviting, and the key. Anything more (where to type it, what happens
+// next) is a wall of text in a chat window, and the driver is right there to
+// ask.
+//
+// The key goes on its own line rather than trailing a sentence. Chat apps wrap
+// mid-token and tap-to-select grabs the whole line, so a key sitting after a
+// colon is the one part of the message that arrives broken.
 export function buildShareMessage(
   enrollmentKey: string,
   { driverName }: { driverName?: string } = {}
@@ -24,10 +31,14 @@ export function buildShareMessage(
   const opener = driverName
     ? `Join ${driverName}'s shuttle on TrackMe.`
     : 'Join my shuttle on TrackMe.';
+
   return [opener, '', 'Enrollment key:', enrollmentKey].join('\n');
 }
 
+// How long the button stays on "Copied" before naming its action again.
 const COPIED_FOR_MS = 2000;
+// A revealed key re-hides itself. The driver is holding the phone in public
+// half the time, and a key left on screen is a credential left on screen.
 const REVEALED_FOR_MS = 20000;
 
 export default function EnrollmentKeyCard({
@@ -40,6 +51,8 @@ export default function EnrollmentKeyCard({
   const [copied, setCopied] = useState(false);
   const [revealed, setRevealed] = useState(false);
 
+  // A rotated key must not inherit the previous one's revealed state, nor leave
+  // the button claiming the old key was copied.
   useEffect(() => {
     setCopied(false);
     setRevealed(false);
@@ -59,6 +72,8 @@ export default function EnrollmentKeyCard({
 
   const handleCopy = useCallback(async () => {
     if (!enrollmentKey) return;
+    // Copying does not reveal: the driver can hand the key over without it ever
+    // being on screen.
     await Clipboard.setStringAsync(enrollmentKey);
     setCopied(true);
   }, [enrollmentKey]);
@@ -68,41 +83,40 @@ export default function EnrollmentKeyCard({
     try {
       await Share.share({
         message: buildShareMessage(enrollmentKey, { driverName }),
+        // Android's chooser shows this above the targets; iOS ignores it.
         title: 'Shuttle enrollment key',
       });
-    } catch {}
+    } catch {
+      // Share is unavailable on some platforms and a dismissed sheet rejects on
+      // others. Neither is worth an error in front of the driver, who can copy
+      // the key instead.
+    }
   }, [enrollmentKey, driverName]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.cardHeader}>
-        <View style={styles.headerTitleContainer}>
-          <Ionicons name="key" size={20} color={theme.color.primary[500]} />
-          <AppText variant="h2" style={styles.headerTitle}>Enrollment Key</AppText>
-        </View>
-        <AppText variant="caption" color={theme.color.text.muted}>
-          Share to let riders join
-        </AppText>
-      </View>
-
+    <Card title="Your enrollment key" style={styles.card}>
       {loading ? (
-        <Skeleton height={64} radius={theme.radius.card} style={styles.skeleton} />
+        <Skeleton height={52} radius={theme.radius.control} />
       ) : error ? (
-        <View style={styles.errorContainer}>
+        <View>
           <InlineError message="Could not load your key." />
           {onRetry ? (
             <PrimaryButton title="Try again" variant="secondary" onPress={onRetry} />
           ) : null}
         </View>
       ) : (
-        <View style={styles.keyContainer}>
+        <>
+          {/* Covered, the field says what it is and what to do; every attempt to
+              draw a stand-in key (dots, asterisks, bars) read as an empty input
+              rather than a withheld value. The whole field is the target, not
+              just the eye. */}
           <Pressable
             testID="toggle-enrollment-key"
             onPress={() => setRevealed((r) => !r)}
             accessibilityRole="button"
             accessibilityState={{ expanded: revealed }}
             accessibilityLabel={revealed ? 'Hide enrollment key' : 'Show enrollment key'}
-            style={[styles.keyBox, revealed && styles.keyBoxRevealed]}
+            style={styles.keyBox}
           >
             {revealed ? (
               <AppText
@@ -110,6 +124,8 @@ export default function EnrollmentKeyCard({
                 variant="h2"
                 style={styles.keyRevealed}
                 selectable
+                // A key is one token. On a narrow phone let it shrink to fit
+                // rather than break across two lines.
                 numberOfLines={1}
                 adjustsFontSizeToFit
               >
@@ -117,136 +133,78 @@ export default function EnrollmentKeyCard({
               </AppText>
             ) : (
               <View testID="enrollment-key-mask" style={styles.hiddenRow}>
-                <Ionicons name="lock-closed" size={18} color={theme.color.text.muted} />
-                <AppText variant="body" color={theme.color.text.secondary} weight="medium">
-                  Tap to reveal key
+                <Ionicons
+                  name="lock-closed"
+                  size={15}
+                  color={theme.color.text.muted}
+                />
+                <AppText variant="label" color={theme.color.text.secondary}>
+                  Tap to reveal
                 </AppText>
               </View>
             )}
 
             <Ionicons
-              name={revealed ? 'eye-off' : 'eye'}
-              size={22}
-              color={revealed ? theme.color.primary[600] : theme.color.text.muted}
+              name={revealed ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color={theme.color.primary[600]}
             />
           </Pressable>
 
           <View style={styles.actions}>
-            <Pressable 
-              style={[styles.actionButton, copied && styles.actionButtonSuccess]} 
+            <PrimaryButton
+              testID="copy-enrollment-key"
+              title={copied ? 'Copied' : 'Copy'}
+              variant="secondary"
               onPress={handleCopy}
-            >
-              <Ionicons 
-                name={copied ? "checkmark" : "copy-outline"} 
-                size={18} 
-                color={copied ? theme.color.success.main : theme.color.primary[600]} 
-              />
-              <AppText 
-                variant="label" 
-                color={copied ? theme.color.success.main : theme.color.primary[600]}
-                weight="medium"
-              >
-                {copied ? 'Copied!' : 'Copy Key'}
-              </AppText>
-            </Pressable>
-            
-            <View style={styles.actionDivider} />
-
-            <Pressable style={styles.actionButton} onPress={handleShare}>
-              <Ionicons name="share-outline" size={18} color={theme.color.primary[600]} />
-              <AppText variant="label" color={theme.color.primary[600]} weight="medium">
-                Share Link
-              </AppText>
-            </Pressable>
+              style={styles.action}
+            />
+            <PrimaryButton
+              testID="share-enrollment-key"
+              title="Share"
+              onPress={handleShare}
+              style={styles.action}
+            />
           </View>
-        </View>
+        </>
       )}
-    </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: theme.color.surface.card,
-    borderRadius: theme.radius.card,
-    ...theme.elevation.card,
-    overflow: 'hidden',
-  },
-  cardHeader: {
-    padding: theme.space[3],
-    borderBottomWidth: theme.borderWidth.hairline,
-    borderBottomColor: theme.color.border.hairline,
-  },
-  headerTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.space[2],
-    marginBottom: theme.space[1],
-  },
-  headerTitle: {
-    color: theme.color.text.primary,
-  },
-  keyContainer: {
-    padding: theme.space[3],
+  card: {
+    padding: theme.space[4],
   },
   keyBox: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: theme.color.surface.field,
-    borderRadius: theme.radius.card,
-    paddingVertical: theme.space[2],
-    paddingHorizontal: theme.space[3],
+    borderRadius: theme.radius.control,
+    borderWidth: theme.borderWidth.hairline,
+    borderColor: theme.color.border.hairline,
+    paddingVertical: theme.space[3],
+    paddingHorizontal: theme.space[4],
+    // Fixed so revealing does not make the card jump.
     minHeight: 56,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  keyBoxRevealed: {
-    backgroundColor: theme.color.primary[50],
-    borderColor: theme.color.primary[100],
   },
   hiddenRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: theme.space[2],
+    gap: theme.space[3],
   },
   keyRevealed: {
     flex: 1,
-    color: theme.color.primary[600],
-    letterSpacing: 0.5,
-    fontWeight: '700',
-    marginRight: theme.space[2],
+    color: theme.color.text.primary,
+    letterSpacing: 1.5,
   },
   actions: {
     flexDirection: 'row',
-    alignItems: 'center',
+    gap: theme.space[3],
     marginTop: theme.space[3],
-    backgroundColor: theme.color.surface.page,
-    borderRadius: theme.radius.pill,
-    padding: theme.space[1],
   },
-  actionButton: {
+  action: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.space[2],
-    paddingVertical: theme.space[2],
-    borderRadius: theme.radius.pill,
-  },
-  actionButtonSuccess: {
-    backgroundColor: theme.color.success.bg,
-  },
-  actionDivider: {
-    width: 1,
-    height: 16,
-    backgroundColor: theme.color.border.hairline,
-  },
-  skeleton: {
-    margin: theme.space[3],
-  },
-  errorContainer: {
-    padding: theme.space[3],
-    gap: theme.space[2],
   },
 });

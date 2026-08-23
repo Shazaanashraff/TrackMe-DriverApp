@@ -36,17 +36,6 @@ jest.mock('../../hooks/auth', () => ({
   useMyEnrollmentKeyQuery: () => mockKeyQuery(),
 }));
 
-const mockVehicleQuery = jest.fn(() => ({
-  data: { data: { vehicleName: 'Shuttle 1', registrationNumber: 'ABC-123', seatCapacity: 20 } },
-  isPending: false,
-  isError: false,
-  refetch: jest.fn(),
-}));
-
-jest.mock('../../hooks/vehicle', () => ({
-  useMyVehicleQuery: () => mockVehicleQuery(),
-}));
-
 const navigation = { navigate: jest.fn(), reset: jest.fn() };
 
 beforeEach(() => {
@@ -54,12 +43,6 @@ beforeEach(() => {
   mockMeQuery.mockReturnValue({ data: undefined });
   mockKeyQuery.mockReturnValue({
     data: { data: { enrollmentKey: 'TMD-QMCZ-9NL2-TJNQ', isPrivate: false } },
-    isPending: false,
-    isError: false,
-    refetch: jest.fn(),
-  });
-  mockVehicleQuery.mockReturnValue({
-    data: { data: { vehicleName: 'Shuttle 1', registrationNumber: 'ABC-123', seatCapacity: 20 } },
     isPending: false,
     isError: false,
     refetch: jest.fn(),
@@ -147,8 +130,8 @@ describe('DriverProfileScreen', () => {
   });
 
   it('navigates to Vehicle registration from the vehicle card CTA when there is no vehicle', async () => {
-    mockVehicleQuery.mockReturnValue({ data: null, isPending: false, isError: false, refetch: jest.fn() });
-    const { findByText } = render(<DriverProfileScreen navigation={navigation} />);
+    api.getMyVehicle.mockRejectedValue(new Error('not found'));
+    const { getByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
     fireEvent.press(await findByText('Add my vehicle'));
     expect(navigation.navigate).toHaveBeenCalledWith('VehicleRegistration');
   });

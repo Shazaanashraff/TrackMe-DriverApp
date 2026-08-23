@@ -34,9 +34,6 @@ describe('VehicleCard', () => {
     expect(UNSAFE_getByType(Ionicons).props.name).toBe('bus');
   });
 
-  // The pill briefly read "Approval required"/"Open enrolment" to avoid colliding
-  // with serviceType, then was deliberately reverted to Public/Private. These
-  // assert the wording that actually ships. The behaviour below is the point.
   it('reads Private when the driver gates enrolment, Public otherwise', () => {
     const gated = render(
       <VehicleCard
@@ -74,15 +71,13 @@ describe('VehicleCard', () => {
     expect(queryByTestId('vehicle-privacy-pill')).toBeNull();
   });
 
-  it('renders the no-vehicle empty state and fires onRegisterPress when it is tapped', () => {
+  it('renders the no-vehicle EmptyState and fires onRegisterPress from its action', () => {
     const onRegisterPress = jest.fn();
     const { getByText } = render(<VehicleCard vehicle={null} onRegisterPress={onRegisterPress} />);
 
     expect(getByText('No vehicle yet')).toBeTruthy();
     expect(getByText('Add your vehicle so riders can find it')).toBeTruthy();
-    // The redesign made the whole row pressable with a chevron, replacing the
-    // old EmptyState's labelled "Add my vehicle" button. Press bubbles to it.
-    fireEvent.press(getByText('No vehicle yet'));
+    fireEvent.press(getByText('Add my vehicle'));
     expect(onRegisterPress).toHaveBeenCalledTimes(1);
   });
 });
