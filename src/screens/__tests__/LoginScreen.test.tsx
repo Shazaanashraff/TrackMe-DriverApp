@@ -158,13 +158,13 @@ describe('LoginScreen', () => {
     const { getByTestId, getByText } = render(<LoginScreen />);
 
     expect(getByTestId(ID_INPUT)).toBeTruthy();
-    expect(getByTestId('primary-btn').props.disabled).toBe(true);
+    expect(getByTestId('primary-btn').props.accessibilityState?.disabled).toBe(true);
     expect(getByText('You need a connection to sign in.')).toBeTruthy();
   });
 
   it('leaves Sign in enabled once back online', () => {
     const { getByTestId, queryByText } = render(<LoginScreen />);
-    expect(getByTestId('primary-btn').props.disabled).toBe(false);
+    expect(getByTestId('primary-btn').props.accessibilityState?.disabled).toBe(false);
     expect(queryByText('You need a connection to sign in.')).toBeNull();
   });
 });
