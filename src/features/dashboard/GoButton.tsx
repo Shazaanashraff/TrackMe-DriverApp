@@ -4,8 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../theme';
 
 // Going on duty is the single thing this app exists to do, so the control gets
-// real presence, but scaled to fit elegantly within a stacked bento layout.
-const SIZE = 88;
+// real presence rather than sitting as a small chip beside the headline.
+const SIZE = 112;
 
 type Props = {
   isLive: boolean;
