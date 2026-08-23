@@ -20,6 +20,17 @@ import LoginScreen from '../src/screens/LoginScreen';
 import DriverDashboard from '../src/screens/DriverDashboard';
 import { resetDispatch } from '../src/services/locationDispatch';
 
+jest.mock('../src/context/NetworkStatusContext', () => ({
+  __esModule: true,
+  useNetworkStatus: () => ({
+    networkState: 'online',
+    isOnline: true,
+    isDegraded: false,
+    isOffline: false,
+    retry: jest.fn(),
+  }),
+}));
+
 jest.mock('../src/services/notificationService', () => ({
   __esModule: true,
   setupSocketNotificationListeners: jest.fn(() => ({ cleanup: jest.fn() })),

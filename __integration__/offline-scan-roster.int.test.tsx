@@ -135,7 +135,7 @@ describe('offline scan end to end: scan offline → saved → reconnect → repl
 
     // 2) Confirm saved: the offline banner shows and the scan is persisted to the
     // AsyncStorage replay queue rather than lost.
-    await scanner.findByText("You're offline. This scan will be sent when you're back online.");
+    await scanner.findByText('Saved — will confirm when back online.');
     await waitFor(async () => {
       const raw = await AsyncStorage.getItem('boarding_scan_queue');
       expect(JSON.parse(raw as string)).toHaveLength(1);
