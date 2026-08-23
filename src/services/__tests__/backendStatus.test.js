@@ -64,4 +64,38 @@ describe('backendStatus', () => {
 
     expect(getBackendOnline()).toBe(false);
   });
+
+  it('survives several rapid online/offline cycles, notifying once per actual change', () => {
+    const listener = jest.fn();
+    subscribeBackendStatus(listener);
+    listener.mockClear();
+
+    for (let i = 0; i < 5; i += 1) {
+      markBackendOffline();
+      markBackendOnline();
+    }
+
+    expect(getBackendOnline()).toBe(true);
+    expect(listener).toHaveBeenCalledTimes(10);
+    // Every call in the alternating sequence toggles the value — no dropped or
+    // duplicated notifications from the rapid flips.
+    expect(listener.mock.calls.map((call) => call[0])).toEqual([
+      false, true, false, true, false, true, false, true, false, true,
+    ]);
+  });
+
+  it('collapses redundant rapid calls of the same state into a single notification', () => {
+    const listener = jest.fn();
+    subscribeBackendStatus(listener);
+    listener.mockClear();
+
+    markBackendOffline();
+    markBackendOffline();
+    markBackendOffline();
+    markBackendOnline();
+    markBackendOnline();
+
+    expect(listener).toHaveBeenCalledTimes(2);
+    expect(listener.mock.calls.map((call) => call[0])).toEqual([false, true]);
+  });
 });
