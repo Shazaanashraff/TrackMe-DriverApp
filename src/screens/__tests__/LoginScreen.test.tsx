@@ -30,12 +30,13 @@ type PrimaryButtonMockProps = {
   title?: string;
   onPress?: () => void;
   loading?: boolean;
+  disabled?: boolean;
 };
 
 jest.mock('../../components/ui/PrimaryButton', () => {
   const { TouchableOpacity, Text } = require('react-native');
-  return ({ title, onPress, loading }: PrimaryButtonMockProps) => (
-    <TouchableOpacity testID="primary-btn" onPress={onPress} disabled={loading}>
+  return ({ title, onPress, loading, disabled }: PrimaryButtonMockProps) => (
+    <TouchableOpacity testID="primary-btn" onPress={onPress} disabled={loading || disabled}>
       <Text>{title}</Text>
     </TouchableOpacity>
   );
@@ -43,15 +44,22 @@ jest.mock('../../components/ui/PrimaryButton', () => {
 
 jest.mock('../../components/ShiftVehicleIcon', () => () => null);
 
+jest.mock('../../context/NetworkStatusContext', () => ({
+  useNetworkStatus: jest.fn(),
+}));
+
 import { useLogin } from '../../hooks/auth';
+import { useNetworkStatus } from '../../context/NetworkStatusContext';
 import LoginScreen from '../LoginScreen';
 
 const mockUseLogin = useLogin as jest.Mock;
+const mockUseNetworkStatus = useNetworkStatus as unknown as jest.Mock;
 const mutate = jest.fn();
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockUseLogin.mockReturnValue({ mutate, isPending: false, isError: false, error: undefined });
+  mockUseNetworkStatus.mockReturnValue({ isOnline: true, isOffline: false, isDegraded: false });
 });
 
 const ID_INPUT = 'input-Driver ID or email';
@@ -143,5 +151,20 @@ describe('LoginScreen', () => {
     const { getByText } = render(<LoginScreen navigation={{ navigate }} />);
     fireEvent.press(getByText('Forgot password?'));
     expect(navigate).toHaveBeenCalledWith('ForgotPassword');
+  });
+
+  it('renders the form and disables Sign in while offline, instead of failing silently', () => {
+    mockUseNetworkStatus.mockReturnValue({ isOnline: false, isOffline: true, isDegraded: false });
+    const { getByTestId, getByText } = render(<LoginScreen />);
+
+    expect(getByTestId(ID_INPUT)).toBeTruthy();
+    expect(getByTestId('primary-btn').props.disabled).toBe(true);
+    expect(getByText('You need a connection to sign in.')).toBeTruthy();
+  });
+
+  it('leaves Sign in enabled once back online', () => {
+    const { getByTestId, queryByText } = render(<LoginScreen />);
+    expect(getByTestId('primary-btn').props.disabled).toBe(false);
+    expect(queryByText('You need a connection to sign in.')).toBeNull();
   });
 });

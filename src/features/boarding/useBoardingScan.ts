@@ -22,7 +22,7 @@ export type BoardingScanResult = {
   source?: string;
 };
 
-export type BoardingScanStatus = 'idle' | 'scanning' | 'success' | 'error' | 'debounced';
+export type BoardingScanStatus = 'idle' | 'scanning' | 'success' | 'error' | 'debounced' | 'queued';
 
 type QueuedScan = { qrToken: string; vehicleId: string; timestamp: number };
 
@@ -144,8 +144,11 @@ export function useBoardingScan(vehicleId: string) {
         const normalized = normalizeError(err);
         if (isOfflineError(normalized)) {
           await queueScan(qrToken, vehicleId);
-          setStatus('error');
-          setErrorMessage("You're offline. This scan will be sent when you're back online.");
+          // Distinct from 'error': the scan is safely saved, not lost — a driver
+          // must never see the same red banner for "saved, will send later" as
+          // for "this QR code is invalid."
+          setStatus('queued');
+          setErrorMessage("Saved — will confirm when back online.");
           return;
         }
         setStatus('error');

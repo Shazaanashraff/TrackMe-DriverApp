@@ -9,6 +9,8 @@ import FormInput from '../components/ui/FormInput';
 import PrimaryButton from '../components/ui/PrimaryButton';
 import InlineError from '../components/ui/InlineError';
 import ErrorState from '../components/ui/ErrorState';
+import OfflineActionNote from '../components/ui/OfflineActionNote';
+import { useNetworkStatus } from '../context/NetworkStatusContext';
 
 function asAppError(error: unknown): AppError {
   return error instanceof AppError ? error : normalizeError(error);
@@ -22,6 +24,7 @@ const LoginScreen = ({ navigation }: { navigation?: { navigate: (screen: string)
   const [identifierError, setIdentifierError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const login = useLogin();
+  const { isOffline } = useNetworkStatus();
 
   const handleLogin = () => {
     setIdentifierError(null);
@@ -80,7 +83,14 @@ const LoginScreen = ({ navigation }: { navigation?: { navigate: (screen: string)
 
           {login.isError && <ErrorState error={asAppError(login.error)} variant="compact" />}
 
-          <PrimaryButton title="Sign in" onPress={handleLogin} loading={login.isPending} style={styles.loginButton} />
+          <PrimaryButton
+            title="Sign in"
+            onPress={handleLogin}
+            loading={login.isPending}
+            disabled={isOffline}
+            style={styles.loginButton}
+          />
+          {isOffline && <OfflineActionNote>You need a connection to sign in.</OfflineActionNote>}
 
           <Pressable
             onPress={() => navigation?.navigate('ForgotPassword')}

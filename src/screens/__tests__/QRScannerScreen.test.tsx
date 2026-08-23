@@ -185,6 +185,36 @@ describe('QRScannerScreen', () => {
     const { getByText } = render(<QRScannerScreen navigation={navigation} route={route} />);
     expect(getByText("QR attendance isn't enabled for this route yet — contact your manager.")).toBeTruthy();
   });
+
+  // A scan that's safely queued for later must not look like the same failure
+  // as an actually-invalid QR code — same banner slot, different color/message.
+  it('renders a queued offline scan as amber "saved" feedback, not the red error banner', () => {
+    mockHookState = {
+      ...mockHookState,
+      status: 'queued',
+      errorMessage: 'Saved — will confirm when back online.',
+    };
+
+    const { getByTestId, getByText } = render(<QRScannerScreen navigation={navigation} route={route} />);
+    expect(getByText('Saved — will confirm when back online.')).toBeTruthy();
+    const banner = getByTestId('scan-feedback');
+    const flatStyle = StyleSheet.flatten(banner.props.style);
+    expect(flatStyle.backgroundColor).toBe(theme.color.warning.main);
+    expect(flatStyle.backgroundColor).not.toBe(theme.color.danger.main);
+  });
+
+  it('shows how many scans are still waiting to send', () => {
+    mockHookState = { ...mockHookState, pendingCount: 7 };
+
+    const { getByTestId, getByText } = render(<QRScannerScreen navigation={navigation} route={route} />);
+    expect(getByTestId('scan-queue-badge')).toBeTruthy();
+    expect(getByText('7 waiting to send')).toBeTruthy();
+  });
+
+  it('shows no queue badge when nothing is pending', () => {
+    const { queryByTestId } = render(<QRScannerScreen navigation={navigation} route={route} />);
+    expect(queryByTestId('scan-queue-badge')).toBeNull();
+  });
 });
 
 describe('QRScannerScreen — cooldown feedback + queueing (issue #11)', () => {
