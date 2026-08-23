@@ -164,4 +164,29 @@ describe('DutyHero', () => {
     const { getByLabelText } = render(<DutyHero {...baseProps} status="starting" />);
     expect(getByLabelText('Go online').props.accessibilityState.busy).toBe(true);
   });
+
+  describe('buffered GPS fixes not yet sent', () => {
+    it('shows "updates sent" as normal when nothing is buffered', () => {
+      const { getByText, queryByText } = render(
+        <DutyHero {...baseProps} status="tracking" bufferedCount={0} />
+      );
+      expect(getByText('updates sent')).toBeTruthy();
+      expect(queryByText('saved, not sent')).toBeNull();
+    });
+
+    it('replaces "updates sent" with the buffered count once fixes are piling up', () => {
+      const { getByText, getByTestId, queryByText } = render(
+        <DutyHero {...baseProps} status="tracking" bufferedCount={18} />
+      );
+      expect(queryByText('updates sent')).toBeNull();
+      expect(getByText('saved, not sent')).toBeTruthy();
+      expect(getByTestId('buffered-count-chip')).toBeTruthy();
+      expect(getByText('18')).toBeTruthy();
+    });
+
+    it('defaults to 0 (no buffered chip) when the prop is omitted', () => {
+      const { queryByText } = render(<DutyHero {...baseProps} status="tracking" />);
+      expect(queryByText('saved, not sent')).toBeNull();
+    });
+  });
 });

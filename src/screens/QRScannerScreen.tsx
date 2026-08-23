@@ -104,6 +104,11 @@ function feedbackFor(status: string, lastResult: ReturnType<typeof useBoardingSc
   if (status === 'debounced') {
     return { variant: 'neutral' as const, message: [lastResult?.studentName, lastResult?.riderCode, 'Already recorded'].filter(Boolean).join(' · ') };
   }
+  if (status === 'queued') {
+    // Safely saved, not lost — amber, not the red 'error' uses. The scan will
+    // send itself the moment the connection returns.
+    return { variant: 'warn' as const, message: errorMessage || 'Saved — will confirm when back online.' };
+  }
   if (status === 'error') {
     return { variant: 'error' as const, message: errorMessage || 'Something went wrong. Please try again.' };
   }
@@ -113,7 +118,7 @@ function feedbackFor(status: string, lastResult: ReturnType<typeof useBoardingSc
 const QRScannerScreen = ({ navigation, route }: Props) => {
   const vehicleId = route?.params?.vehicleId || '';
   const [permission, requestPermission] = useCameraPermissions();
-  const { status, lastResult, errorMessage, submitScan } = useBoardingScan(vehicleId);
+  const { status, lastResult, errorMessage, pendingCount, submitScan } = useBoardingScan(vehicleId);
   const scanLockRef = useRef(false);
   // A different rider's scan landing mid-cooldown is queued here rather than
   // dropped, and fired the moment the cooldown clears (issue #11).
@@ -208,6 +213,14 @@ const QRScannerScreen = ({ navigation, route }: Props) => {
             <View style={styles.viewfinder} />
           </View>
 
+          {pendingCount > 0 ? (
+            <View style={styles.queueBadge} testID="scan-queue-badge">
+              <AppText variant="caption" weight="medium" color={theme.color.white}>
+                {pendingCount} waiting to send
+              </AppText>
+            </View>
+          ) : null}
+
           {feedback ? (
             <View style={[styles.feedbackBanner, styles[`feedback_${feedback.variant}`]]} testID="scan-feedback">
               <AppText variant="body" weight="medium" color={theme.color.white}>
@@ -261,8 +274,20 @@ const styles = StyleSheet.create({
   feedback_neutral: {
     backgroundColor: theme.color.text.secondary,
   },
+  feedback_warn: {
+    backgroundColor: theme.color.warning.main,
+  },
   feedback_error: {
     backgroundColor: theme.color.danger.main,
+  },
+  queueBadge: {
+    position: 'absolute',
+    top: theme.space[4],
+    right: theme.space[4],
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: theme.radius.pill,
+    paddingVertical: theme.space[1],
+    paddingHorizontal: theme.space[3],
   },
   permissionContainer: {
     flex: 1,

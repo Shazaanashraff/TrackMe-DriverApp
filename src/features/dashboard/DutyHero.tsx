@@ -22,6 +22,10 @@ type Props = {
   hasVehicle: boolean;
   hadVehicleBefore: boolean;
   lostConnection?: boolean;
+  // Unsent GPS fixes still sitting in locationDispatch's buffer. >0 means
+  // updates aren't currently reaching the server — shown in place of
+  // "updates sent" since the two can't both be true at once.
+  bufferedCount?: number;
   onGoPress: () => void;
   onEndPress: () => void;
 };
@@ -69,6 +73,7 @@ export default function DutyHero({
   hasVehicle,
   hadVehicleBefore,
   lostConnection = false,
+  bufferedCount = 0,
   onGoPress,
   onEndPress,
 }: Props) {
@@ -153,7 +158,11 @@ export default function DutyHero({
       {isLive ? (
         <View style={styles.statsRow}>
           <StatChip value={timeOnline} label="time online" />
-          <StatChip value={String(updatesSent)} label="updates sent" />
+          {bufferedCount > 0 ? (
+            <StatChip value={String(bufferedCount)} label="saved, not sent" testID="buffered-count-chip" />
+          ) : (
+            <StatChip value={String(updatesSent)} label="updates sent" />
+          )}
           <StatChip value={gps} label="GPS" />
         </View>
       ) : null}

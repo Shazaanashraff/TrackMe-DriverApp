@@ -191,7 +191,10 @@ describe('useBoardingScan', () => {
       await result.current.submitScan('qr-token-offline');
     });
 
-    expect(result.current.status).toBe('error');
+    // 'queued', not 'error' — a scan that's safely saved for later must read
+    // differently from one that actually failed (e.g. an invalid QR code).
+    expect(result.current.status).toBe('queued');
+    expect(result.current.errorMessage).toBe('Saved — will confirm when back online.');
     expect(result.current.pendingCount).toBe(1);
 
     const raw = await AsyncStorage.getItem('boarding_scan_queue');

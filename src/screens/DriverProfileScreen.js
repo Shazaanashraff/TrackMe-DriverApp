@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, SafeAreaView, StatusBar, ScrollView, StyleSheet } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { useLogout, useMeQuery, useMyEnrollmentKeyQuery } from '../hooks/auth';
+import { useMyVehicleQuery } from '../hooks/vehicle';
 import EnrollmentKeyCard from '../features/profile/EnrollmentKeyCard';
-import api from '../services/api';
 import { theme } from '../theme';
 import AppText from '../components/ui/AppText';
 import Card from '../components/ui/Card';
@@ -13,8 +13,12 @@ import ConfirmSheet from '../components/ui/ConfirmSheet';
 import Skeleton from '../components/ui/Skeleton';
 import VehicleCard from '../features/dashboard/VehicleCard';
 
+function unwrap(response) {
+  return response?.data ?? response;
+}
+
 const DriverProfileScreen = ({ navigation }) => {
-  const { user, authenticatedRequest } = useAuth();
+  const { user } = useAuth();
   const logout = useLogout();
   // The server's copy wins where it has loaded; the one stored at sign-in keeps
   // the screen populated on a cold or offline start rather than blanking it.
@@ -22,24 +26,12 @@ const DriverProfileScreen = ({ navigation }) => {
   const profile = { ...(user || {}), ...(meQuery.data?.user || {}) };
   const keyQuery = useMyEnrollmentKeyQuery();
   const keyData = keyQuery.data?.data;
-  const [vehicle, setVehicle] = useState(null);
-  const [loadingVehicle, setLoadingVehicle] = useState(true);
+  // Same cached, persisted query the Dashboard uses — replaces a one-off,
+  // uncached fetch that used to read as "No vehicle yet" on any failure,
+  // offline included, even for a driver who has one (issue found this pass).
+  const vehicleQuery = useMyVehicleQuery();
+  const vehicle = unwrap(vehicleQuery.data) || null;
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
-  useEffect(() => {
-    const loadVehicleInfo = async () => {
-      try {
-        const vehicleData = await authenticatedRequest(api.getMyVehicle);
-        setVehicle(vehicleData.data || vehicleData);
-      } catch (error) {
-        setVehicle(null);
-      } finally {
-        setLoadingVehicle(false);
-      }
-    };
-
-    loadVehicleInfo();
-  }, [authenticatedRequest]);
 
   const handleLogout = () => {
     logout.mutate(undefined, {
@@ -80,13 +72,16 @@ const DriverProfileScreen = ({ navigation }) => {
             enrollmentKey={keyData?.enrollmentKey}
             driverName={profile.name}
             loading={keyQuery.isPending}
-            error={keyQuery.isError}
+            // A cached key beats a failed background refetch — showing "could
+            // not load" over a key that's sitting right there in cache would
+            // hide it at the exact moment a driver needs to read it out.
+            error={keyQuery.isError && !keyData?.enrollmentKey}
             onRetry={keyQuery.refetch}
           />
         </View>
 
         <AppText variant="h2" style={styles.sectionTitle}>Your vehicle</AppText>
-        {loadingVehicle ? (
+        {vehicleQuery.isLoading ? (
           <Skeleton height={80} radius={theme.radius.card} style={styles.card} />
         ) : (
           <View style={styles.card}>
