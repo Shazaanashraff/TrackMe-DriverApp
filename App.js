@@ -9,7 +9,7 @@ import { ErrorBoundary } from './src/components/ErrorBoundary';
 import AppNavigator from './src/navigation/AppNavigator';
 import * as notificationService from './src/services/notificationService';
 import { View } from 'react-native';
-import { startBackendHealthMonitor } from './src/services/backendStatus';
+import { NetworkStatusProvider } from './src/context/NetworkStatusContext';
 import { queryClient, persistOptions } from './src/app/queryClient';
 // Registers the background location task. Must be imported at app entry, not from
 // a screen — the OS can launch this process headless, with no navigation mounted.
@@ -31,13 +31,8 @@ function AppContent() {
   }, [fontsLoaded]);
 
   useEffect(() => {
-    // The health poller still runs: it is the source OfflineBanner and the query
-    // layer read reachability from. Nothing at this level needs the value itself
-    // since the full-screen offline takeover was removed.
-    const stopHealthMonitor = startBackendHealthMonitor();
-
     // Initialize notifications once on app start
-    notificationService.initializePushNotifications().catch(err => 
+    notificationService.initializePushNotifications().catch(err =>
       console.warn('Notification initialization failed:', err)
     );
 
@@ -47,7 +42,6 @@ function AppContent() {
     });
 
     return () => {
-      stopHealthMonitor();
       notificationSubscription?.remove();
     };
   }, []);
@@ -76,7 +70,9 @@ export default function App() {
   return (
     <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
       <AuthProvider>
-        <AppContent />
+        <NetworkStatusProvider>
+          <AppContent />
+        </NetworkStatusProvider>
       </AuthProvider>
     </PersistQueryClientProvider>
   );
