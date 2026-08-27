@@ -21,6 +21,12 @@ jest.mock('../../context/AuthContext', () => ({
   useAuth: () => ({ token: 'tok' }),
 }));
 
+const mockUseNetworkStatus = jest.fn(() => ({ isOnline: true, isOffline: false, isDegraded: false }));
+jest.mock('../../context/NetworkStatusContext', () => ({
+  __esModule: true,
+  useNetworkStatus: () => mockUseNetworkStatus(),
+}));
+
 const goBack = jest.fn();
 
 function renderScreen() {
@@ -38,6 +44,7 @@ beforeEach(async () => {
   jest.clearAllMocks();
   await AsyncStorage.clear();
   jest.useFakeTimers();
+  mockUseNetworkStatus.mockReturnValue({ isOnline: true, isOffline: false, isDegraded: false });
 });
 
 afterEach(() => {
@@ -172,5 +179,39 @@ describe('VehicleRegistrationScreen', () => {
     expect(toggle.props.accessibilityState.checked).toBe(true);
     fireEvent.press(toggle);
     expect(toggle.props.accessibilityState.checked).toBe(false);
+  });
+
+  it('disables Save vehicle and shows an offline note when offline', () => {
+    mockUseNetworkStatus.mockReturnValue({ isOnline: false, isOffline: true, isDegraded: false });
+
+    const { getByText } = renderScreen();
+
+    expect(getByText('Save vehicle').parent?.parent?.props.accessibilityState?.disabled).toBe(true);
+    expect(
+      getByText("You need a connection to save your vehicle. Your details are kept — try again once you're back online.")
+    ).toBeTruthy();
+    fireEvent.press(getByText('Save vehicle'));
+    expect(api.registerVehicle).not.toHaveBeenCalled();
+  });
+
+  // The old `error?.isBackendConnectionError` branch checked a property that was
+  // never set (it's a stand-alone function, never imported here) — a connection
+  // failure fell through to the raw AppError.message instead of the app's own
+  // friendly copy. Confirms the fix routes it through userMessage() instead.
+  it('shows the friendly offline message, not the raw error, when the request fails on a network error', async () => {
+    api.registerVehicle.mockRejectedValue(new Error('Network request failed'));
+    const { getByText, getByPlaceholderText } = renderScreen();
+
+    fireEvent.changeText(getByPlaceholderText('e.g. VEHICLE-102'), 'VEHICLE-9');
+    fireEvent.changeText(getByPlaceholderText('e.g. Silver Express'), 'Test Express');
+    fireEvent.changeText(getByPlaceholderText('e.g. ABC-1234'), 'ZZZ-0000');
+
+    await act(async () => {
+      fireEvent.press(getByText('Save vehicle'));
+    });
+
+    await waitFor(() =>
+      expect(getByText("You're offline. Please check your connection and try again.")).toBeTruthy()
+    );
   });
 });

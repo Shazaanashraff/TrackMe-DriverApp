@@ -9,6 +9,8 @@ import PrimaryButton from '../components/ui/PrimaryButton';
 import InlineError from '../components/ui/InlineError';
 import ScreenHeader from '../components/ui/ScreenHeader';
 import EmptyState from '../components/ui/EmptyState';
+import OfflineActionNote from '../components/ui/OfflineActionNote';
+import { useNetworkStatus } from '../context/NetworkStatusContext';
 
 function asAppError(error: unknown): AppError {
   return error instanceof AppError ? error : normalizeError(error);
@@ -34,6 +36,7 @@ const ResetPasswordScreen = ({
   const [formError, setFormError] = useState<string | null>(null);
 
   const resetMutation = useResetPassword();
+  const { isOffline } = useNetworkStatus();
 
   const handleReset = () => {
     setPasswordError(null);
@@ -109,8 +112,12 @@ const ResetPasswordScreen = ({
                 title="Update password"
                 onPress={handleReset}
                 loading={resetMutation.isPending}
+                disabled={isOffline}
                 style={styles.submitButton}
               />
+              {isOffline && (
+                <OfflineActionNote>You need a connection to update your password.</OfflineActionNote>
+              )}
             </View>
           </>
         ) : (

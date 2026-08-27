@@ -7,9 +7,11 @@ import ScreenHeader from '../components/ui/ScreenHeader';
 import StatusPill from '../components/ui/StatusPill';
 import EmptyState from '../components/ui/EmptyState';
 import Skeleton from '../components/ui/Skeleton';
+import OfflineBanner from '../components/ui/OfflineBanner';
 import { formatTime } from '../helpers/formatters';
 import { useMyVehicleQuery } from '../hooks/vehicle';
 import { useBoardingRosterQuery, RosterRider, RosterStatus } from '../hooks/boarding';
+import { useNetworkStatus } from '../context/NetworkStatusContext';
 
 type Props = {
   navigation: { goBack: () => void };
@@ -48,6 +50,11 @@ const BoardingRosterScreen = ({ navigation, route }: Props) => {
   const myVehicleQuery = useMyVehicleQuery();
   const vehicle = unwrap<Vehicle>(myVehicleQuery.data) as Vehicle | null;
   const vehicleId = route?.params?.vehicleId || vehicle?.vehicleId || vehicle?._id || '';
+  const { isOffline } = useNetworkStatus();
+  // The roster query is disabled without a vehicleId — offline, before the
+  // vehicle has ever been cached, that reads as a confident "0 / 0 enrolled
+  // riders" instead of "can't tell yet" (see useBoardingRosterQuery's `enabled`).
+  const vehicleUnknownOffline = !vehicleId && isOffline && !myVehicleQuery.isLoading;
 
   const { data, isLoading, isError, refetch, isRefetching } = useBoardingRosterQuery(vehicleId);
 
@@ -92,8 +99,24 @@ const BoardingRosterScreen = ({ navigation, route }: Props) => {
       </View>
     ) : null;
 
+  if (vehicleUnknownOffline) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <OfflineBanner />
+        <ScreenHeader title="On board today" onBack={() => navigation.goBack()} />
+        <EmptyState
+          fill
+          icon="cloud-offline-outline"
+          title="Can't check your roster offline"
+          subtitle="We can't tell which vehicle you're assigned to yet. Connect once to load it."
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
+      <OfflineBanner />
       <ScreenHeader title="On board today" onBack={() => navigation.goBack()} />
       <FlatList
         data={data?.roster ?? []}

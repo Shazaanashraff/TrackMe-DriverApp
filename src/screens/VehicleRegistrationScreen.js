@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRegisterVehicle } from '../hooks/vehicle';
+import { AppError, normalizeError, userMessage } from '../lib/errors';
 import { theme } from '../theme';
 import AppText from '../components/ui/AppText';
 import ScreenHeader from '../components/ui/ScreenHeader';
@@ -19,6 +20,12 @@ import PrimaryButton from '../components/ui/PrimaryButton';
 import Card from '../components/ui/Card';
 import StatusPill from '../components/ui/StatusPill';
 import InlineError from '../components/ui/InlineError';
+import OfflineActionNote from '../components/ui/OfflineActionNote';
+import { useNetworkStatus } from '../context/NetworkStatusContext';
+
+function asAppError(error) {
+  return error instanceof AppError ? error : normalizeError(error);
+}
 
 const VEHICLE_TYPES = ['AC', 'NON-AC', 'DELUXE', 'SLEEPER'];
 const SERVICE_TYPES = ['PUBLIC', 'SCHOOL', 'OFFICE'];
@@ -31,6 +38,7 @@ const DRAFT_KEY = 'vehicle_registration_draft';
 
 const VehicleRegistrationScreen = ({ navigation }) => {
   const registerVehicle = useRegisterVehicle();
+  const { isOffline } = useNetworkStatus();
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [formError, setFormError] = useState(null);
@@ -100,11 +108,7 @@ const VehicleRegistrationScreen = ({ navigation }) => {
         persistDraft(formData);
       }
     } catch (error) {
-      if (error?.isBackendConnectionError) {
-        persistDraft(formData);
-        return;
-      }
-      setFormError(error.message || "Couldn't save your vehicle. Try again.");
+      setFormError(userMessage(asAppError(error)));
       persistDraft(formData);
     } finally {
       setLoading(false);
@@ -209,7 +213,18 @@ const VehicleRegistrationScreen = ({ navigation }) => {
           ) : null}
           <InlineError message={formError} />
 
-          <PrimaryButton title="Save vehicle" onPress={handleRegisterVehicle} loading={loading} style={styles.submitButton} />
+          <PrimaryButton
+            title="Save vehicle"
+            onPress={handleRegisterVehicle}
+            loading={loading}
+            disabled={isOffline}
+            style={styles.submitButton}
+          />
+          {isOffline && (
+            <OfflineActionNote>
+              You need a connection to save your vehicle. Your details are kept — try again once you're back online.
+            </OfflineActionNote>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

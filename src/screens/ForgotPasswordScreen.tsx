@@ -8,6 +8,8 @@ import FormInput from '../components/ui/FormInput';
 import PrimaryButton from '../components/ui/PrimaryButton';
 import InlineError from '../components/ui/InlineError';
 import ScreenHeader from '../components/ui/ScreenHeader';
+import OfflineActionNote from '../components/ui/OfflineActionNote';
+import { useNetworkStatus } from '../context/NetworkStatusContext';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -20,6 +22,7 @@ const ForgotPasswordScreen = ({ navigation }: { navigation: { navigate: (screen:
   const [emailError, setEmailError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const requestOtp = useRequestPasswordResetOtp();
+  const { isOffline } = useNetworkStatus();
 
   const handleSendOtp = () => {
     setEmailError(null);
@@ -75,8 +78,12 @@ const ForgotPasswordScreen = ({ navigation }: { navigation: { navigate: (screen:
             title="Send code"
             onPress={handleSendOtp}
             loading={requestOtp.isPending}
+            disabled={isOffline}
             style={styles.submitButton}
           />
+          {isOffline && (
+            <OfflineActionNote>You need a connection to send the code.</OfflineActionNote>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

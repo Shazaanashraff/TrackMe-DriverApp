@@ -9,16 +9,24 @@ jest.mock('../../hooks/auth', () => ({
   useResetPassword: jest.fn(),
 }));
 
+jest.mock('../../context/NetworkStatusContext', () => ({
+  __esModule: true,
+  useNetworkStatus: jest.fn(),
+}));
+
 import { useResetPassword } from '../../hooks/auth';
+import { useNetworkStatus } from '../../context/NetworkStatusContext';
 import ResetPasswordScreen from '../ResetPasswordScreen';
 
 const mockUseResetPassword = useResetPassword as jest.Mock;
+const mockUseNetworkStatus = useNetworkStatus as unknown as jest.Mock;
 
 const VALID_ROUTE = { params: { email: 'driver@company.com', resetToken: 'reset-tok' } };
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockUseResetPassword.mockReturnValue({ mutate, isPending: false });
+  mockUseNetworkStatus.mockReturnValue({ isOnline: true, isOffline: false, isDegraded: false });
 });
 
 describe('ResetPasswordScreen', () => {
@@ -101,5 +109,18 @@ describe('ResetPasswordScreen', () => {
     fireEvent.press(getByText('Update password'));
 
     await waitFor(() => expect(getByText('Reset link expired')).toBeTruthy());
+  });
+
+  it('disables Update password and shows an offline note when offline', () => {
+    mockUseNetworkStatus.mockReturnValue({ isOnline: false, isOffline: true, isDegraded: false });
+
+    const { getByText } = render(
+      <ResetPasswordScreen navigation={{ navigate: jest.fn(), goBack: jest.fn() }} route={VALID_ROUTE} />
+    );
+
+    expect(getByText('Update password').parent?.parent?.props.accessibilityState?.disabled).toBe(true);
+    expect(getByText('You need a connection to update your password.')).toBeTruthy();
+    fireEvent.press(getByText('Update password'));
+    expect(mutate).not.toHaveBeenCalled();
   });
 });
