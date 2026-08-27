@@ -17,6 +17,17 @@ jest.mock('../../context/AuthContext', () => ({
   useAuth: () => ({ token: 'tok' }),
 }));
 
+jest.mock('../../context/NetworkStatusContext', () => ({
+  __esModule: true,
+  useNetworkStatus: () => ({
+    networkState: 'online',
+    isOnline: true,
+    isDegraded: false,
+    isOffline: false,
+    retry: jest.fn(),
+  }),
+}));
+
 function renderWithClient(ui) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
