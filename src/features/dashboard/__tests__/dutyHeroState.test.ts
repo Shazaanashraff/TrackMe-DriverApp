@@ -72,6 +72,28 @@ describe('deriveDutyHeroState', () => {
     expect(state.goDisabled).toBe(true);
   });
 
+  it('pending (offline GO) reads as on duty, amber, GO enabled', () => {
+    const state = deriveDutyHeroState({ ...base, status: 'pending' });
+    expect(state).toEqual({
+      headline: "You're on duty",
+      subline: "No signal — you'll sync when you're back online",
+      dot: 'warn',
+      showAllowLocation: false,
+      goDisabled: false,
+    });
+  });
+
+  it('pending with permission denied asks for location so the shift can be saved', () => {
+    const state = deriveDutyHeroState({ ...base, status: 'pending', permission: 'denied' });
+    expect(state).toEqual({
+      headline: "You're on duty",
+      subline: 'Allow location so this shift can be saved',
+      dot: 'warn',
+      showAllowLocation: true,
+      goDisabled: false,
+    });
+  });
+
   it('live and broadcasting', () => {
     const state = deriveDutyHeroState({
       ...base,

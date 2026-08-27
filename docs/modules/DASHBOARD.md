@@ -11,6 +11,12 @@ here — that is the change protocol, not optional extra work.
 
 `src/screens/DriverDashboard.tsx`, `src/features/dashboard/` (incl. `dutyHeroState.ts`, `useSocketConnection`, `useCustomRouteJourney`)
 
+> **Note for whoever writes this doc:** the duty state machine now has a `pending` status —
+> pressing GO with no connection puts the shift on duty locally (GPS buffering, amber hero, GO
+> reads END) and it is announced to the server on reconnect. `DriverDashboard` gates
+> `useLocationBroadcast` / `useBackgroundTracking` / keep-awake on `tracking || pending`. Full
+> description in [`../LOCATION_TRACKING.md`](../LOCATION_TRACKING.md) §"Offline go-on-duty".
+
 ## What this doc must cover
 
 Template section order: Purpose · Key files (one job each) · Data flow · Contracts (API/socket/

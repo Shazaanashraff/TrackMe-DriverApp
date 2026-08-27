@@ -14,6 +14,10 @@ export interface ConnectionState {
 export interface TrackingAck {
   success: boolean;
   error?: string;
+  // Set only when the emit never left the device because the socket was down.
+  // Lets useTrackingSession tell "can't reach the server right now" (park the
+  // shift as pending, retry on reconnect) apart from a real server refusal.
+  offline?: boolean;
 }
 
 type ConnectionStateListener = (state: ConnectionState) => void;
@@ -163,10 +167,10 @@ export const emitLocation = (
 
 const START_ACK_TIMEOUT_MS = 5000;
 
-export const startTracking = (vehicleId: string): Promise<TrackingAck> => {
+export const startTracking = (vehicleId: string, startedAt?: string): Promise<TrackingAck> => {
   return new Promise((resolve) => {
     if (!socket || !socket.connected) {
-      resolve({ success: false, error: 'Socket not connected' });
+      resolve({ success: false, error: 'Socket not connected', offline: true });
       return;
     }
 
@@ -179,7 +183,11 @@ export const startTracking = (vehicleId: string): Promise<TrackingAck> => {
       resolve({ success: false, error: 'No response from server' });
     }, START_ACK_TIMEOUT_MS);
 
-    socket.emit('driver:start-tracking', { vehicleId }, (response: TrackingAck) => {
+    // `startedAt` is only sent for a shift that was started offline and is now
+    // reconnecting — it carries the real GO-press time so the backend records an
+    // honest duration. A normal start omits it and the server stamps `now`.
+    const payload = startedAt ? { vehicleId, startedAt } : { vehicleId };
+    socket.emit('driver:start-tracking', payload, (response: TrackingAck) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
@@ -193,7 +201,7 @@ const STOP_ACK_TIMEOUT_MS = 5000;
 export const stopTracking = (vehicleId: string): Promise<TrackingAck> => {
   return new Promise((resolve) => {
     if (!socket || !socket.connected) {
-      resolve({ success: false, error: 'Socket not connected' });
+      resolve({ success: false, error: 'Socket not connected', offline: true });
       return;
     }
 

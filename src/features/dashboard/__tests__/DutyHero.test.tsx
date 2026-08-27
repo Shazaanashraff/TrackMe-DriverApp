@@ -119,6 +119,34 @@ describe('DutyHero', () => {
     });
   });
 
+  describe('pending state (offline GO — Offline & Caching Audit, chunk 1)', () => {
+    it('reads as on duty, shows the sync subline, and fires onEndPress from END', () => {
+      const onEndPress = jest.fn();
+      const { getByText, getByLabelText } = render(
+        <DutyHero {...baseProps} status="pending" onEndPress={onEndPress} />
+      );
+      expect(getByText("You're on duty")).toBeTruthy();
+      expect(getByText("No signal — you'll sync when you're back online")).toBeTruthy();
+      fireEvent.press(getByLabelText('End journey'));
+      expect(onEndPress).toHaveBeenCalledTimes(1);
+    });
+
+    it('shows the stat chip row while pending', () => {
+      const { getByText } = render(<DutyHero {...baseProps} status="pending" />);
+      expect(getByText('time online')).toBeTruthy();
+      expect(getByText('GPS')).toBeTruthy();
+    });
+
+    it('surfaces the buffered-count chip while pending', () => {
+      const { getByText, getByTestId } = render(
+        <DutyHero {...baseProps} status="pending" bufferedCount={7} />
+      );
+      expect(getByTestId('buffered-count-chip')).toBeTruthy();
+      expect(getByText('saved, not sent')).toBeTruthy();
+      expect(getByText('7')).toBeTruthy();
+    });
+  });
+
   describe('reconnecting state', () => {
     it('shows the reconnecting headline while tracking with a dropped socket', () => {
       const { getByText } = render(

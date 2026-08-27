@@ -68,9 +68,13 @@ const DriverDashboard = ({ navigation }: Props) => {
 
   const session = useTrackingSession();
   const tracking = session.status === 'tracking';
-  const background = useBackgroundTracking(tracking);
+  // A shift started with no signal ('pending') is on duty locally: the GPS
+  // pipeline runs and buffers, the screen stays awake, background tracking is
+  // eligible — it just hasn't reached the server yet (chunk 1).
+  const onDuty = tracking || session.status === 'pending';
+  const background = useBackgroundTracking(onDuty);
   const broadcast = useLocationBroadcast({
-    active: tracking,
+    active: onDuty,
     vehicleId,
     routeId,
     backgroundActive: background.isActive,
@@ -83,12 +87,12 @@ const DriverDashboard = ({ navigation }: Props) => {
   // While on duty in the foreground, don't let the screen sleep and silently
   // demote a foreground-only shift into no shift at all.
   useEffect(() => {
-    if (!tracking || background.isActive) return undefined;
+    if (!onDuty || background.isActive) return undefined;
     activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => {});
     return () => {
       deactivateKeepAwake(KEEP_AWAKE_TAG);
     };
-  }, [tracking, background.isActive]);
+  }, [onDuty, background.isActive]);
 
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [enablingBackground, setEnablingBackground] = useState(false);
@@ -145,7 +149,7 @@ const DriverDashboard = ({ navigation }: Props) => {
           isReconnecting={session.isReconnecting}
           connecting={connecting}
           permission={broadcast.permission}
-          lastFix={session.status === 'tracking' ? broadcast.lastFix : null}
+          lastFix={onDuty ? broadcast.lastFix : null}
           lostConnection={session.status === 'tracking' ? broadcast.lostConnection : false}
           bufferedCount={bufferedCount}
           hasVehicle={hasVehicle}
@@ -168,8 +172,8 @@ const DriverDashboard = ({ navigation }: Props) => {
 
         <TripProgressCard
           routeId={routeId}
-          fix={session.status === 'tracking' ? broadcast.lastFix : null}
-          isTracking={session.status === 'tracking'}
+          fix={onDuty ? broadcast.lastFix : null}
+          isTracking={onDuty}
         />
 
         <AppText variant="h2" style={styles.sectionTitleSpaced}>Quick actions</AppText>

@@ -10,9 +10,13 @@
 - `useBackgroundTracking` promotes the shift to OS-managed background updates once the driver
   grants background permission; the foreground watcher stands down while that is running, since
   both feed the same dispatcher.
-- `startTracking(vehicleId)` / `stopTracking(vehicleId)` emit `driver:start-tracking` /
+- `startTracking(vehicleId, startedAt?)` / `stopTracking(vehicleId)` emit `driver:start-tracking` /
   `driver:stop-tracking`; **both ack paths are timeout-bounded** — an unanswered start used to
   leave the GO button spinning forever with no way to retry.
+- **Pressing GO with no connection no longer fails.** `startTracking` resolves
+  `{ success: false, offline: true }` when the socket is down; `useTrackingSession` parks the
+  shift in a `'pending'` state (on duty locally, GPS buffering) and announces it for real on the
+  next reconnect — see §"Offline go-on-duty" below.
 - Backend contract for all of the above: `backend/docs/modules/REALTIME.md`.
 
 ## Target architecture (three pieces)
@@ -24,15 +28,18 @@ Keep the existing exports, typed: `connectSocket(token)`, `emitLocation(payload,
 
 ### 2. `hooks/useTrackingSession.ts` (lifecycle)
 Owns the **session**: start → broadcasting → stop.
-- `start()` → ensure socket connected → `startTracking(busId)`; on ack success set state
-  `tracking`; on failure surface an `AppError` (kind `tracking`).
-- `stop()` → `stopTracking(busId)` → state `idle`.
-- Tracks `status: 'idle' | 'starting' | 'tracking' | 'error'`, derived from socket connection
-  state + acks.
+- `start()` → `startTracking(busId)`; on ack success set state `tracking`; on a **connectivity**
+  failure (`ack.offline`) set state `pending`; on a server refusal surface an `AppError`
+  (kind `tracking`) and set state `error`.
+- `stop()` → `stopTracking(busId)` → state `idle`. From `pending` it short-circuits straight to
+  `idle` (nothing reached the server to stop).
+- Tracks `status: 'idle' | 'starting' | 'tracking' | 'pending' | 'error'`, derived from socket
+  connection state + acks.
 - On unmount / logout / app-background-policy, stop cleanly.
 
 ### 3. `hooks/useLocationBroadcast.ts` (the GPS pump)
-Owns position acquisition + emit, active only while `useTrackingSession` is `tracking`.
+Owns position acquisition + emit, active while `useTrackingSession` is `tracking` **or**
+`pending` (an offline-started shift buffers locally until it reconnects).
 - Request permissions first (foreground always; background if enabled — see below). Expose
   `permission: 'granted' | 'denied' | 'undetermined'` for UX.
 - `watchPositionAsync` with tuned accuracy/interval (see Battery).
@@ -101,6 +108,30 @@ mocked.
 - On reconnect, replay in order with timestamps; backend dedupes by timestamp.
 - Surface a small "buffering offline — N fixes queued" indicator.
 
+## Offline go-on-duty (Offline & Caching Audit, chunk 1)
+Pressing GO with no connection used to dead-end at `Alert("Couldn't go on duty",
+"Socket not connected")` — the GPS pipeline never started, so a driver in a dead zone could not
+begin a shift at all.
+
+Now:
+- `startTracking()` tags its not-connected rejection `{ offline: true }`.
+- `useTrackingSession.start()` sees that and enters **`pending`** instead of `error`: it records
+  the GO-press time (`pendingSinceRef`, in memory) and keeps `activeVehicleIdRef`.
+- `DriverDashboard` turns `useLocationBroadcast` / `useBackgroundTracking` / keep-awake on for
+  `pending` as well as `tracking`, so fixes buffer in `locationDispatch` from the moment GO is
+  pressed. `DutyHero` shows an amber "You're on duty · No signal — you'll sync when you're back
+  online" with the existing "saved, not sent" buffered-count chip; GO reads END.
+- On the next `onConnectionStateChange('connected')` the reconnect effect emits
+  `startTracking(vehicleId, <GO-press time as ISO>)`. Success → `tracking`, and the existing
+  `locationDispatch` replay flushes the buffer. A still-offline retry keeps it `pending`. A
+  **server refusal** (e.g. the vehicle was un-assigned during the offline window) → `error`;
+  `active` then goes false and `locationDispatch` clears the unsendable buffer.
+- **Not covered:** surviving an app kill before reconnect. `pending` is in-memory only — this
+  matches today's behaviour for a *confirmed* shift (neither survives a cold start) and is called
+  out as a shared follow-up, not a regression.
+- Backend: `driver:start-tracking` accepts an optional `startedAt`, clamped to `[now − 6h, now]`
+  (`backend/docs/modules/REALTIME.md`).
+
 ## Permission & error UX (ties to ERROR_HANDLING.md)
 - Permission denied → clear screen explaining why + a button to open settings; tracking
   disabled until granted.
@@ -120,7 +151,10 @@ mocked.
   foreground-service options, start/stop idempotence.
 - `useBackgroundTracking`: offer/dismiss, grant + deny, auto-start on a later shift, stop on
   shift end and on unmount.
-- `useTrackingSession`: start success/failure (ack), stop, cleanup on unmount (mock socket).
+- `useTrackingSession`: start success/failure (ack), stop, cleanup on unmount (mock socket);
+  **offline GO → `pending`; pending announced with the real press time on reconnect → `tracking`;
+  still-offline retry stays `pending`; server refusal on reconnect → `error`; END from `pending`
+  → `idle` without a socket call**.
 - `useLocationBroadcast`: permission branches; throttle limits emit frequency (fake timers);
   min-distance skip; offline buffer queues + replays on reconnect; watcher removed on stop.
 - `locationUtils`: distance, throttle, coord validation (pure).

@@ -132,7 +132,7 @@ describe('start/stop tracking — message shapes + ack contract', () => {
     // never simulateConnect() — mockSocket.connected stays false
 
     const ack = await socket.stopTracking('vehicle-1');
-    expect(ack).toEqual({ success: false, error: 'Socket not connected' });
+    expect(ack).toEqual({ success: false, error: 'Socket not connected', offline: true });
     expect(mockSocket.emit).not.toHaveBeenCalled();
   });
 });
