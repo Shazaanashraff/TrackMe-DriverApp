@@ -9,14 +9,22 @@ jest.mock('../../hooks/auth', () => ({
   useRequestPasswordResetOtp: jest.fn(),
 }));
 
+jest.mock('../../context/NetworkStatusContext', () => ({
+  __esModule: true,
+  useNetworkStatus: jest.fn(),
+}));
+
 import { useRequestPasswordResetOtp } from '../../hooks/auth';
+import { useNetworkStatus } from '../../context/NetworkStatusContext';
 import ForgotPasswordScreen from '../ForgotPasswordScreen';
 
 const mockUseRequestPasswordResetOtp = useRequestPasswordResetOtp as jest.Mock;
+const mockUseNetworkStatus = useNetworkStatus as unknown as jest.Mock;
 
 beforeEach(() => {
   jest.clearAllMocks();
   mockUseRequestPasswordResetOtp.mockReturnValue({ mutate, isPending: false, isError: false, error: undefined });
+  mockUseNetworkStatus.mockReturnValue({ isOnline: true, isOffline: false, isDegraded: false });
 });
 
 describe('ForgotPasswordScreen', () => {
@@ -66,5 +74,16 @@ describe('ForgotPasswordScreen', () => {
     fireEvent.press(getByText('Send code'));
 
     await waitFor(() => expect(getByText('No account found with that email')).toBeTruthy());
+  });
+
+  it('disables Send code and shows an offline note when offline', () => {
+    mockUseNetworkStatus.mockReturnValue({ isOnline: false, isOffline: true, isDegraded: false });
+
+    const { getByText } = render(<ForgotPasswordScreen navigation={{ navigate: jest.fn(), goBack: jest.fn() }} />);
+
+    expect(getByText('Send code').parent?.parent?.props.accessibilityState?.disabled).toBe(true);
+    expect(getByText('You need a connection to send the code.')).toBeTruthy();
+    fireEvent.press(getByText('Send code'));
+    expect(mutate).not.toHaveBeenCalled();
   });
 });

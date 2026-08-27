@@ -3,14 +3,23 @@ import { render, fireEvent } from '@testing-library/react-native';
 import BoardingRosterScreen from '../BoardingRosterScreen';
 import { useBoardingRosterQuery } from '../../hooks/boarding';
 
+const mockUseMyVehicleQuery = jest.fn<{ data: { data: { vehicleId: string } } | undefined; isLoading: boolean }, []>(
+  () => ({ data: { data: { vehicleId: 'VEH-1' } }, isLoading: false })
+);
 jest.mock('../../hooks/vehicle', () => ({
   __esModule: true,
-  useMyVehicleQuery: () => ({ data: { data: { vehicleId: 'VEH-1' } } }),
+  useMyVehicleQuery: () => mockUseMyVehicleQuery(),
 }));
 
 jest.mock('../../hooks/boarding', () => ({
   __esModule: true,
   useBoardingRosterQuery: jest.fn(),
+}));
+
+const mockUseNetworkStatus = jest.fn(() => ({ isOnline: true, isOffline: false, isDegraded: false }));
+jest.mock('../../context/NetworkStatusContext', () => ({
+  __esModule: true,
+  useNetworkStatus: () => mockUseNetworkStatus(),
 }));
 
 const mockUse = useBoardingRosterQuery as jest.Mock;
@@ -31,7 +40,11 @@ function fullRoster() {
   };
 }
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockUseMyVehicleQuery.mockReturnValue({ data: { data: { vehicleId: 'VEH-1' } }, isLoading: false });
+  mockUseNetworkStatus.mockReturnValue({ isOnline: true, isOffline: false, isDegraded: false });
+});
 
 describe('BoardingRosterScreen', () => {
   it('renders the count summary, every rider with a status, and the guests section', () => {
@@ -72,5 +85,32 @@ describe('BoardingRosterScreen', () => {
     const { getByLabelText } = render(<BoardingRosterScreen navigation={nav} route={routeParams} />);
     fireEvent.press(getByLabelText('Go back'));
     expect(nav.goBack).toHaveBeenCalledTimes(1);
+  });
+
+  // The roster query is `enabled: !!vehicleId` — offline, before the vehicle
+  // has ever been cached, it never runs at all, so isLoading/isError both stay
+  // false and the screen used to render a confident "0 / 0 enrolled riders."
+  it("shows a can't-check-offline state instead of a false '0 / 0' when the vehicle was never cached offline", () => {
+    mockUseMyVehicleQuery.mockReturnValue({ data: undefined, isLoading: false });
+    mockUseNetworkStatus.mockReturnValue({ isOnline: false, isOffline: true, isDegraded: false });
+    mockUse.mockReturnValue({ data: undefined, isLoading: false, isError: false, refetch: jest.fn(), isRefetching: false });
+
+    const { getByText, queryByText } = render(
+      <BoardingRosterScreen navigation={nav} route={{ params: {} }} />
+    );
+
+    expect(getByText("Can't check your roster offline")).toBeTruthy();
+    expect(queryByText('0 / 0')).toBeNull();
+    expect(queryByText('No enrolled riders')).toBeNull();
+  });
+
+  it('does not show the offline-vehicle state while the vehicle query is still loading', () => {
+    mockUseMyVehicleQuery.mockReturnValue({ data: undefined, isLoading: true });
+    mockUseNetworkStatus.mockReturnValue({ isOnline: false, isOffline: true, isDegraded: false });
+    mockUse.mockReturnValue({ data: undefined, isLoading: true, isError: false, refetch: jest.fn(), isRefetching: false });
+
+    const { queryByText } = render(<BoardingRosterScreen navigation={nav} route={{ params: {} }} />);
+
+    expect(queryByText("Can't check your roster offline")).toBeNull();
   });
 });

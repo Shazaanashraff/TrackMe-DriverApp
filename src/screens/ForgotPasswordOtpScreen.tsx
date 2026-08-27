@@ -8,6 +8,8 @@ import FormInput from '../components/ui/FormInput';
 import PrimaryButton from '../components/ui/PrimaryButton';
 import InlineError from '../components/ui/InlineError';
 import ScreenHeader from '../components/ui/ScreenHeader';
+import OfflineActionNote from '../components/ui/OfflineActionNote';
+import { useNetworkStatus } from '../context/NetworkStatusContext';
 
 function asAppError(error: unknown): AppError {
   return error instanceof AppError ? error : normalizeError(error);
@@ -30,6 +32,7 @@ const ForgotPasswordOtpScreen = ({
 
   const verifyOtp = useVerifyPasswordResetOtp();
   const resendOtp = useRequestPasswordResetOtp();
+  const { isOffline } = useNetworkStatus();
 
   const handleVerify = () => {
     setOtpError(null);
@@ -60,7 +63,7 @@ const ForgotPasswordOtpScreen = ({
   };
 
   const handleResend = () => {
-    if (resendOtp.isPending) return;
+    if (resendOtp.isPending || isOffline) return;
     setResendError(null);
     resendOtp.mutate(
       { email },
@@ -98,6 +101,7 @@ const ForgotPasswordOtpScreen = ({
             title="Verify code"
             onPress={handleVerify}
             loading={verifyOtp.isPending}
+            disabled={isOffline}
             style={styles.submitButton}
           />
 
@@ -105,10 +109,13 @@ const ForgotPasswordOtpScreen = ({
             title={resendOtp.isPending ? 'Sending…' : 'Resend code'}
             variant="secondary"
             onPress={handleResend}
-            disabled={resendOtp.isPending}
+            disabled={resendOtp.isPending || isOffline}
             style={styles.resendButton}
           />
           <InlineError message={resendError} />
+          {isOffline && (
+            <OfflineActionNote>You need a connection to verify this code.</OfflineActionNote>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

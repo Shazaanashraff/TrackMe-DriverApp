@@ -17,6 +17,17 @@ jest.mock('../../context/AuthContext', () => ({
   useAuth: () => ({ token: 'tok' }),
 }));
 
+jest.mock('../../context/NetworkStatusContext', () => ({
+  __esModule: true,
+  useNetworkStatus: () => ({
+    networkState: 'online',
+    isOnline: true,
+    isDegraded: false,
+    isOffline: false,
+    retry: jest.fn(),
+  }),
+}));
+
 function renderWithClient(ui) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
@@ -76,10 +87,14 @@ describe('TripHistoryScreen', () => {
     expect(await findByText('Finish a journey and it will show up here.')).toBeTruthy();
   });
 
-  it('shows the empty state when the fetch fails and nothing was ever cached', async () => {
+  // A failed fetch with nothing cached used to fall through to the same "No
+  // trips yet" copy as a driver who genuinely has no history — indistinguishable
+  // from a real empty state. It now says so explicitly instead.
+  it("shows a couldn't-load state, not the empty state, when the fetch fails and nothing was ever cached", async () => {
     api.getDriverTrips.mockRejectedValue(new Error('network down'));
-    const { findByText } = renderWithClient(<TripHistoryScreen />);
-    expect(await findByText('No trips yet')).toBeTruthy();
+    const { findByText, queryByText } = renderWithClient(<TripHistoryScreen />);
+    expect(await findByText("Couldn't load your trips")).toBeTruthy();
+    expect(queryByText('No trips yet')).toBeNull();
   });
 
   it('reloads trips on pull-to-refresh', async () => {

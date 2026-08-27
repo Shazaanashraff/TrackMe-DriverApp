@@ -14,7 +14,7 @@ const TripHistoryScreen = () => {
   // Shared TanStack Query cache (see docs/DATA_LAYER.md) — gives an instant cached
   // list on revisit and, unlike the old useState/useEffect version, never clears the
   // list to [] just because a background refresh failed (issue #15).
-  const { data, isLoading, refetch } = useDriverTripsQuery();
+  const { data, isLoading, isError, refetch } = useDriverTripsQuery();
   const [refreshing, setRefreshing] = useState(false);
   const trips = data?.trips || [];
 
@@ -89,12 +89,21 @@ const TripHistoryScreen = () => {
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <EmptyState
-              fill
-              icon="receipt-outline"
-              title="No trips yet"
-              subtitle="Finish a journey and it will show up here."
-            />
+            isError ? (
+              <EmptyState
+                fill
+                icon="cloud-offline-outline"
+                title="Couldn't load your trips"
+                subtitle="Connect to the internet and pull down to try again."
+              />
+            ) : (
+              <EmptyState
+                fill
+                icon="receipt-outline"
+                title="No trips yet"
+                subtitle="Finish a journey and it will show up here."
+              />
+            )
           }
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={theme.color.primary[500]} />

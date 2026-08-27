@@ -11,11 +11,18 @@ jest.mock('../../hooks/auth', () => ({
   useRequestPasswordResetOtp: jest.fn(),
 }));
 
+jest.mock('../../context/NetworkStatusContext', () => ({
+  __esModule: true,
+  useNetworkStatus: jest.fn(),
+}));
+
 import { useVerifyPasswordResetOtp, useRequestPasswordResetOtp } from '../../hooks/auth';
+import { useNetworkStatus } from '../../context/NetworkStatusContext';
 import ForgotPasswordOtpScreen from '../ForgotPasswordOtpScreen';
 
 const mockUseVerify = useVerifyPasswordResetOtp as jest.Mock;
 const mockUseResend = useRequestPasswordResetOtp as jest.Mock;
+const mockUseNetworkStatus = useNetworkStatus as unknown as jest.Mock;
 
 function renderScreen(navigation = { navigate: jest.fn(), goBack: jest.fn() }) {
   return render(
@@ -30,6 +37,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   mockUseVerify.mockReturnValue({ mutate: verifyMutate, isPending: false });
   mockUseResend.mockReturnValue({ mutate: resendMutate, isPending: false });
+  mockUseNetworkStatus.mockReturnValue({ isOnline: true, isOffline: false, isDegraded: false });
 });
 
 describe('ForgotPasswordOtpScreen', () => {
@@ -86,5 +94,18 @@ describe('ForgotPasswordOtpScreen', () => {
       { email: 'driver@company.com' },
       expect.objectContaining({ onError: expect.any(Function) })
     );
+  });
+
+  it('disables Verify code and Resend code, with an offline note, when offline', () => {
+    mockUseNetworkStatus.mockReturnValue({ isOnline: false, isOffline: true, isDegraded: false });
+
+    const { getByText } = renderScreen();
+
+    expect(getByText('Verify code').parent?.parent?.props.accessibilityState?.disabled).toBe(true);
+    expect(getByText('Resend code').parent?.parent?.props.accessibilityState?.disabled).toBe(true);
+    expect(getByText('You need a connection to verify this code.')).toBeTruthy();
+
+    fireEvent.press(getByText('Resend code'));
+    expect(resendMutate).not.toHaveBeenCalled();
   });
 });
