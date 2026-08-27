@@ -88,6 +88,27 @@ export function deriveDutyHeroState({
     };
   }
 
+  // Started with no connection (chunk 1). The shift is on-duty locally and GPS
+  // is buffering; it just hasn't reached the server yet. Amber, not green.
+  if (status === 'pending') {
+    if (permission === 'denied') {
+      return {
+        headline: "You're on duty",
+        subline: 'Allow location so this shift can be saved',
+        dot: 'warn',
+        showAllowLocation: true,
+        goDisabled: false,
+      };
+    }
+    return {
+      headline: "You're on duty",
+      subline: "No signal — you'll sync when you're back online",
+      dot: 'warn',
+      showAllowLocation: false,
+      goDisabled: false,
+    };
+  }
+
   if (status === 'starting') {
     return {
       headline: "You're off duty",

@@ -151,6 +151,117 @@ describe('useTrackingSession', () => {
     expect(mockStartTracking).toHaveBeenLastCalledWith('vehicle-1');
   });
 
+  // ── Offline go-on-duty (Offline & Caching Audit, chunk 1) ──────────────────
+
+  it('parks the shift as pending (not error) when GO is pressed with no connection', async () => {
+    mockStartTracking.mockResolvedValueOnce({ success: false, error: 'Socket not connected', offline: true });
+    const { result } = renderHook(() => useTrackingSession());
+
+    act(() => {
+      result.current.start('vehicle-1');
+    });
+
+    await waitFor(() => expect(result.current.status).toBe('pending'));
+    expect(result.current.error).toBeUndefined();
+    expect(result.current.isReconnecting).toBe(false);
+  });
+
+  it('announces a pending shift with the real press time on reconnect, then goes tracking', async () => {
+    mockStartTracking
+      .mockResolvedValueOnce({ success: false, error: 'Socket not connected', offline: true })
+      .mockResolvedValueOnce({ success: true });
+    let stateListener: (state: { status: string }) => void = () => {};
+    mockOnConnectionStateChange.mockImplementation((cb) => {
+      stateListener = cb;
+      return () => {};
+    });
+
+    const { result } = renderHook(() => useTrackingSession());
+    act(() => {
+      result.current.start('vehicle-1');
+    });
+    await waitFor(() => expect(result.current.status).toBe('pending'));
+
+    act(() => {
+      stateListener({ status: 'connected' });
+    });
+
+    await waitFor(() => expect(result.current.status).toBe('tracking'));
+    expect(mockStartTracking).toHaveBeenCalledTimes(2);
+    const [vehicleArg, startedAtArg] = mockStartTracking.mock.calls[1];
+    expect(vehicleArg).toBe('vehicle-1');
+    expect(typeof startedAtArg).toBe('string');
+    expect(Number.isNaN(Date.parse(startedAtArg))).toBe(false);
+    expect(result.current.error).toBeUndefined();
+  });
+
+  it('keeps a pending shift pending when the reconnect attempt is still offline', async () => {
+    mockStartTracking
+      .mockResolvedValueOnce({ success: false, error: 'Socket not connected', offline: true })
+      .mockResolvedValueOnce({ success: false, error: 'Socket not connected', offline: true });
+    let stateListener: (state: { status: string }) => void = () => {};
+    mockOnConnectionStateChange.mockImplementation((cb) => {
+      stateListener = cb;
+      return () => {};
+    });
+
+    const { result } = renderHook(() => useTrackingSession());
+    act(() => {
+      result.current.start('vehicle-1');
+    });
+    await waitFor(() => expect(result.current.status).toBe('pending'));
+
+    act(() => {
+      stateListener({ status: 'connected' });
+    });
+
+    await waitFor(() => expect(mockStartTracking).toHaveBeenCalledTimes(2));
+    expect(result.current.status).toBe('pending');
+    expect(result.current.error).toBeUndefined();
+  });
+
+  it('drops a pending shift to error if the server refuses it on reconnect', async () => {
+    mockStartTracking
+      .mockResolvedValueOnce({ success: false, error: 'Socket not connected', offline: true })
+      .mockResolvedValueOnce({ success: false, error: 'Vehicle not found' });
+    let stateListener: (state: { status: string }) => void = () => {};
+    mockOnConnectionStateChange.mockImplementation((cb) => {
+      stateListener = cb;
+      return () => {};
+    });
+
+    const { result } = renderHook(() => useTrackingSession());
+    act(() => {
+      result.current.start('vehicle-1');
+    });
+    await waitFor(() => expect(result.current.status).toBe('pending'));
+
+    act(() => {
+      stateListener({ status: 'connected' });
+    });
+
+    await waitFor(() => expect(result.current.status).toBe('error'));
+    expect(result.current.error?.message).toBe('Vehicle not found');
+  });
+
+  it('ends a pending shift straight to idle without calling the server', async () => {
+    mockStartTracking.mockResolvedValueOnce({ success: false, error: 'Socket not connected', offline: true });
+    const { result } = renderHook(() => useTrackingSession());
+
+    act(() => {
+      result.current.start('vehicle-1');
+    });
+    await waitFor(() => expect(result.current.status).toBe('pending'));
+
+    act(() => {
+      result.current.stop('vehicle-1');
+    });
+
+    await waitFor(() => expect(result.current.status).toBe('idle'));
+    expect(mockStopTracking).not.toHaveBeenCalled();
+    expect(result.current.error).toBeUndefined();
+  });
+
   it('keeps reconnecting visible when restoring the server-side session fails', async () => {
     mockStartTracking
       .mockResolvedValueOnce({ success: true })

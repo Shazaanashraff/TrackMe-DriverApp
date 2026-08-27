@@ -78,36 +78,39 @@ export default function DutyHero({
   onEndPress,
 }: Props) {
   const isLive = status === 'tracking';
+  // A pending (offline-started) shift is on duty for every UI purpose here — the
+  // timer runs, the stats row shows, GO reads END — it just isn't green.
+  const onDuty = isLive || status === 'pending';
   const [now, setNow] = useState(() => Date.now());
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [updatesSent, setUpdatesSent] = useState(0);
   const lastFixTimestampRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (isLive && startedAt == null) {
+    if (onDuty && startedAt == null) {
       setStartedAt(Date.now());
-    } else if (!isLive && startedAt != null) {
+    } else if (!onDuty && startedAt != null) {
       setStartedAt(null);
       setUpdatesSent(0);
       lastFixTimestampRef.current = null;
     }
-  }, [isLive, startedAt]);
+  }, [onDuty, startedAt]);
 
   useEffect(() => {
-    if (!isLive) return undefined;
+    if (!onDuty) return undefined;
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
-  }, [isLive]);
+  }, [onDuty]);
 
   useEffect(() => {
-    if (!isLive || !lastFix) return;
+    if (!onDuty || !lastFix) return;
     if (lastFixTimestampRef.current === lastFix.timestamp) return;
     lastFixTimestampRef.current = lastFix.timestamp;
     setUpdatesSent((count) => count + 1);
-  }, [isLive, lastFix]);
+  }, [onDuty, lastFix]);
 
   const secondsSinceFix =
-    isLive && lastFix ? Math.max(0, Math.floor((now - lastFix.timestamp) / 1000)) : null;
+    onDuty && lastFix ? Math.max(0, Math.floor((now - lastFix.timestamp) / 1000)) : null;
 
   const state = deriveDutyHeroState({
     status,
@@ -148,14 +151,14 @@ export default function DutyHero({
           {state.showAllowLocation ? <PermissionDeniedState /> : null}
         </View>
         <GoButton
-          isLive={isLive}
+          isLive={onDuty}
           disabled={state.goDisabled}
           busy={status === 'starting'}
-          onPress={isLive ? onEndPress : onGoPress}
+          onPress={onDuty ? onEndPress : onGoPress}
         />
       </View>
 
-      {isLive ? (
+      {onDuty ? (
         <View style={styles.statsRow}>
           <StatChip value={timeOnline} label="time online" />
           {bufferedCount > 0 ? (

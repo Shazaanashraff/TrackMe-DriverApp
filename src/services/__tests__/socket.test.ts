@@ -125,7 +125,7 @@ describe('startTracking', () => {
     await expect(startTracking('vehicle-1')).resolves.toEqual({ success: true });
   });
 
-  it('resolves success:false without emitting when not connected', async () => {
+  it('resolves success:false with offline:true, without emitting, when not connected', async () => {
     const { connectSocket, startTracking } = getModule();
     connectSocket('tok');
     mockSocket.connected = false;
@@ -133,8 +133,41 @@ describe('startTracking', () => {
     await expect(startTracking('vehicle-1')).resolves.toEqual({
       success: false,
       error: 'Socket not connected',
+      offline: true,
     });
     expect(mockSocket.emit).not.toHaveBeenCalled();
+  });
+
+  it('emits only { vehicleId } for a normal start', () => {
+    const { connectSocket, startTracking } = getModule();
+    connectSocket('tok');
+    mockSocket.emit.mockImplementationOnce(
+      (_event: string, _payload: unknown, cb: (r: unknown) => void) => cb({ success: true })
+    );
+
+    startTracking('vehicle-1');
+
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      'driver:start-tracking',
+      { vehicleId: 'vehicle-1' },
+      expect.any(Function)
+    );
+  });
+
+  it('includes startedAt in the payload when a pending shift reconnects', () => {
+    const { connectSocket, startTracking } = getModule();
+    connectSocket('tok');
+    mockSocket.emit.mockImplementationOnce(
+      (_event: string, _payload: unknown, cb: (r: unknown) => void) => cb({ success: true })
+    );
+
+    startTracking('vehicle-1', '2026-08-27T09:00:00.000Z');
+
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      'driver:start-tracking',
+      { vehicleId: 'vehicle-1', startedAt: '2026-08-27T09:00:00.000Z' },
+      expect.any(Function)
+    );
   });
 
   it('resolves success:false when the ack never arrives, instead of hanging on GO', async () => {
@@ -197,7 +230,7 @@ describe('stopTracking', () => {
     );
   });
 
-  it('resolves success:false without emitting when not connected', async () => {
+  it('resolves success:false with offline:true, without emitting, when not connected', async () => {
     const { connectSocket, stopTracking } = getModule();
     connectSocket('tok');
     mockSocket.connected = false;
@@ -205,6 +238,7 @@ describe('stopTracking', () => {
     await expect(stopTracking('vehicle-1')).resolves.toEqual({
       success: false,
       error: 'Socket not connected',
+      offline: true,
     });
     expect(mockSocket.emit).not.toHaveBeenCalled();
   });
