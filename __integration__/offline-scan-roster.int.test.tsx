@@ -16,6 +16,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
+import { NetworkStatusProvider } from '../src/context/NetworkStatusContext';
 import QRScannerScreen from '../src/screens/QRScannerScreen';
 import BoardingRosterScreen from '../src/screens/BoardingRosterScreen';
 import { markBackendHealthy } from '../src/services/backendStatus';
@@ -68,9 +69,11 @@ function AuthBootstrap({ onReady, children }: { onReady: () => void; children: R
 function renderScreen(qc: QueryClient, ui: React.ReactElement, onReady: () => void) {
   return render(
     <QueryClientProvider client={qc}>
-      <AuthProvider>
-        <AuthBootstrap onReady={onReady}>{ui}</AuthBootstrap>
-      </AuthProvider>
+      <NetworkStatusProvider>
+        <AuthProvider>
+          <AuthBootstrap onReady={onReady}>{ui}</AuthBootstrap>
+        </AuthProvider>
+      </NetworkStatusProvider>
     </QueryClientProvider>
   );
 }

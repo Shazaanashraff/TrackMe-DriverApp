@@ -22,6 +22,36 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-08-30 — Fix main CI: two `__integration__` suites missing `NetworkStatusContext`
+- **Branch:** issue/51-fix-network-status-context-integration-tests
+- **Modules touched:** [docs/modules/BUS_REGISTRATION.md](modules/BUS_REGISTRATION.md),
+  [docs/modules/BOARDING.md](modules/BOARDING.md)
+- **What changed:**
+  - `__integration__/bus-registration-dashboard.int.test.tsx` now mocks `NetworkStatusContext`
+    to a static online value (this journey doesn't exercise offline behavior), the same pattern
+    `VehicleRegistrationScreen.test.js` and `shift-lifecycle.int.test.tsx` already use.
+  - `__integration__/offline-scan-roster.int.test.tsx` now wraps its render tree in the real
+    `NetworkStatusProvider` instead — this suite deliberately exercises the real
+    `services/backendStatus` module (its own `markBackendHealthy()` reconnect signal), so a
+    static mock would have defeated the point of the test.
+- **Why:** Closes #51. The offline-audit-remediation merges wired `useNetworkStatus()` into
+  `VehicleRegistrationScreen` and `BoardingRosterScreen`, but these two `__integration__` files
+  predate that wiring and never provided the context, so both screens crashed on mount
+  (`useNetworkStatus must be used within a NetworkStatusProvider`) — the second failure
+  surfaced as `Unable to find node on an unmounted component` since the crash happened before
+  the test's own assertion. No production code changed.
+- **Contract impact:** none.
+- **Tests:** `__integration__/bus-registration-dashboard.int.test.tsx`,
+  `__integration__/offline-scan-roster.int.test.tsx` — both updated, no new test files.
+  `npm test`: 68/68 suites, 576/576 tests passing (was 66/68, 574/576 on `main`).
+  `npm run typecheck`: same 4 pre-existing errors (`ErrorBoundary.tsx`, `api.test.ts`),
+  unrelated to and unaffected by this change. `npm run lint`: 0 errors (68 pre-existing
+  warnings, none new).
+- **Docs updated:** n/a — test-setup fix only, no behavior change to document.
+- **Follow-ups / known issues:** none.
+
+---
+
 ## 2026-08-27 — Offline go-on-duty: pressing GO with no connection (Offline & Caching Audit, chunk 1)
 - **Branch:** feature/audit-remediation-offline-shift-start
 - **Modules touched:** [docs/LOCATION_TRACKING.md](LOCATION_TRACKING.md) (§"Offline go-on-duty"),
