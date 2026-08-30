@@ -42,6 +42,21 @@ jest.mock('socket.io-client', () => ({
   io: jest.fn(() => ({ connected: false, on: jest.fn(), emit: jest.fn(), disconnect: jest.fn() })),
 }));
 
+// Neither this journey's screens (DriverDashboard, VehicleRegistrationScreen) nor
+// this test exercise offline behavior — mock NetworkStatusContext to a static
+// online value the same way VehicleRegistrationScreen.test.js and
+// shift-lifecycle.int.test.tsx do, rather than wiring up the real provider.
+jest.mock('../src/context/NetworkStatusContext', () => ({
+  __esModule: true,
+  useNetworkStatus: () => ({
+    networkState: 'online',
+    isOnline: true,
+    isDegraded: false,
+    isOffline: false,
+    retry: jest.fn(),
+  }),
+}));
+
 function jsonResponse(status: number, body: unknown) {
   return {
     ok: status >= 200 && status < 300,
