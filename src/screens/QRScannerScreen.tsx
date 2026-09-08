@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, SafeAreaView, StatusBar, StyleSheet, Linking, Pressable, ActivityIndicator } from 'react-native';
+import { View, StatusBar, StyleSheet, Linking, Pressable, ActivityIndicator } from 'react-native';
+// react-native's own SafeAreaView is a no-op on Android; only this one applies insets there.
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme';
@@ -98,7 +100,7 @@ function feedbackFor(status: string, lastResult: ReturnType<typeof useBoardingSc
     const time = lastResult?.timestamp ? new Date(lastResult.timestamp).toLocaleTimeString() : '';
     return {
       variant: 'success' as const,
-      message: [name, riderCode, type, time].filter(Boolean).join(' · ') || 'Scan recorded',
+      message: lastResult?.discrepancy || [name, riderCode, type, time].filter(Boolean).join(' · ') || 'Scan recorded',
     };
   }
   if (status === 'debounced') {

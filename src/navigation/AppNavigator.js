@@ -12,23 +12,29 @@ import DriverProfileScreen from '../screens/DriverProfileScreen';
 import QRScannerScreen from '../screens/QRScannerScreen';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import { theme } from '../theme';
+import { MessagesScreen, ConversationScreen, AbsencesScreen, RiderAudienceScreen } from '../features/communications/screens';
+import { AnnouncementsScreen } from '../features/communications/BroadcastPanel';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
+  Messages: { outline: 'chatbubbles-outline', filled: 'chatbubbles' },
   Dashboard: { outline: 'home-outline', filled: 'home' },
   TripHistory: { outline: 'time-outline', filled: 'time' },
   DriverProfile: { outline: 'person-outline', filled: 'person' },
 };
 
 const TAB_LABELS = {
+  Messages: 'Messages',
   Dashboard: 'Home',
   TripHistory: 'Trips',
   DriverProfile: 'Profile',
 };
 
 function MainTabs() {
+  const insets = useSafeAreaInsets();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -40,7 +46,8 @@ function MainTabs() {
           backgroundColor: theme.color.surface.card,
           borderTopWidth: theme.borderWidth.hairline,
           borderTopColor: theme.color.border.hairline,
-          height: 64,
+          height: 64 + insets.bottom,
+          paddingBottom: Math.max(insets.bottom, 8),
         },
         tabBarLabelStyle: {
           fontFamily: theme.fontFamily('medium'),
@@ -53,6 +60,7 @@ function MainTabs() {
       })}
     >
       <Tab.Screen name="Dashboard" component={DriverDashboard} />
+      <Tab.Screen name="Messages" component={MessagesScreen} />
       <Tab.Screen name="TripHistory" component={TripHistoryScreen} />
       <Tab.Screen name="DriverProfile" component={DriverProfileScreen} />
     </Tab.Navigator>
@@ -81,6 +89,10 @@ const AppNavigator = () => {
           <Stack.Screen name="MainTabs" component={MainTabs} />
           <Stack.Screen name="VehicleRegistration" component={VehicleRegistrationScreen} />
           <Stack.Screen name="QRScanner" component={QRScannerScreen} />
+          <Stack.Screen name="Conversation" component={ConversationScreen} />
+          <Stack.Screen name="Absences" component={AbsencesScreen} />
+          <Stack.Screen name="Announcements" component={AnnouncementsScreen} />
+          <Stack.Screen name="RiderAudience" component={RiderAudienceScreen} />
         </>
       )}
     </Stack.Navigator>

@@ -106,6 +106,8 @@
 | ErrorState/InlineError/OfflineBanner | unit | components/ui/__tests__ | states, Retry, offline, ErrorState `message` override (pull-to-refresh copy) | error UX changes |
 | backendStatus | unit | services/__tests__/backendStatus.test.ts | monitor, subscribe, patterns | health logic changes |
 | Offline cold start | e2e | .maestro/offline-*.yaml | cached + banner | offline behavior changes |
+| Safe-area imports (edge-to-edge) | unit | screens/__tests__/safeAreaImports.test.js | no file under src/ imports SafeAreaView from 'react-native' (iOS-only, a no-op on Android, so headers slide under the status bar); App.js wraps the tree in SafeAreaProvider so insets resolve | a screen adds safe-area handling, or edgeToEdgeEnabled changes |
+| Driver quick broadcasts | behavior | features/communications/__tests__/broadcast.test.js | fixed presets, two-action send, cancel, audience snapshot, offline retry, stable request IDs and event dedup | communication panel or draft behavior changes |
 
 ## Motion, copy, a11y pass (Phase 5)
 | Item | Type | Test file | Cases | Update when |

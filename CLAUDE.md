@@ -26,6 +26,8 @@ src/
                        # dutyHeroState.ts (pure headline/subline/dot state machine),
                        # useCustomRouteJourney, useSocketConnection
     route-management/  # RouteForm, RouteList, RouteListItem
+    communications/   # Private messages, dated absences, cancellation acknowledgments,
+                       # quick broadcasts, announcement composer, and app-owned realtime bridge
   helpers/
     formatters.js     # formatCurrency(), formatDate(), formatTime(), formatDateTime()
     geo.js            # haversineMeters(), totalDistanceMeters(), formatElapsed()
@@ -73,6 +75,7 @@ existing `navigation.navigate('…')` call sites keep working; `BusRegistration`
 `RouteManagement` are pushed screens registered on the root stack above the tabs — calling
 `navigation.navigate('BusRegistration')` from a tab screen bubbles up automatically.
 See `docs/redesign/SIGNAL_INK_PLAN.md` for the in-progress "Signal Ink" reskin driving this.
+See `docs/modules/COMMUNICATIONS.md` for message, absence, broadcast, push, and recovery contracts.
 
 ---
 

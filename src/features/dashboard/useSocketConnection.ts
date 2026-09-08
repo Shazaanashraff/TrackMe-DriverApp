@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
   connectSocket,
-  disconnectSocket,
   getConnectionState,
   onConnectionStateChange,
 } from '../../services/socket';
 
-// Owns the socket connection lifecycle (connect on mount, disconnect on unmount) and
+// Observes the socket owned by the authenticated application shell and
 // exposes whether it's mid-handshake — separate from useTrackingSession, which owns
 // the start/stop tracking session on top of an already-connected socket.
 export function useSocketConnection(token: string | null) {
@@ -19,7 +18,6 @@ export function useSocketConnection(token: string | null) {
 
   useEffect(() => {
     if (token) connectSocket(token);
-    return () => disconnectSocket();
   }, [token]);
 
   return { connecting };

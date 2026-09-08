@@ -10,6 +10,9 @@ Senior-architect docs that the execution TODOs (`../todos/`) cite. Read top-to-b
 - **ERROR_HANDLING.md** — error taxonomy (+ permission/tracking kinds), 4 UI states.
 - **RESTRUCTURE_PLAN.md** — why + ordered what for Phases 0–2, 7.
 
+- **modules/COMMUNICATIONS.md** — private conversations, dated absence changes, fixed quick
+  broadcasts, delivery progress, push setup, and recovery behavior.
+
 ## Execution
 - **IMPLEMENTATION_GUIDE.md** — how to do each TODO type + verify + completion-test definition.
 - **../todos/todo-list.md** — the live backlog.

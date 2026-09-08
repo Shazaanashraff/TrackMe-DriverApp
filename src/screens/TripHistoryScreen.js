@@ -1,5 +1,7 @@
 import React, { useCallback, useState } from 'react';
-import { FlatList, RefreshControl, SafeAreaView, StatusBar, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, StatusBar, StyleSheet, View } from 'react-native';
+// react-native's own SafeAreaView is a no-op on Android; only this one applies insets there.
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useDriverTripsQuery } from '../hooks/trips';
 import { theme } from '../theme';

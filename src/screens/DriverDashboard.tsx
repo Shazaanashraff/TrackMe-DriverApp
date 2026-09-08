@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, SafeAreaView, StatusBar, View, StyleSheet, Pressable } from 'react-native';
+import { Alert, ScrollView, StatusBar, View, StyleSheet, Pressable } from 'react-native';
+// react-native's own SafeAreaView is a no-op on Android; only this one applies insets there.
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
@@ -16,6 +18,7 @@ import DutyHero from '../features/dashboard/DutyHero';
 import VehicleCard from '../features/dashboard/VehicleCard';
 import TripProgressCard from '../features/dashboard/TripProgressCard';
 import { useSocketConnection } from '../features/dashboard/useSocketConnection';
+import BroadcastPanel from '../features/communications/BroadcastPanel';
 
 type Vehicle = {
   vehicleId?: string;
@@ -187,6 +190,7 @@ const DriverDashboard = ({ navigation }: Props) => {
             <Ionicons name="chevron-forward" size={18} color={theme.color.primary[300]} />
           </Pressable>
         </ScrollView>
+        <BroadcastPanel navigation={navigation} />
       </SafeAreaView>
 
       <BackgroundLocationDisclosure
