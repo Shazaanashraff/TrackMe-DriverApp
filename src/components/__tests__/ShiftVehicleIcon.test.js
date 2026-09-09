@@ -25,4 +25,11 @@ describe('ShiftVehicleIcon', () => {
     expect(xml).toContain('#123456');
     expect(xml).toContain('#abcdef');
   });
+
+  it('uses the React-compatible SVG class property on web', () => {
+    const { toJSON } = render(<ShiftVehicleIcon />);
+    const xml = toJSON().props.xml;
+    expect(xml).toContain('className="svg-icon"');
+    expect(xml).not.toContain('<svg class="svg-icon"');
+  });
 });

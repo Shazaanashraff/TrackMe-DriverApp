@@ -95,7 +95,7 @@
 | RouteListItem (Card + StatusPill) | unit | features/route-management/__tests__/RouteListItem.test.tsx | route details render, ACTIVE/INACTIVE StatusPill | STYLEGUIDE route-card spec changes |
 | RouteList (EmptyState) | unit | features/route-management/__tests__/RouteList.test.tsx | routes render with count badge, empty state copy, error+retry | list spec or copy changes |
 | LoginScreen (ink hero top 35%) | unit | screens/__tests__/LoginScreen.test.tsx | "Driver ID or email" + password inputs render, blocked submit + inline errors, signs in with either an email or a driver ID, identifier is trimmed, role-gate error copy, loading state | validation, the sign-in identifier, role gate, or copy changes |
-| ShiftBusIcon (recolorable body/detail) | unit | components/__tests__/ShiftBusIcon.test.js | renders at given size, defaults to signal/white, accepts custom colors | mark recoloring changes |
+| ShiftVehicleIcon (recolorable body/detail) | unit | components/__tests__/ShiftVehicleIcon.test.js | renders at given size, defaults to signal/white, accepts custom colors, and uses the React-compatible SVG `className` property without a web console warning | mark recoloring or SVG root attributes change |
 | lib/errors — INVALID_CREDENTIALS copy | unit | lib/__tests__/errors.test.ts | returns the exact STYLEGUIDE §8 "Wrong email or password. Try again." string | auth error copy changes |
 
 ## Cross-cutting
