@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCommunication } from "./provider";
@@ -53,6 +53,20 @@ function useBroadcast() {
       await AsyncStorage.setItem(`last-announcement:${accountId}`, result._id);
     }
   };
+  // This card offers no way to reopen a saved draft, so one restored from a
+  // previous session would only sit here as a line of text a driver can't act
+  // on. Drop it once, on the restore, not on the drafts this session saves
+  // before each send. The absences screen keeps its own review action.
+  const droppedRestored = useRef(false);
+  const { restored, draft: restoredDraft, clear, setFeedback } = sender;
+  useEffect(() => {
+    if (droppedRestored.current || !restored) return;
+    droppedRestored.current = true;
+    if (restoredDraft) {
+      void clear();
+      setFeedback("");
+    }
+  }, [restored, restoredDraft, clear, setFeedback]);
   const retry = useExplicitSend("broadcast-retry");
   const modals = (
     <>
@@ -75,19 +89,12 @@ function useBroadcast() {
   const feedback = (
     <View>
       <Text accessibilityLiveRegion="polite" style={styles.feedback}>
-        {sender.busy || sender.draft
+        {sender.busy
           ? sender.feedback
           : progress.data
           ? deliverySummary(progress.data)
           : sender.feedback}
       </Text>
-      {sender.draft && !preview ? (
-        <Action
-          label="Review saved broadcast"
-          onPress={() => setPreview(sender.draft)}
-          disabled={sender.busy}
-        />
-      ) : null}
       {progress.data?.recipients?.some((r) => r.state === "failed") ? (
         <Action
           label="Retry failed recipients only"

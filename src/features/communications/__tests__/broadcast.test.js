@@ -90,7 +90,7 @@ test.each(presets)(
     });
   }
 );
-test("cancel sends nothing; offline explicit retry retains original request ID", async () => {
+test("cancel sends nothing; an offline send is stored, not sent, then goes out online", async () => {
   const ui = mount();
   await waitFor(() =>
     expect(
@@ -100,30 +100,51 @@ test("cancel sends nothing; offline explicit retry retains original request ID",
   fireEvent.press(ui.getByTestId("quick-on_my_way"));
   fireEvent.press(ui.getByText("Cancel"));
   expect(request.mock.calls.filter((c) => c[1] === "POST")).toHaveLength(0);
-  await waitFor(() =>
-    expect(ui.getByText("Review saved broadcast")).toBeTruthy()
-  );
+
   online = false;
-  fireEvent.press(ui.getByText("All enrolled riders · 2"));
-  fireEvent.press(ui.getByText("Cancel"));
-  fireEvent.press(ui.getByText("Review saved broadcast"));
+  fireEvent.press(ui.getByTestId("quick-on_my_way"));
   fireEvent.press(ui.getByTestId("send-broadcast"));
   await waitFor(() => expect(ui.getByText("Not sent, offline")).toBeTruthy());
-  const original = JSON.parse(
+  expect(request.mock.calls.filter((c) => c[1] === "POST")).toHaveLength(0);
+
+  // The unsent broadcast is still written to storage before the network call,
+  // so nothing is lost even though this card no longer offers a review action
+  // for it. Re-sending starts from the preset again.
+  const stored = JSON.parse(
     await AsyncStorage.getItem("communication-draft:driver-1:broadcast")
   );
-  expect(request.mock.calls.filter((c) => c[1] === "POST")).toHaveLength(0);
+  expect(stored.body.requestId).toBeTruthy();
+
   online = true;
-  fireEvent.press(ui.getByText("All enrolled riders · 2"));
-  fireEvent.press(ui.getByText("Cancel"));
-  fireEvent.press(ui.getByText("Review saved broadcast"));
+  fireEvent.press(ui.getByTestId("quick-on_my_way"));
   fireEvent.press(ui.getByTestId("send-broadcast"));
   await waitFor(() =>
-    expect(request.mock.calls.find((c) => c[1] === "POST")[2].requestId).toBe(
-      original.body.requestId
-    )
+    expect(request.mock.calls.filter((c) => c[1] === "POST")).toHaveLength(1)
   );
 });
+
+test("a draft left over from a previous session shows nothing to review", async () => {
+  await AsyncStorage.setItem(
+    "communication-draft:driver-1:broadcast",
+    JSON.stringify(announcementDraft(presets[0], rows, null, "2026-09-08"))
+  );
+
+  const ui = mount();
+  await waitFor(() =>
+    expect(
+      ui.getByTestId("quick-on_my_way").props.accessibilityState.disabled
+    ).toBe(false)
+  );
+
+  expect(ui.queryByText("Review saved broadcast")).toBeNull();
+  expect(ui.queryByText("Draft saved, review and retry")).toBeNull();
+  await waitFor(async () =>
+    expect(
+      await AsyncStorage.getItem("communication-draft:driver-1:broadcast")
+    ).toBeNull()
+  );
+});
+
 test("audience preview is copied, not aliased", () => {
   const selected = ["rider-a"];
   const draft = announcementDraft(presets[0], rows, selected, "2026-09-08");
