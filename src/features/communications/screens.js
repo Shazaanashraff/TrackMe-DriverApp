@@ -1,19 +1,17 @@
-import React, { useEffect, useState } from "react";
-import { FlatList, ScrollView, View, Text, TextInput } from "react-native";
+import React, { useState } from "react";
+import { ScrollView, View, Text, TextInput } from "react-native";
 import { useCommunication } from "./provider";
 import { useCommunicationQuery, useExplicitSend } from "./hooks";
 import {
   Page,
   Action,
-  RiderIdentity,
   AbsenceCard,
   Freshness,
   DateField,
   Sheet,
   styles,
 } from "./components";
-import { resourceId, newRequestId, colomboToday } from "./state";
-import { theme } from "../../theme";
+import { newRequestId, colomboToday } from "./state";
 
 export function emptyListMessage(query, online, loading, error, empty) {
   if (!online && !query.data)
@@ -21,76 +19,6 @@ export function emptyListMessage(query, online, loading, error, empty) {
   if (query.isLoading) return loading;
   if (query.isError && !query.data) return `${error} Use Refresh to try again.`;
   return empty;
-}
-export function RiderAudienceScreen({ navigation }) {
-  const { request, online } = useCommunication();
-  const query = useCommunicationQuery("/driver/riders");
-  const [search, setSearch] = useState("");
-  const [error, setError] = useState("");
-  const filtered = (query.data || []).filter((r) =>
-    `${r.riderName} ${r.riderCode}`.toLowerCase().includes(search.toLowerCase())
-  );
-  return (
-    <Page title="Enrolled riders" navigation={navigation}>
-      <View style={{ paddingHorizontal: theme.space[4], gap: theme.space[2] }}>
-        <TextInput
-          accessibilityLabel="Search riders"
-          style={styles.field}
-          value={search}
-          onChangeText={setSearch}
-          placeholder="Search name or rider code"
-        />
-        <Text accessibilityLiveRegion="polite" style={styles.feedback}>
-          {error}
-        </Text>
-        <Freshness query={query} online={online} />
-      </View>
-      <FlatList
-        data={filtered}
-        keyExtractor={(r) => resourceId(r.riderId)}
-        contentContainerStyle={styles.content}
-        contentInsetAdjustmentBehavior="automatic"
-        ListEmptyComponent={
-          <Text style={styles.text}>
-            {emptyListMessage(
-              query,
-              online,
-              "Loading enrolled riders…",
-              "Could not load enrolled riders.",
-              search
-                ? "No riders match this search."
-                : "No active rider enrollments yet."
-            )}
-          </Text>
-        }
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <RiderIdentity name={item.riderName} code={item.riderCode} />
-            <Text style={styles.small}>
-              {item.organization} ·{" "}
-              {item.pickup?.label || "Pickup not specified"}
-            </Text>
-            <Action
-              label="Message rider"
-              onPress={async () => {
-                try {
-                  const c = await request("/conversations", "POST", {
-                    riderId: resourceId(item.riderId),
-                  });
-                  navigation.navigate("Conversation", {
-                    conversationId: c._id,
-                    riderId: resourceId(item.riderId),
-                  });
-                } catch (e) {
-                  setError(e.message);
-                }
-              }}
-            />
-          </View>
-        )}
-      />
-    </Page>
-  );
 }
 export function AbsencesScreen({ navigation, route, embedded = false }) {
   const { role, online } = useCommunication();

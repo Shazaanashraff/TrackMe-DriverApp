@@ -1,8 +1,9 @@
 // One rider, opened from the directory. Deliberately small: who they are, and
 // the one number to call if something goes wrong on the route.
 //
-// The home address is not here and is not on the wire — a driver sees the pickup
-// label ("Home gate") on the row and nothing more precise.
+// No address here, and none in the roster payload either — the row draws the
+// pickup label ("Home gate") and the server sends nothing more precise.
+// (Absence cards are a separate path and do still show a street address.)
 import React from "react";
 import { ScrollView, View, Text } from "react-native";
 import { useCommunicationQuery } from "./hooks";

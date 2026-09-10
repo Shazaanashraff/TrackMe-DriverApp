@@ -155,7 +155,7 @@ describe("a rider's profile", () => {
     expect(ui.getByText("0770000001")).toBeTruthy();
   });
 
-  // The home address is not on the wire at all; a driver sees the pickup label.
+  // The profile shows no address; the roster sends a pickup label only.
   test("never shows an address", async () => {
     const ui = mount(RiderProfileScreen, { riderId: "rider-a" });
     await ui.findByText("Amal");
