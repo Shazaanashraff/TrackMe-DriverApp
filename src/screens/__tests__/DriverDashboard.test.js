@@ -148,7 +148,7 @@ describe('DriverDashboard — lost connection warning (issue #30)', () => {
     const { getByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
 
     expect(
-      getByText('Losing connection — recent updates may not be reaching the server')
+      getByText('Connection unstable')
     ).toBeTruthy();
   });
 
@@ -163,7 +163,7 @@ describe('DriverDashboard — lost connection warning (issue #30)', () => {
     const { queryByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
 
     expect(
-      queryByText('Losing connection — recent updates may not be reaching the server')
+      queryByText('Connection unstable')
     ).toBeNull();
   });
 });
@@ -217,7 +217,7 @@ describe('DriverDashboard — Go on duty failure surfaced (issue #20)', () => {
     // Wait for the screen to settle instead: the custom-route call this used to
     // wait on was removed with the feature, so any alert effect has run by the
     // time the dashboard has painted.
-    await findByText('Your vehicle');
+    await findByText('YOUR VEHICLE');
 
     expect(alertSpy).not.toHaveBeenCalled();
   });
@@ -252,7 +252,7 @@ describe('DriverDashboard — stop-tracking ack failure surfaced (issue #12)', (
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
     const { findByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
-    await findByText('Your vehicle');
+    await findByText('YOUR VEHICLE');
 
     expect(alertSpy).not.toHaveBeenCalled();
   });
@@ -273,7 +273,7 @@ describe('DriverDashboard — buffered GPS fixes surfaced (offline audit)', () =
 
     expect(getByTestId('buffered-count-chip')).toBeTruthy();
     expect(getByText('12')).toBeTruthy();
-    expect(getByText('saved, not sent')).toBeTruthy();
+    expect(getByText('UNSENT')).toBeTruthy();
   });
 
   it('shows the normal "updates sent" chip when nothing is buffered', () => {
@@ -288,8 +288,8 @@ describe('DriverDashboard — buffered GPS fixes surfaced (offline audit)', () =
 
     const { getByText, queryByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
 
-    expect(getByText('updates sent')).toBeTruthy();
-    expect(queryByText('saved, not sent')).toBeNull();
+    expect(getByText('UPDATES')).toBeTruthy();
+    expect(queryByText('UNSENT')).toBeNull();
   });
 });
 
@@ -299,8 +299,8 @@ describe('DriverDashboard — unassigned-vehicle messaging (issue #21)', () => {
 
     const { findByText, queryByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
 
-    expect(await findByText('Register your vehicle to go live')).toBeTruthy();
-    expect(queryByText('Your vehicle assignment was removed — contact your manager')).toBeNull();
+    expect(await findByText('Vehicle registration required')).toBeTruthy();
+    expect(queryByText('Vehicle assignment removed')).toBeNull();
   });
 
   it('shows the removed-assignment message once a previously-seen vehicle disappears', async () => {
@@ -309,8 +309,8 @@ describe('DriverDashboard — unassigned-vehicle messaging (issue #21)', () => {
 
     const { findByText, queryByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
 
-    expect(await findByText('Your vehicle assignment was removed — contact your manager')).toBeTruthy();
-    expect(queryByText('Register your vehicle to go live')).toBeNull();
+    expect(await findByText('Vehicle assignment removed')).toBeTruthy();
+    expect(queryByText('Vehicle registration required')).toBeNull();
   });
 
   it('persists that this driver has had a vehicle once one is seen', async () => {

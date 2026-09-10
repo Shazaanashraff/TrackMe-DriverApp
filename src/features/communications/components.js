@@ -97,11 +97,13 @@ export const styles = StyleSheet.create({
   sheetScroll: { flexShrink: 1 },
   sheetContent: { gap: theme.space[3] },
   panel: {
+    marginTop: theme.space[4],
+    borderRadius: theme.radius.card,
     backgroundColor: theme.color.surface.card,
-    borderTopWidth: theme.borderWidth.hairline,
+    borderWidth: theme.borderWidth.hairline,
     borderColor: theme.color.border.hairline,
   },
-  panelContent: { padding: theme.space[2], gap: theme.space[2] },
+  panelContent: { padding: theme.space[3], gap: theme.space[2] },
   pageHeader: { minHeight: 56, paddingHorizontal: theme.space[4] },
 });
 export function Action({ label, onPress, disabled, primary, style, testID }) {
@@ -391,7 +393,7 @@ export function CancellationStrip({
     >
       <Text style={styles.text}>
         {a.riderId?.fullName || "Rider"} is coming{" "}
-        {a.date === colomboToday() ? "today" : `on ${a.date}`}—absence
+        {a.date === colomboToday() ? "today" : `on ${a.date}`} · absence
         cancelled.
       </Text>
       <View style={styles.row}>

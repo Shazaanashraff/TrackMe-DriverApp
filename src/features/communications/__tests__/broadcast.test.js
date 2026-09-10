@@ -108,7 +108,7 @@ test("cancel sends nothing; offline explicit retry retains original request ID",
   fireEvent.press(ui.getByText("Cancel"));
   fireEvent.press(ui.getByText("Review saved broadcast"));
   fireEvent.press(ui.getByTestId("send-broadcast"));
-  await waitFor(() => expect(ui.getByText("Not sent—offline")).toBeTruthy());
+  await waitFor(() => expect(ui.getByText("Not sent, offline")).toBeTruthy());
   const original = JSON.parse(
     await AsyncStorage.getItem("communication-draft:driver-1:broadcast")
   );
@@ -131,7 +131,7 @@ test("audience preview is copied, not aliased", () => {
   expect(draft.body.riderIds).toEqual(["rider-a"]);
 });
 
-test("bounds the fixed quick actions inside a scrollable viewport region", async () => {
+test("renders the quick actions as a dashboard section, not a fixed panel", async () => {
   const ui = mount();
   await waitFor(() =>
     expect(
@@ -139,8 +139,9 @@ test("bounds the fixed quick actions inside a scrollable viewport region", async
     ).toBe(false)
   );
 
-  const scroll = ui.getByTestId("fixed-broadcast-scroll");
-  expect(scroll.props.nestedScrollEnabled).toBe(true);
-  expect(scroll.props.style.maxHeight).toBeGreaterThanOrEqual(280);
-  expect(scroll.props.style.maxHeight).toBeLessThanOrEqual(560);
+  // It scrolls with the page now. A nested scroll with its own height cap took
+  // over half the screen and squeezed everything above it into a strip.
+  const section = ui.getByTestId("broadcast-section");
+  expect(section.props.style.maxHeight).toBeUndefined();
+  expect(ui.queryByTestId("fixed-broadcast-scroll")).toBeNull();
 });

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, useWindowDimensions } from "react-native";
+import { View, Text } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCommunication } from "./provider";
 import { useCommunicationQuery, useExplicitSend } from "./hooks";
@@ -122,20 +122,12 @@ export default function BroadcastPanel({ navigation }) {
     `/driver/absences?date=${colomboToday()}`
   );
   const ack = useExplicitSend("home-acknowledgment");
-  const { height, fontScale } = useWindowDimensions();
-  const maxHeight = Math.min(
-    560,
-    Math.max(280, height * (fontScale > 1.2 ? 0.55 : 0.58))
-  );
+  // A section of the dashboard, not a fixed panel pinned under it. It used to
+  // claim up to 58% of the screen height with its own nested scroll, which left
+  // the vehicle and quick actions squeezed into a strip above it.
   return (
-    <View testID="fixed-broadcast-panel" style={styles.panel}>
-      <ScrollView
-        testID="fixed-broadcast-scroll"
-        style={{ maxHeight }}
-        contentContainerStyle={styles.panelContent}
-        nestedScrollEnabled
-        keyboardShouldPersistTaps="handled"
-      >
+    <View testID="broadcast-section" style={styles.panel}>
+      <View style={styles.panelContent}>
         <CancellationStrip
           changes={changes.data?.changes}
           busy={ack.busy}
@@ -173,7 +165,7 @@ export default function BroadcastPanel({ navigation }) {
           }
         />
         {b.feedback}
-      </ScrollView>
+      </View>
       {b.modals}
     </View>
   );

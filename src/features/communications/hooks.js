@@ -27,7 +27,7 @@ export function useExplicitSend(name) {
   useEffect(() => {
     let alive = true;
     setRestored(false); setDraft(null); setFeedback('');
-    AsyncStorage.getItem(key).then(value => { if (alive && value) { setDraft(JSON.parse(value)); setFeedback('Draft saved—review and retry'); } }).catch(() => {}).finally(() => { if (alive) setRestored(true); });
+    AsyncStorage.getItem(key).then(value => { if (alive && value) { setDraft(JSON.parse(value)); setFeedback('Draft saved, review and retry'); } }).catch(() => {}).finally(() => { if (alive) setRestored(true); });
     return () => { alive = false; };
   }, [key]);
   const save = useCallback(async value => {
@@ -39,7 +39,7 @@ export function useExplicitSend(name) {
     lock.current = true; setBusy(true);
     try {
       await save(value);
-      if (!online) { setFeedback('Not sent—offline'); return null; }
+      if (!online) { setFeedback('Not sent, offline'); return null; }
       setFeedback('Sending…');
       const result = await request(value.path, value.method || 'POST', value.body);
       if (result?.results?.some(r => !r.success)) {
@@ -48,7 +48,7 @@ export function useExplicitSend(name) {
       await queryClient.invalidateQueries({ queryKey: ['communications', accountId] });
       return result;
     } catch (error) {
-      setFeedback(error.kind === 'offline' || !online ? 'Not sent—offline' : `${error.message || 'Not confirmed'} · Review and retry`);
+      setFeedback(error.kind === 'offline' || !online ? 'Not sent, offline' : `${error.message || 'Not confirmed'} · Review and retry`);
       return null;
     } finally { lock.current = false; setBusy(false); }
   };

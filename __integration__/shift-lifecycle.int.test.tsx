@@ -173,7 +173,8 @@ describe('shift lifecycle: login → go on duty → location stream → end duty
       fireEvent.changeText(getByLabelText('Password'), 'Passw0rd!');
       fireEvent.press(getByText('Sign in'));
 
-      expect(await findByText('Hi Nadia · Shuttle 1')).toBeTruthy();
+      // The hero names the driver and the plate in its two context pills.
+      expect(await findByText('Nadia')).toBeTruthy();
 
       // The socket connects as soon as DriverDashboard mounts with a token.
       await waitFor(() => expect(mockSocket.on).toHaveBeenCalledWith('connect', expect.any(Function)));
@@ -210,7 +211,7 @@ describe('shift lifecycle: login → go on duty → location stream → end duty
       expect(locationCalls).toHaveLength(3);
       expect(locationCalls[0][1]).toMatchObject({ vehicleId: 'VEHICLE-1' });
 
-      // DutyHero's own "updates sent" stat chip reflects the same stream.
+      // DutyHero's own UPDATES slot in the HUD strip reflects the same stream.
       await findByText('3');
 
       // 4) END DUTY — GO/END is now the End-journey control; tapping it opens the

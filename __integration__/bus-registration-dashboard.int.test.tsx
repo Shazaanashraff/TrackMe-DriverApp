@@ -156,14 +156,15 @@ describe('bus registration end to end: register → Dashboard reflects it after 
     });
     global.fetch = fetchMock as unknown as typeof fetch;
 
-    const { getByText, getByLabelText, findByText, queryByText } = renderApp();
+    const { getByText, getAllByText, getByLabelText, findByText, queryByText } = renderApp();
 
     // 1) Dashboard starts with no vehicle registered.
     expect(await findByText('No vehicle yet')).toBeTruthy();
 
     // 2) Tap through to the real registration screen (the same navigation target
-    // AppNavigator wires VehicleCard's empty-state action to).
-    fireEvent.press(getByText('Add my vehicle'));
+    // AppNavigator wires VehicleCard's empty state to). The whole row is the
+    // target here, not a labelled button inside it.
+    fireEvent.press(getByText('No vehicle yet'));
     await findByText('Your vehicle'); // ScreenHeader title on VehicleRegistrationScreen
 
     // 3) Fill in and submit the real form.
@@ -178,7 +179,8 @@ describe('bus registration end to end: register → Dashboard reflects it after 
     // 4) VehicleRegistrationScreen calls navigation.goBack() ~700ms after a
     // successful save — back on the (freshly remounted) Dashboard, VehicleCard
     // now shows the vehicle registerVehicle's onSuccess invalidated the query for.
-    await waitFor(() => expect(getByText('Night Owl')).toBeTruthy(), { timeout: 3000 });
+    // Twice over: the hero's vehicle context pill and the VehicleCard below it.
+    await waitFor(() => expect(getAllByText('Night Owl').length).toBe(2), { timeout: 3000 });
     expect(queryByText('No vehicle yet')).toBeNull();
 
     const registerCalls = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/api/vehicle/register'));

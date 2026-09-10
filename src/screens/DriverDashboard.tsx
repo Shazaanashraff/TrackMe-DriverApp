@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StatusBar, View, StyleSheet } from 'react-native';
+import { Alert, ScrollView, StatusBar, View, StyleSheet, Pressable } from 'react-native';
 // react-native's own SafeAreaView is a no-op on Android; only this one applies insets there.
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useAuth } from '../context/AuthContext';
@@ -13,8 +14,6 @@ import { getBufferedCount, subscribeToBufferCount } from '../services/locationDi
 import BackgroundLocationDisclosure from '../features/dashboard/BackgroundLocationDisclosure';
 import { theme } from '../theme';
 import AppText from '../components/ui/AppText';
-import Card from '../components/ui/Card';
-import ListRow from '../components/ui/ListRow';
 import ConfirmSheet from '../components/ui/ConfirmSheet';
 import DutyHero from '../features/dashboard/DutyHero';
 import VehicleCard from '../features/dashboard/VehicleCard';
@@ -73,7 +72,7 @@ const DriverDashboard = ({ navigation }: Props) => {
   const tracking = session.status === 'tracking';
   // A shift started with no signal ('pending') is on duty locally: the GPS
   // pipeline runs and buffers, the screen stays awake, background tracking is
-  // eligible — it just hasn't reached the server yet (chunk 1).
+  // eligible. It just hasn't reached the server yet (chunk 1).
   const onDuty = tracking || session.status === 'pending';
   const background = useBackgroundTracking(onDuty);
   const broadcast = useLocationBroadcast({
@@ -143,59 +142,71 @@ const DriverDashboard = ({ navigation }: Props) => {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <SafeAreaView style={styles.heroSafeArea}>
-        <DutyHero
-          firstName={firstName}
-          vehicleName={vehicle?.vehicleName}
-          status={session.status}
-          isReconnecting={session.isReconnecting}
-          connecting={connecting}
-          permission={broadcast.permission}
-          lastFix={onDuty ? broadcast.lastFix : null}
-          lostConnection={session.status === 'tracking' ? broadcast.lostConnection : false}
-          bufferedCount={bufferedCount}
-          hasVehicle={hasVehicle}
-          hadVehicleBefore={hadVehicleBefore}
-          onGoPress={handleStart}
-          onEndPress={() => setShowEndConfirm(true)}
-        />
-      </SafeAreaView>
-
-      <ScrollView
-        style={styles.scroll}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <AppText variant="h2" style={styles.sectionTitle}>Your vehicle</AppText>
-        <VehicleCard
-          vehicle={vehicle}
-          onRegisterPress={() => navigation.navigate('VehicleRegistration')}
-        />
-
-        <TripProgressCard
-          routeId={routeId}
-          fix={onDuty ? broadcast.lastFix : null}
-          isTracking={onDuty}
-        />
-
-        <AppText variant="h2" style={styles.sectionTitleSpaced}>Quick actions</AppText>
-        <Card style={styles.scanCard} padding={0}>
-          <ListRow
-            testID="scan-rider-qr-row"
-            icon="qr-code-outline"
-            title="Scan rider QR"
-            subtitle={vehicle ? 'Record boarding or alighting' : 'Register a vehicle to enable scanning'}
-            onPress={vehicle ? () => navigation.navigate('QRScanner', { vehicleId }) : undefined}
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          style={styles.scroll}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <DutyHero
+            firstName={firstName}
+            vehicleName={vehicle?.vehicleName}
+            status={session.status}
+            isReconnecting={session.isReconnecting}
+            connecting={connecting}
+            permission={broadcast.permission}
+            lastFix={onDuty ? broadcast.lastFix : null}
+            lostConnection={session.status === 'tracking' ? broadcast.lostConnection : false}
+            bufferedCount={bufferedCount}
+            hasVehicle={hasVehicle}
+            hadVehicleBefore={hadVehicleBefore}
+            onGoPress={handleStart}
+            onEndPress={() => setShowEndConfirm(true)}
           />
-        </Card>
 
-        {vehicle ? (
-          <OnBoardCard vehicleId={vehicleId} onPress={() => navigation.navigate('BoardingRoster', { vehicleId })} />
-        ) : null}
-      </ScrollView>
+          <AppText variant="overline" color={theme.color.text.muted} style={styles.sectionTitle}>YOUR VEHICLE</AppText>
+          <VehicleCard
+            vehicle={vehicle}
+            onRegisterPress={() => navigation.navigate('VehicleRegistration')}
+          />
 
-      <BroadcastPanel navigation={navigation} />
+          <TripProgressCard
+            routeId={routeId}
+            fix={onDuty ? broadcast.lastFix : null}
+            isTracking={onDuty}
+          />
+
+          {vehicle ? (
+            <OnBoardCard vehicleId={vehicleId} onPress={() => navigation.navigate('BoardingRoster', { vehicleId })} />
+          ) : null}
+
+          <AppText variant="overline" color={theme.color.text.muted} style={styles.sectionTitleSpaced}>QUICK ACTIONS</AppText>
+          
+          <Pressable 
+            testID="scan-rider-qr-row"
+            style={({ pressed }) => [
+              styles.quickActionBlock,
+              pressed && styles.quickActionBlockPressed,
+              !vehicle && styles.quickActionDisabled
+            ]}
+            onPress={vehicle ? () => navigation.navigate('QRScanner', { vehicleId }) : undefined}
+          >
+            <View style={styles.quickActionIcon}>
+              <Ionicons name="qr-code" size={20} color={theme.color.primary[600]} />
+            </View>
+            <View style={styles.quickActionText}>
+              <AppText variant="body" weight="medium" color={theme.color.primary[900]}>Scan rider QR</AppText>
+              <AppText variant="label" color={theme.color.text.secondary}>
+                {vehicle ? 'Record boarding or alighting' : 'Register a vehicle first'}
+              </AppText>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={theme.color.primary[300]} />
+          </Pressable>
+
+          <BroadcastPanel navigation={navigation} />
+        </ScrollView>
+      </SafeAreaView>
 
       <BackgroundLocationDisclosure
         visible={background.shouldOfferUpgrade && broadcast.permission === 'granted'}
@@ -221,25 +232,55 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.color.surface.page,
   },
-  heroSafeArea: {
-    backgroundColor: theme.color.ink.base,
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.color.surface.page,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    padding: theme.space[5],
-    paddingBottom: theme.space[8],
+    padding: theme.space[3],
+    paddingBottom: theme.space[6],
   },
   sectionTitle: {
-    marginBottom: theme.space[3],
+    marginBottom: theme.space[2],
+    marginTop: theme.space[1],
+    paddingHorizontal: theme.space[1],
   },
   sectionTitleSpaced: {
-    marginTop: theme.space[6],
-    marginBottom: theme.space[3],
+    marginTop: theme.space[4],
+    marginBottom: theme.space[2],
+    paddingHorizontal: theme.space[1],
   },
-  scanCard: {
-    paddingHorizontal: theme.space[4],
+  quickActionBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.color.primary[50],
+    borderRadius: theme.radius.card,
+    padding: theme.space[3],
+    marginBottom: theme.space[4],
+    borderWidth: 1,
+    borderColor: theme.color.primary[100],
+  },
+  quickActionBlockPressed: {
+    backgroundColor: theme.color.primary[100],
+  },
+  quickActionDisabled: {
+    opacity: 0.5,
+  },
+  quickActionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.color.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: theme.space[3],
+    ...theme.elevation.card,
+  },
+  quickActionText: {
+    flex: 1,
   },
 });
 

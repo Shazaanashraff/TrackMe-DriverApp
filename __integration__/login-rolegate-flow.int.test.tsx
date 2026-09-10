@@ -153,7 +153,7 @@ describe('login role-gate, end to end through the real LoginScreen', () => {
     // The role-gate passes, AuthContext persists the session, and Root's real
     // auth-gate switch (mirroring AppNavigator) swaps LoginScreen for the real
     // DriverDashboard.
-    expect(await findByText('Hi Nadia')).toBeTruthy();
+    expect(await findByText('Nadia')).toBeTruthy();
     await waitFor(async () => expect(await AsyncStorage.getItem('token')).toBe('access-driver'));
 
     const loginCalls = fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/api/auth/login'));

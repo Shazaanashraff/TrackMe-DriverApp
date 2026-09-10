@@ -15,7 +15,7 @@ describe('deriveDutyHeroState', () => {
     const state = deriveDutyHeroState(base);
     expect(state).toEqual({
       headline: "You're off duty",
-      subline: "Riders can't see you yet",
+      subline: 'Hidden from riders',
       dot: 'off',
       showAllowLocation: false,
       goDisabled: false,
@@ -24,25 +24,25 @@ describe('deriveDutyHeroState', () => {
 
   it('off duty without a vehicle disables GO', () => {
     const state = deriveDutyHeroState({ ...base, hasVehicle: false });
-    expect(state.subline).toBe('Register your vehicle to go live');
+    expect(state.subline).toBe('Vehicle registration required');
     expect(state.goDisabled).toBe(true);
   });
 
   it('shows a distinct message when a manager unassigned a previously-held vehicle (issue #21)', () => {
     const state = deriveDutyHeroState({ ...base, hasVehicle: false, hadVehicleBefore: true });
-    expect(state.subline).toBe('Your vehicle assignment was removed — contact your manager');
+    expect(state.subline).toBe('Vehicle assignment removed');
     expect(state.goDisabled).toBe(true);
   });
 
   it('hadVehicleBefore is ignored once a vehicle is present again', () => {
     const state = deriveDutyHeroState({ ...base, hasVehicle: true, hadVehicleBefore: true });
-    expect(state.subline).toBe("Riders can't see you yet");
+    expect(state.subline).toBe('Hidden from riders');
   });
 
   it('off duty while the socket is still connecting', () => {
     const state = deriveDutyHeroState({ ...base, connecting: true });
     expect(state.headline).toBe("You're off duty");
-    expect(state.subline).toBe('Hang tight, finding the server');
+    expect(state.subline).toBe('Connecting...');
   });
 
   it('shows a starting subline and disables GO while the start ack is pending', () => {
@@ -60,7 +60,7 @@ describe('deriveDutyHeroState', () => {
     const state = deriveDutyHeroState({ ...base, status: 'error' });
     expect(state).toEqual({
       headline: "You're off duty",
-      subline: "Couldn't go live — tap GO to try again",
+      subline: 'Tap GO to try again',
       dot: 'warn',
       showAllowLocation: false,
       goDisabled: false,
@@ -76,7 +76,7 @@ describe('deriveDutyHeroState', () => {
     const state = deriveDutyHeroState({ ...base, status: 'pending' });
     expect(state).toEqual({
       headline: "You're on duty",
-      subline: "No signal — you'll sync when you're back online",
+      subline: 'Offline, will sync later',
       dot: 'warn',
       showAllowLocation: false,
       goDisabled: false,
@@ -87,7 +87,7 @@ describe('deriveDutyHeroState', () => {
     const state = deriveDutyHeroState({ ...base, status: 'pending', permission: 'denied' });
     expect(state).toEqual({
       headline: "You're on duty",
-      subline: 'Allow location so this shift can be saved',
+      subline: 'Location access required',
       dot: 'warn',
       showAllowLocation: true,
       goDisabled: false,
@@ -102,16 +102,16 @@ describe('deriveDutyHeroState', () => {
     });
     expect(state).toEqual({
       headline: "You're live",
-      subline: 'Riders can see your vehicle · updated 4s ago',
+      subline: 'Visible to riders',
       dot: 'on',
       showAllowLocation: false,
       goDisabled: false,
     });
   });
 
-  it('live with no fix yet omits the "updated Ns ago" suffix', () => {
+  it('reads the same whether or not a fix has arrived yet', () => {
     const state = deriveDutyHeroState({ ...base, status: 'tracking', secondsSinceFix: null });
-    expect(state.subline).toBe('Riders can see your vehicle');
+    expect(state.subline).toBe('Visible to riders');
   });
 
   it('reconnecting while tracking', () => {
@@ -122,7 +122,7 @@ describe('deriveDutyHeroState', () => {
     });
     expect(state).toEqual({
       headline: 'Reconnecting…',
-      subline: 'Hang tight, finding the server',
+      subline: 'Reconnecting...',
       dot: 'warn',
       showAllowLocation: false,
       goDisabled: false,
@@ -137,7 +137,7 @@ describe('deriveDutyHeroState', () => {
     });
     expect(state).toEqual({
       headline: "You're live",
-      subline: 'Allow location so riders can see your vehicle',
+      subline: 'Location access required',
       dot: 'warn',
       showAllowLocation: true,
       goDisabled: false,
@@ -163,7 +163,7 @@ describe('deriveDutyHeroState', () => {
     });
     expect(state).toEqual({
       headline: "You're live",
-      subline: "Losing connection — recent updates may not be reaching the server",
+      subline: "Connection unstable",
       dot: 'warn',
       showAllowLocation: false,
       goDisabled: false,
@@ -187,7 +187,7 @@ describe('deriveDutyHeroState', () => {
       lostConnection: true,
       permission: 'denied',
     });
-    expect(state.subline).toBe('Losing connection — recent updates may not be reaching the server');
+    expect(state.subline).toBe('Connection unstable');
     expect(state.showAllowLocation).toBe(false);
   });
 });

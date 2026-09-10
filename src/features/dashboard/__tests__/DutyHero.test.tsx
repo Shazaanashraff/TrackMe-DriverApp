@@ -17,14 +17,16 @@ const baseProps = {
 };
 
 describe('DutyHero', () => {
-  it('renders the greeting with first name and vehicle name', () => {
+  it('names the driver and the vehicle in the context pills', () => {
     const { getByText } = render(<DutyHero {...baseProps} />);
-    expect(getByText('Hi Nadia · Shuttle 1')).toBeTruthy();
+    expect(getByText('Nadia')).toBeTruthy();
+    expect(getByText('Shuttle 1')).toBeTruthy();
   });
 
-  it('omits the vehicle name from the greeting when there is none', () => {
-    const { getByText } = render(<DutyHero {...baseProps} vehicleName={undefined} />);
-    expect(getByText('Hi Nadia')).toBeTruthy();
+  it('drops the vehicle pill when there is no vehicle name', () => {
+    const { getByText, queryByText } = render(<DutyHero {...baseProps} vehicleName={undefined} />);
+    expect(getByText('Nadia')).toBeTruthy();
+    expect(queryByText('Shuttle 1')).toBeNull();
   });
 
   describe('off duty state', () => {
@@ -34,14 +36,14 @@ describe('DutyHero', () => {
         <DutyHero {...baseProps} onGoPress={onGoPress} />
       );
       expect(getByText("You're off duty")).toBeTruthy();
-      expect(getByText("Riders can't see you yet")).toBeTruthy();
+      expect(getByText('Hidden from riders')).toBeTruthy();
       fireEvent.press(getByLabelText('Go online'));
       expect(onGoPress).toHaveBeenCalledTimes(1);
     });
 
     it('shows no more than 2 blocks (no stat chip row) while off duty', () => {
       const { queryByText } = render(<DutyHero {...baseProps} />);
-      expect(queryByText('time online')).toBeNull();
+      expect(queryByText('TIME')).toBeNull();
     });
   });
 
@@ -51,7 +53,7 @@ describe('DutyHero', () => {
       const { getByText, getByLabelText } = render(
         <DutyHero {...baseProps} hasVehicle={false} onGoPress={onGoPress} />
       );
-      expect(getByText('Register your vehicle to go live')).toBeTruthy();
+      expect(getByText('Vehicle registration required')).toBeTruthy();
       fireEvent.press(getByLabelText('Go online'));
       expect(onGoPress).not.toHaveBeenCalled();
     });
@@ -60,8 +62,8 @@ describe('DutyHero', () => {
       const { getByText, queryByText } = render(
         <DutyHero {...baseProps} hasVehicle={false} hadVehicleBefore />
       );
-      expect(getByText('Your vehicle assignment was removed — contact your manager')).toBeTruthy();
-      expect(queryByText('Register your vehicle to go live')).toBeNull();
+      expect(getByText('Vehicle assignment removed')).toBeTruthy();
+      expect(queryByText('Vehicle registration required')).toBeNull();
     });
   });
 
@@ -72,18 +74,18 @@ describe('DutyHero', () => {
         <DutyHero {...baseProps} status="tracking" onEndPress={onEndPress} />
       );
       expect(getByText("You're live")).toBeTruthy();
-      expect(getByText('time online')).toBeTruthy();
-      expect(getByText('updates sent')).toBeTruthy();
+      expect(getByText('TIME')).toBeTruthy();
+      expect(getByText('UPDATES')).toBeTruthy();
       expect(getByText('GPS')).toBeTruthy();
       fireEvent.press(getByLabelText('End journey'));
       expect(onEndPress).toHaveBeenCalledTimes(1);
     });
 
-    it('shows the "updated Ns ago" subline once a fix has arrived', () => {
+    it('keeps the live subline to one line once a fix has arrived', () => {
       const { getByText } = render(
         <DutyHero {...baseProps} status="tracking" lastFix={{ lat: 1, lng: 1, timestamp: Date.now() }} />
       );
-      expect(getByText(/Riders can see your vehicle · updated \d+s ago/)).toBeTruthy();
+      expect(getByText('Visible to riders')).toBeTruthy();
     });
 
     it('counts a new updates-sent tick each time lastFix changes', () => {
@@ -126,14 +128,14 @@ describe('DutyHero', () => {
         <DutyHero {...baseProps} status="pending" onEndPress={onEndPress} />
       );
       expect(getByText("You're on duty")).toBeTruthy();
-      expect(getByText("No signal — you'll sync when you're back online")).toBeTruthy();
+      expect(getByText('Offline, will sync later')).toBeTruthy();
       fireEvent.press(getByLabelText('End journey'));
       expect(onEndPress).toHaveBeenCalledTimes(1);
     });
 
     it('shows the stat chip row while pending', () => {
       const { getByText } = render(<DutyHero {...baseProps} status="pending" />);
-      expect(getByText('time online')).toBeTruthy();
+      expect(getByText('TIME')).toBeTruthy();
       expect(getByText('GPS')).toBeTruthy();
     });
 
@@ -142,7 +144,7 @@ describe('DutyHero', () => {
         <DutyHero {...baseProps} status="pending" bufferedCount={7} />
       );
       expect(getByTestId('buffered-count-chip')).toBeTruthy();
-      expect(getByText('saved, not sent')).toBeTruthy();
+      expect(getByText('UNSENT')).toBeTruthy();
       expect(getByText('7')).toBeTruthy();
     });
   });
@@ -153,7 +155,7 @@ describe('DutyHero', () => {
         <DutyHero {...baseProps} status="tracking" isReconnecting />
       );
       expect(getByText('Reconnecting…')).toBeTruthy();
-      expect(getByText('Hang tight, finding the server')).toBeTruthy();
+      expect(getByText('Reconnecting...')).toBeTruthy();
     });
   });
 
@@ -163,6 +165,7 @@ describe('DutyHero', () => {
         <DutyHero {...baseProps} status="tracking" permission="denied" />
       );
       expect(getByText("You're live")).toBeTruthy();
+      // The subline gives way to PermissionDeniedState's own copy and CTA.
       expect(getByText('Allow location so riders can see your vehicle')).toBeTruthy();
       expect(getByText('Allow location')).toBeTruthy();
     });
@@ -174,17 +177,13 @@ describe('DutyHero', () => {
         <DutyHero {...baseProps} status="tracking" lostConnection />
       );
       expect(getByText("You're live")).toBeTruthy();
-      expect(
-        getByText('Losing connection — recent updates may not be reaching the server')
-      ).toBeTruthy();
-      expect(queryByText("Riders can't see you yet")).toBeNull();
+      expect(getByText('Connection unstable')).toBeTruthy();
+      expect(queryByText('Hidden from riders')).toBeNull();
     });
 
     it('defaults to false and does not warn when omitted', () => {
       const { queryByText } = render(<DutyHero {...baseProps} status="tracking" />);
-      expect(
-        queryByText('Losing connection — recent updates may not be reaching the server')
-      ).toBeNull();
+      expect(queryByText('Connection unstable')).toBeNull();
     });
   });
 
@@ -198,23 +197,23 @@ describe('DutyHero', () => {
       const { getByText, queryByText } = render(
         <DutyHero {...baseProps} status="tracking" bufferedCount={0} />
       );
-      expect(getByText('updates sent')).toBeTruthy();
-      expect(queryByText('saved, not sent')).toBeNull();
+      expect(getByText('UPDATES')).toBeTruthy();
+      expect(queryByText('UNSENT')).toBeNull();
     });
 
     it('replaces "updates sent" with the buffered count once fixes are piling up', () => {
       const { getByText, getByTestId, queryByText } = render(
         <DutyHero {...baseProps} status="tracking" bufferedCount={18} />
       );
-      expect(queryByText('updates sent')).toBeNull();
-      expect(getByText('saved, not sent')).toBeTruthy();
+      expect(queryByText('UPDATES')).toBeNull();
+      expect(getByText('UNSENT')).toBeTruthy();
       expect(getByTestId('buffered-count-chip')).toBeTruthy();
       expect(getByText('18')).toBeTruthy();
     });
 
     it('defaults to 0 (no buffered chip) when the prop is omitted', () => {
       const { queryByText } = render(<DutyHero {...baseProps} status="tracking" />);
-      expect(queryByText('saved, not sent')).toBeNull();
+      expect(queryByText('UNSENT')).toBeNull();
     });
   });
 });

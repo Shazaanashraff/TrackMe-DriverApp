@@ -26,7 +26,7 @@ describe('EnrollmentKeyCard', () => {
     // says what it is rather than standing in for the value.
     expect(queryByTestId('enrollment-key-value')).toBeNull();
     expect(getByTestId('enrollment-key-mask')).toBeTruthy();
-    expect(getByText('Tap to reveal')).toBeTruthy();
+    expect(getByText('Tap to reveal key')).toBeTruthy();
   });
 
   it('reveals the key on the toggle and hides it again', () => {
@@ -74,12 +74,12 @@ describe('EnrollmentKeyCard', () => {
 
     fireEvent.press(getByTestId('copy-enrollment-key'));
     await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalledWith(KEY));
-    await waitFor(() => expect(getByText('Copied')).toBeTruthy());
+    await waitFor(() => expect(getByText('Copied!')).toBeTruthy());
 
     // The confirmation is temporary; a button stuck on "Copied" stops naming
     // what it does.
     act(() => { jest.advanceTimersByTime(2500); });
-    await waitFor(() => expect(getByText('Copy')).toBeTruthy());
+    await waitFor(() => expect(getByText('Copy Key')).toBeTruthy());
     jest.useRealTimers();
   });
 
@@ -109,12 +109,12 @@ describe('EnrollmentKeyCard', () => {
   it('drops the copied confirmation when the key is rotated underneath it', async () => {
     const { getByTestId, getByText, rerender } = render(<EnrollmentKeyCard enrollmentKey={KEY} />);
     fireEvent.press(getByTestId('copy-enrollment-key'));
-    await waitFor(() => expect(getByText('Copied')).toBeTruthy());
+    await waitFor(() => expect(getByText('Copied!')).toBeTruthy());
 
     // What sits on the clipboard is the old key, so still claiming "Copied"
     // next to a new one would be a lie.
     rerender(<EnrollmentKeyCard enrollmentKey="TMD-P44B-X3RF-YGNX" />);
-    await waitFor(() => expect(getByText('Copy')).toBeTruthy());
+    await waitFor(() => expect(getByText('Copy Key')).toBeTruthy());
   });
 
   it('re-masks when the key is rotated while revealed', async () => {
