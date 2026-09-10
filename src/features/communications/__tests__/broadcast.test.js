@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BroadcastPanel from "../BroadcastPanel";
 import { useCommunication } from "../provider";
-import { announcementDraft, mergeMessages } from "../state";
+import { announcementDraft } from "../state";
 jest.mock("../provider", () => ({ useCommunication: jest.fn() }));
 jest.mock("@react-navigation/native", () => ({ useIsFocused: () => true }));
 jest.mock("react-native-safe-area-context", () => ({
@@ -124,13 +124,11 @@ test("cancel sends nothing; offline explicit retry retains original request ID",
     )
   );
 });
-test("audience preview is copied and socket/poll messages deduplicate", () => {
+test("audience preview is copied, not aliased", () => {
   const selected = ["rider-a"];
   const draft = announcementDraft(presets[0], rows, selected, "2026-09-08");
   selected.push("rider-b");
   expect(draft.body.riderIds).toEqual(["rider-a"]);
-  const message = { _id: "1", eventId: "event-1" };
-  expect(mergeMessages([message], [message])).toHaveLength(1);
 });
 
 test("bounds the fixed quick actions inside a scrollable viewport region", async () => {

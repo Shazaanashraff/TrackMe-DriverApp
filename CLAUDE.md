@@ -90,9 +90,10 @@ src/
 App.js
 └── AppNavigator (root native stack)
     ├── [logged out]   → Login            (only role `driver` may sign in — enforced in LoginScreen)
-    └── [logged in]    → MainTabs (bottom tabs) + pushed: VehicleRegistration, QRScanner, BoardingRoster
+    └── [logged in]    → MainTabs (bottom tabs) + pushed: VehicleRegistration, QRScanner, BoardingRoster, RiderProfile
                            MainTabs:
                            ├── Dashboard      ("Home" tab — DutyHero + VehicleCard + OnBoardCard + TripProgressCard)
+                           ├── Riders         ("Riders" tab — rider directory | absences, segmented)
                            ├── TripHistory    ("Trips" tab)
                            └── DriverProfile  ("Profile" tab)
 ```

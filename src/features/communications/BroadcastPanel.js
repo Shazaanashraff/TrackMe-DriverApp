@@ -139,7 +139,7 @@ export default function BroadcastPanel({ navigation }) {
         <CancellationStrip
           changes={changes.data?.changes}
           busy={ack.busy}
-          onView={() => navigation.navigate("Absences")}
+          onView={() => navigation.navigate("MainTabs", { screen: "Riders", params: { tab: "absences" } })}
           onAcknowledge={(a) =>
             ack.submit({
               path: `/absences/${a._id}/acknowledge`,
@@ -162,7 +162,7 @@ export default function BroadcastPanel({ navigation }) {
           />
           <Action
             label={`Absences · ${changes.data?.absentCount || 0}`}
-            onPress={() => navigation.navigate("Absences")}
+            onPress={() => navigation.navigate("MainTabs", { screen: "Riders", params: { tab: "absences" } })}
           />
         </View>
         <QuickActionGrid

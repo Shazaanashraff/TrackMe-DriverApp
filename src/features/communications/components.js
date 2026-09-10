@@ -3,6 +3,7 @@ import {
   Modal,
   View,
   Text,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,6 +17,7 @@ import {
 } from "react-native-safe-area-context";
 import { theme } from "../../theme";
 import { resourceId, colomboToday } from "./state";
+import { useRiderAvatar } from "./riderAvatarCache";
 export const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.color.surface.page },
   content: { padding: theme.space[4], gap: theme.space[3] },
@@ -28,6 +30,21 @@ export const styles = StyleSheet.create({
   title: { ...theme.textStyle("h1"), color: theme.color.text.primary },
   text: { ...theme.textStyle("body"), color: theme.color.text.primary },
   small: { ...theme.textStyle("caption"), color: theme.color.text.secondary },
+  segmentedWrap: { paddingHorizontal: theme.space[4], paddingBottom: theme.space[3] },
+  // A whole-row target: a driver taps this in a moving vehicle.
+  riderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.space[3],
+    minHeight: 64,
+    paddingVertical: theme.space[2],
+    paddingHorizontal: theme.space[3],
+    borderRadius: theme.radius.card,
+    backgroundColor: theme.color.surface.card,
+    borderWidth: 1,
+    borderColor: theme.color.border.hairline,
+  },
+  profileField: { gap: 2, paddingVertical: theme.space[2] },
   card: {
     padding: theme.space[3],
     borderRadius: theme.radius.card,
@@ -213,7 +230,83 @@ export function QuickActionGrid({ actions, onSelect, disabled }) {
     </View>
   );
 }
-export function RiderIdentity({ name, code, driverName, unread }) {
+// A rider's face, or their initial while there is no picture to show. The image
+// is fetched one rider at a time and cached against `avatarVersion`, so a roster
+// costs one request per rider per photo change rather than one per render.
+export function RiderAvatar({ rider, name, size = 48 }) {
+  const uri = useRiderAvatar(rider);
+  const initial = String(name || "R").trim().slice(0, 1).toUpperCase();
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: theme.color.primary[50],
+        overflow: "hidden",
+      }}
+    >
+      {uri ? (
+        <Image source={{ uri }} style={{ width: size, height: size }} resizeMode="cover" />
+      ) : (
+        <Text style={[styles.buttonText, { fontSize: Math.round(size / 2.4) }]}>{initial}</Text>
+      )}
+    </View>
+  );
+}
+
+// Two panes behind one tab. `accessibilityRole="tab"` so a screen reader
+// announces it as a switch rather than two unrelated buttons.
+export function Segmented({ options, value, onChange }) {
+  return (
+    <View accessibilityRole="tablist" style={localStyles.segmented}>
+      {options.map((option) => {
+        const selected = option.value === value;
+        return (
+          <Pressable
+            key={option.value}
+            accessibilityRole="tab"
+            accessibilityState={{ selected }}
+            testID={`segment-${option.value}`}
+            onPress={() => onChange(option.value)}
+            style={[localStyles.segment, selected && localStyles.segmentSelected]}
+          >
+            <Text style={[styles.small, selected && localStyles.segmentTextSelected]}>
+              {option.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+const localStyles = StyleSheet.create({
+  segmented: {
+    flexDirection: "row",
+    gap: 4,
+    padding: 4,
+    borderRadius: theme.radius.card,
+    backgroundColor: theme.color.surface.page,
+    borderWidth: theme.borderWidth.hairline,
+    borderColor: theme.color.border.hairline,
+  },
+  segment: {
+    flex: 1,
+    minHeight: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.radius.control,
+  },
+  segmentSelected: { backgroundColor: theme.color.surface.card },
+  segmentTextSelected: { color: theme.color.text.primary },
+});
+
+export function RiderIdentity({ name, code, driverName }) {
   return (
     <View style={styles.row}>
       <View
@@ -237,19 +330,8 @@ export function RiderIdentity({ name, code, driverName, unread }) {
           </Text>
         ) : null}
       </View>
-      <UnreadBadge count={unread} />
     </View>
   );
-}
-export function UnreadBadge({ count }) {
-  return count > 0 ? (
-    <Text
-      accessibilityLabel={`${count} unread messages`}
-      style={[styles.buttonText, { padding: 8 }]}
-    >
-      {count}
-    </Text>
-  ) : null;
 }
 export function AudienceSelector({
   visible,
@@ -357,13 +439,7 @@ export function Freshness({ query, online }) {
     </View>
   );
 }
-export function AbsenceCard({
-  absence: a,
-  onConversation,
-  onCancel,
-  onAcknowledge,
-  busy,
-}) {
+export function AbsenceCard({ absence: a, onCancel, onAcknowledge, busy }) {
   const pending = a.status !== "RETIRED" && a.acknowledgedRevision < a.revision;
   const editable = a.date >= colomboToday();
   return (
@@ -400,9 +476,6 @@ export function AbsenceCard({
           {a.enrollmentId.pickupPlaceId.address}
         </Text>
       ) : null}
-      {onConversation ? (
-        <Action label="Open private conversation" onPress={onConversation} />
-      ) : null}
       {editable && a.status === "ABSENT" && onCancel ? (
         <Action
           label="Cancel absence"
@@ -418,37 +491,6 @@ export function AbsenceCard({
           disabled={busy}
         />
       ) : null}
-    </View>
-  );
-}
-export function MessageBubble({ message, own, read }) {
-  return (
-    <View
-      style={[
-        styles.card,
-        {
-          alignSelf: own ? "flex-end" : "flex-start",
-          maxWidth: "92%",
-          backgroundColor: own
-            ? theme.color.primary[50]
-            : theme.color.surface.card,
-        },
-      ]}
-    >
-      {message.announcementId ? (
-        <Text style={styles.small}>
-          {message.correctionOf
-            ? "Correction to earlier announcement"
-            : "Driver announcement"}
-        </Text>
-      ) : null}
-      <Text selectable style={styles.text}>
-        {message.text}
-      </Text>
-      <Text style={styles.small}>
-        {new Date(message.createdAt).toLocaleString()}{" "}
-        {own ? `· ${read ? "Read" : "Sent"}` : ""}
-      </Text>
     </View>
   );
 }

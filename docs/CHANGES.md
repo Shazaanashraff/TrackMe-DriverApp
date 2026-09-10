@@ -22,6 +22,44 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-09-10 — The Messages tab becomes a Riders directory
+- **Branch:** feature/rider-directory-tab
+- **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)
+- **What changed:**
+  - Removed private rider-driver messaging: `MessagesScreen`, `ConversationScreen`,
+    `ConversationContent`, `MessageBubble`, `UnreadBadge`, `mergeMessages`, the
+    `Conversation`/`RiderAudience`/`Absences` stack routes, and the provider's
+    deep-link-to-conversation poller. The in-app banner is now dismiss-only.
+  - The freed tab is **Riders**: a segmented screen over a rider directory and the
+    existing driver absence review. Only the visible segment mounts, since each polls
+    every 30 s while focused. The Home panel's two absence actions now deep-link into
+    the Absences segment — they pointed at a stack route that no longer exists.
+  - The directory is a row per rider (picture, name, then grade · organization · pickup)
+    opening a rider profile: name, grade, rider code, one contact number. No address.
+  - Pictures come from the new per-rider avatar endpoint and are cached in AsyncStorage
+    against `avatarVersion` (`riderAvatarCache.js`, ported from user-app). A rider with
+    no picture causes no request and shows their initial.
+- **Why:** the inbox had nothing to receive — user-app dropped its conversation screens,
+  so riders have had no send path. The two things a driver actually uses were buried in
+  chips on the Home panel.
+- **Contract impact:** consumes the additive backend change of the same date —
+  `GET /api/driver/riders` gains `category`/`grade`/`hasAvatar`, plus new
+  `GET /api/driver/riders/:riderId` and `.../avatar`. Backend doc:
+  `backend/docs/modules/COMMUNICATIONS.md`.
+- **Tests:** new `features/communications/__tests__/riders.test.js` (20 cases: segment
+  defaulting and single-mount polling, row subtitle and tap-through, search, 404 copy,
+  no address, avatar cache per version incl. no-request and eviction, `gradeLine` table).
+  `broadcast.test.js` lost its `mergeMessages` case. Full suite **604/604 passing, 70
+  suites**, up from 584; lint 0 errors.
+- **Docs updated:** `docs/modules/COMMUNICATIONS.md`, `docs/TESTING_GUIDE.md` row,
+  `CLAUDE.md` navigation map.
+- **Follow-ups / known issues:** **not yet exercised in a browser** — the automated
+  checks pass and the web bundle compiles with 0 console errors on load, but no one has
+  clicked through the tab against real data yet. Also: a notification tap no longer
+  navigates anywhere now that the conversation deep link is gone.
+
+---
+
 ## 2026-09-10 — Rider–driver communications, merged into `main`
 - **Branch:** feature/comms-preset-trim (merged)
 - **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)

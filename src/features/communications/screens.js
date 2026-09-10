@@ -1,113 +1,26 @@
 import React, { useEffect, useState } from "react";
 import { FlatList, ScrollView, View, Text, TextInput } from "react-native";
-import { useAuth } from "../../context/AuthContext";
 import { useCommunication } from "./provider";
 import { useCommunicationQuery, useExplicitSend } from "./hooks";
 import {
   Page,
   Action,
   RiderIdentity,
-  MessageBubble,
   AbsenceCard,
   Freshness,
   DateField,
   Sheet,
   styles,
 } from "./components";
-import { resourceId, newRequestId, colomboToday, mergeMessages } from "./state";
+import { resourceId, newRequestId, colomboToday } from "./state";
 import { theme } from "../../theme";
 
-function emptyListMessage(query, online, loading, error, empty) {
+export function emptyListMessage(query, online, loading, error, empty) {
   if (!online && !query.data)
     return error.replace("Could not load", "Offline · no cached");
   if (query.isLoading) return loading;
   if (query.isError && !query.data) return `${error} Use Refresh to try again.`;
   return empty;
-}
-export function MessagesScreen({ navigation }) {
-  const { riders = [] } = useAuth();
-  const { role, online } = useCommunication();
-  const [riderFilter, setRiderFilter] = useState("");
-  const query = useCommunicationQuery(
-    `/conversations${riderFilter ? `?riderId=${riderFilter}` : ""}`
-  );
-  return (
-    <Page title="Messages" navigation={navigation} showBack={false}>
-      <View style={{ padding: theme.space[3], gap: theme.space[2] }}>
-        <Action
-          label={role === "driver" ? "Absences and changes" : "My Absences"}
-          onPress={() => navigation.navigate("Absences")}
-        />
-        <Freshness query={query} online={online} />
-        {role !== "driver" ? (
-          <ScrollView horizontal>
-            <View style={styles.row}>
-              <Action
-                label="All riders"
-                primary={!riderFilter}
-                onPress={() => setRiderFilter("")}
-              />
-              {riders.map((r) => (
-                <Action
-                  key={r._id}
-                  label={r.fullName}
-                  primary={riderFilter === r._id}
-                  onPress={() => setRiderFilter(r._id)}
-                />
-              ))}
-            </View>
-          </ScrollView>
-        ) : (
-          <Action
-            label="Message a rider"
-            onPress={() => navigation.navigate("RiderAudience")}
-          />
-        )}
-      </View>
-      <FlatList
-        data={query.data || []}
-        keyExtractor={(item) => item._id}
-        contentContainerStyle={styles.content}
-        contentInsetAdjustmentBehavior="automatic"
-        ListEmptyComponent={
-          <Text style={styles.text}>
-            {emptyListMessage(
-              query,
-              online,
-              "Loading conversations…",
-              "Could not load conversations.",
-              "No conversations yet. Open an enrolled shuttle to start a private message."
-            )}
-          </Text>
-        }
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-            <RiderIdentity
-              name={item.rider?.fullName || item.riderName}
-              code={item.rider?.riderCode}
-              driverName={item.driverName}
-              unread={item.unread}
-            />
-            <Text numberOfLines={2} style={styles.text}>
-              {item.preview?.text || "Start a conversation"}
-            </Text>
-            {item.readOnly ? (
-              <Text style={styles.small}>Enrollment ended · History only</Text>
-            ) : null}
-            <Action
-              label="Open conversation"
-              onPress={() =>
-                navigation.navigate("Conversation", {
-                  conversationId: item._id,
-                  riderId: item.riderId,
-                })
-              }
-            />
-          </View>
-        )}
-      />
-    </Page>
-  );
 }
 export function RiderAudienceScreen({ navigation }) {
   const { request, online } = useCommunication();
@@ -179,285 +92,7 @@ export function RiderAudienceScreen({ navigation }) {
     </Page>
   );
 }
-export function ConversationScreen({ navigation, route }) {
-  const { role, request, online } = useCommunication();
-  const { conversationId, riderId, driverId } = route.params || {};
-  const [resolved, setResolved] = useState(conversationId);
-  const [resolveError, setResolveError] = useState("");
-  useEffect(() => {
-    let alive = true;
-    setResolved(conversationId);
-    setResolveError("");
-    if (!conversationId && riderId && driverId)
-      request("/conversations", "POST", { riderId, driverId })
-        .then((c) => {
-          if (alive) setResolved(c._id);
-        })
-        .catch((e) => {
-          if (alive) setResolveError(e.message);
-        });
-    return () => {
-      alive = false;
-    };
-  }, [conversationId, riderId, driverId, request]);
-  return (
-    <Page title="Private conversation" navigation={navigation}>
-      {resolved ? (
-        <ConversationContent
-          key={resolved}
-          id={resolved}
-          navigation={navigation}
-          role={role}
-          request={request}
-          online={online}
-        />
-      ) : (
-        <Text style={styles.text}>
-          {resolveError || "Opening conversation…"}
-        </Text>
-      )}
-    </Page>
-  );
-}
-function ConversationContent({ id, navigation, role, request, online }) {
-  const query = useCommunicationQuery(`/conversations/${id}/messages`);
-  const sender = useExplicitSend(`conversation:${id}`);
-  const ack = useExplicitSend(`conversation-ack:${id}`);
-  const [text, setText] = useState("");
-  const [minutes, setMinutes] = useState("5");
-  const [older, setOlder] = useState([]);
-  const [cursor, setCursor] = useState(undefined);
-  const [pageError, setPageError] = useState("");
-  useEffect(() => {
-    if (sender.restored && sender.draft?.body?.text)
-      setText(sender.draft.body.text);
-  }, [sender.restored, sender.draft]);
-  const c = query.data?.conversation;
-  const messages = mergeMessages(older, query.data?.messages || []);
-  const lastId = query.data?.messages?.at(-1)?._id;
-  useEffect(() => {
-    if (lastId && online)
-      request(`/conversations/${id}/read`, "PUT", {
-        throughMessageId: lastId,
-      }).catch(() => {});
-  }, [lastId, id, request, online]);
-  const readThrough =
-    role === "driver" ? c?.userReadThrough : c?.driverReadThrough;
-  const quick =
-    role === "driver"
-      ? [
-          { id: "arrived", label: "Arrived" },
-          { id: "passed", label: "Already passed your stop" },
-          { id: "can_collect", label: "Can collect you" },
-        ]
-      : [
-          { id: "ready", label: "Ready at pickup" },
-          { id: "waiting", label: "Waiting" },
-          { id: "running_late", label: `Running late · ${minutes} min` },
-          { id: "thanks", label: "Thanks" },
-        ];
-  const send = async (body) => {
-    const existing = sender.draft?.body;
-    const retry =
-      existing &&
-      existing.text === body.text &&
-      existing.templateId === body.templateId &&
-      JSON.stringify(existing.parameters) === JSON.stringify(body.parameters);
-    const result = await sender.submit(
-      retry
-        ? sender.draft
-        : {
-            path: `/conversations/${id}/messages`,
-            body: { ...body, requestId: newRequestId() },
-          }
-    );
-    if (result) setText("");
-  };
-  return (
-    <>
-      <View style={{ padding: theme.space[3], gap: theme.space[2] }}>
-        <RiderIdentity name={c?.riderName} driverName={c?.driverName} />
-        <Freshness query={query} online={online} />
-      </View>
-      <FlatList
-        data={messages}
-        keyExtractor={(m) => m.eventId}
-        contentContainerStyle={styles.content}
-        contentInsetAdjustmentBehavior="automatic"
-        ListHeaderComponent={
-          (cursor === undefined ? query.data?.nextCursor : cursor) ? (
-            <Action
-              label="Load earlier messages"
-              onPress={async () => {
-                try {
-                  const page = await request(
-                    `/conversations/${id}/messages?before=${
-                      cursor === undefined ? query.data.nextCursor : cursor
-                    }`
-                  );
-                  setOlder((previous) =>
-                    mergeMessages(previous, page.messages)
-                  );
-                  setCursor(page.nextCursor);
-                } catch (e) {
-                  setPageError(e.message);
-                }
-              }}
-            />
-          ) : null
-        }
-        ListEmptyComponent={
-          <Text style={styles.text}>
-            {emptyListMessage(
-              query,
-              online,
-              "Loading messages…",
-              "Could not load messages.",
-              "No messages yet. Use a quick reply or write the first message."
-            )}
-          </Text>
-        }
-        ListFooterComponent={
-          <>
-            <Text accessibilityLiveRegion="polite" style={styles.feedback}>
-              {pageError}
-            </Text>
-            {(query.data?.absences || []).map((a) => (
-              <AbsenceCard
-                key={a._id}
-                absence={{
-                  ...a,
-                  riderId: { _id: a.riderId, fullName: c?.riderName },
-                  driverId: { _id: a.driverId, name: c?.driverName },
-                }}
-                onCancel={
-                  role === "driver"
-                    ? undefined
-                    : () =>
-                        navigation.navigate("Absences", {
-                          riderId: resourceId(c.riderId),
-                        })
-                }
-                onAcknowledge={
-                  role === "driver"
-                    ? (a) =>
-                        ack.submit({
-                          path: `/absences/${a._id}/acknowledge`,
-                          body: {
-                            requestId: newRequestId(),
-                            expectedRevision: a.revision,
-                          },
-                        })
-                    : undefined
-                }
-                busy={ack.busy}
-              />
-            ))}
-          </>
-        }
-        renderItem={({ item }) => (
-          <MessageBubble
-            message={item}
-            own={item.sender === role}
-            read={readThrough && item._id <= readThrough}
-          />
-        )}
-      />
-      {query.data?.readOnly ? (
-        <Text style={[styles.text, { padding: theme.space[4] }]}>
-          Enrollment ended. Conversation history is read-only.
-        </Text>
-      ) : (
-        <View
-          style={{
-            padding: theme.space[3],
-            gap: theme.space[2],
-            borderTopWidth: theme.borderWidth.hairline,
-            borderColor: theme.color.border.hairline,
-          }}
-        >
-          {role !== "driver" ? (
-            <View style={styles.row}>
-              <Action
-                label="Report absence"
-                style={{ flex: 1 }}
-                disabled={!c}
-                onPress={() =>
-                  navigation.navigate("ReportAbsence", {
-                    riderId: resourceId(c.riderId),
-                    driverId: resourceId(c.driverId),
-                    riderName: c.riderName,
-                  })
-                }
-              />
-              <TextInput
-                accessibilityLabel="Running late minutes"
-                value={minutes}
-                onChangeText={setMinutes}
-                keyboardType="number-pad"
-                maxLength={3}
-                style={[styles.field, { width: 72 }]}
-              />
-            </View>
-          ) : null}
-          <ScrollView horizontal keyboardShouldPersistTaps="handled">
-            <View style={styles.row}>
-              {quick.map((q) => (
-                <Action
-                  key={q.id}
-                  label={q.label}
-                  disabled={sender.busy || !sender.restored}
-                  onPress={() =>
-                    send({
-                      templateId: q.id,
-                      ...(q.id === "running_late"
-                        ? { parameters: { minutes: Number(minutes) } }
-                        : {}),
-                    })
-                  }
-                />
-              ))}
-            </View>
-          </ScrollView>
-          <View style={styles.row}>
-            <TextInput
-              accessibilityLabel="Message"
-              placeholder="Message · up to 1,000 characters"
-              value={text}
-              multiline
-              maxLength={1000}
-              onChangeText={(value) => {
-                setText(value);
-                void sender.save({
-                  path: `/conversations/${id}/messages`,
-                  body: { text: value, requestId: newRequestId() },
-                });
-              }}
-              style={[styles.field, { flex: 1, maxHeight: 112 }]}
-            />
-            <Action
-              label="Send"
-              primary
-              disabled={!text.trim() || sender.busy || !sender.restored}
-              onPress={() => send({ text })}
-            />
-          </View>
-          {sender.draft && sender.feedback ? (
-            <Action
-              label="Retry saved message"
-              disabled={sender.busy}
-              onPress={() => sender.submit()}
-            />
-          ) : null}
-          <Text accessibilityLiveRegion="polite" style={styles.feedback}>
-            {sender.feedback || ack.feedback}
-          </Text>
-        </View>
-      )}
-    </>
-  );
-}
-export function AbsencesScreen({ navigation, route }) {
+export function AbsencesScreen({ navigation, route, embedded = false }) {
   const { role, online } = useCommunication();
   const [date, setDate] = useState(colomboToday());
   const [history, setHistory] = useState(false);
@@ -498,12 +133,8 @@ export function AbsencesScreen({ navigation, route }) {
       action,
     },
   });
-  return (
-    <Page
-      title={role === "driver" ? "Absences" : "My Absences"}
-      navigation={navigation}
-    >
-      <ScrollView
+  const body = (
+    <ScrollView
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled"
@@ -577,12 +208,6 @@ export function AbsencesScreen({ navigation, route }) {
               <AbsenceCard
                 key={a._id}
                 absence={a}
-                onConversation={() =>
-                  navigation.navigate("Conversation", {
-                    conversationId: resourceId(a.conversationId),
-                    riderId: resourceId(a.riderId),
-                  })
-                }
                 onCancel={
                   role === "driver"
                     ? undefined
@@ -607,8 +232,10 @@ export function AbsencesScreen({ navigation, route }) {
             onPress={() => setConfirm(sender.draft)}
           />
         ) : null}
-      </ScrollView>
-      <Sheet
+    </ScrollView>
+  );
+  const sheet = (
+    <Sheet
         visible={!!confirm}
         title={
           confirm?.preview?.action === "cancel"
@@ -630,7 +257,23 @@ export function AbsencesScreen({ navigation, route }) {
             if (result) setConfirm(null);
           }}
         />
-      </Sheet>
+    </Sheet>
+  );
+  if (embedded) {
+    return (
+      <>
+        {body}
+        {sheet}
+      </>
+    );
+  }
+  return (
+    <Page
+      title={role === "driver" ? "Absences" : "My Absences"}
+      navigation={navigation}
+    >
+      {body}
+      {sheet}
     </Page>
   );
 }

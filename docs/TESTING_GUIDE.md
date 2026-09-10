@@ -108,6 +108,7 @@
 | backendStatus | unit | services/__tests__/backendStatus.test.ts | monitor, subscribe, patterns; **several rapid online/offline cycles in a row still notify exactly once per actual change, with no dropped or duplicated notifications, and redundant same-state calls collapse into a single notification (issue #31)** | health logic changes |
 | Offline cold start | e2e | .maestro/offline-*.yaml | cached + banner | offline behavior changes |
 | Safe-area imports (edge-to-edge) | unit | screens/__tests__/safeAreaImports.test.js | no file under src/ imports SafeAreaView from 'react-native' (iOS-only, a no-op on Android, so headers slide under the status bar); App.js wraps the tree in SafeAreaProvider so insets resolve | a screen adds safe-area handling, or edgeToEdgeEnabled changes |
+| Rider directory + profile | behavior | features/communications/__tests__/riders.test.js | segmented tab defaults to Riders and mounts only the visible segment, row subtitle and tap-through, search by name/code, 404 reads as no longer enrolled, no address anywhere, avatar cached per version with no request when `hasAvatar` is false, `gradeLine` table | the Riders tab, rider profile, or avatar caching |
 | Driver quick broadcasts | behavior | features/communications/__tests__/broadcast.test.js | fixed presets, bounded panel scrolling, two-action send, cancel, audience snapshot, offline retry, stable request IDs and event dedup | communication panel or draft behavior changes |
 
 ## Motion, copy, a11y pass (Phase 5)

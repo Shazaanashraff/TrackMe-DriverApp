@@ -14,6 +14,16 @@ export function deliverySummary(announcement) {
   if (counts.pending) return `Sending · ${counts.sent || 0}/${announcement.recipients.length} sent`;
   return `Sent to ${counts.sent || 0} riders${counts.failed ? ` · ${counts.failed} failed` : ''}${counts.skipped ? ` · ${counts.skipped} no longer enrolled` : ''}`;
 }
-export function mergeMessages(old, incoming) {
-  return [...new Map([...old, ...incoming].map(m => [m.eventId, m])).values()].sort((a, b) => a._id.localeCompare(b._id));
+
+// What a rider answered at signup, as a line to show a driver. Only SCHOOL is
+// asked for a grade (backend utils/enrollmentSchema.js SIGNUP_FIELDS), and the
+// server already withholds the answer for any other category, so an empty value
+// means "no line to draw" rather than "missing".
+//
+// The stored answer is free text: a parent may type "7", "Grade 7" or "Year 10".
+// Prefixing a bare number is what makes all three read naturally.
+export function gradeLine(category, grade) {
+  const value = String(grade || '').trim();
+  if (category !== 'SCHOOL' || !value) return '';
+  return /^\d/.test(value) ? `Grade ${value}` : value;
 }
