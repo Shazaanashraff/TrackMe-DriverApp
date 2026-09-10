@@ -1,5 +1,11 @@
 # Changes
 
+## 2026-09-10 — Removed the More updates section
+
+- Removed the "More updates" action from the Home broadcast panel and the whole `AnnouncementsScreen` behind it, plus its `Announcements` route. It was the screen's only entry point.
+- This drops the custom announcement composer, the open-ended delay preview, the service-unavailability notice, and the earlier-announcements history with linked corrections. The driver now sends only the server presets from the quick-action grid, alongside the audience selector and absences.
+- Removed the test that locked the open-ended delay wording, since the client no longer writes any message wording. Backend announcement endpoints were left untouched.
+
 ## 2026-09-10 — Shorter quick-action grid, delay wording names no cause
 
 - The grid now renders the two presets the backend serves ("On my way", "Delay · 10 min") instead of six. No client change was needed for the list itself: it has always rendered whatever `GET /api/conversations/presets` returns.

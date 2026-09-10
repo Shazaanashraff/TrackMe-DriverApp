@@ -2,7 +2,7 @@ import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import BroadcastPanel, { AnnouncementsScreen } from "../BroadcastPanel";
+import BroadcastPanel from "../BroadcastPanel";
 import { useCommunication } from "../provider";
 import { announcementDraft, mergeMessages } from "../state";
 jest.mock("../provider", () => ({ useCommunication: jest.fn() }));
@@ -145,33 +145,4 @@ test("bounds the fixed quick actions inside a scrollable viewport region", async
   expect(scroll.props.nestedScrollEnabled).toBe(true);
   expect(scroll.props.style.maxHeight).toBeGreaterThanOrEqual(280);
   expect(scroll.props.style.maxHeight).toBeLessThanOrEqual(560);
-});
-
-// The open-ended delay under More updates builds its own preview sentence
-// client-side, while the server rebuilds the same sentence from the template id
-// on send. If the two drift, a driver reviews one message and their riders get
-// another, silently. This locks the client half word for word against
-// backend src/utils/communicationTemplates.js canonical('traffic').
-test("open-ended delay previews the exact wording the server will send", async () => {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: 0 } },
-  });
-  clients.push(client);
-  const ui = render(
-    <QueryClientProvider client={client}>
-      <AnnouncementsScreen
-        navigation={{ navigate: jest.fn() }}
-        route={{ params: {} }}
-      />
-    </QueryClientProvider>
-  );
-  fireEvent.changeText(ui.getByLabelText("Delay minutes"), "25");
-  fireEvent.press(ui.getByText("Preview 25 minute delay"));
-  await waitFor(() =>
-    expect(
-      ui.getByText(
-        "I’m running about 25 minutes behind. Sorry for the inconvenience, I’ll update you if this changes."
-      )
-    ).toBeTruthy()
-  );
 });

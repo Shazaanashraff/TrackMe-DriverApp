@@ -13,7 +13,6 @@ import QRScannerScreen from '../screens/QRScannerScreen';
 import LoadingScreen from '../components/ui/LoadingScreen';
 import { theme } from '../theme';
 import { MessagesScreen, ConversationScreen, AbsencesScreen, RiderAudienceScreen } from '../features/communications/screens';
-import { AnnouncementsScreen } from '../features/communications/BroadcastPanel';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Stack = createNativeStackNavigator();
@@ -91,7 +90,6 @@ const AppNavigator = () => {
           <Stack.Screen name="QRScanner" component={QRScannerScreen} />
           <Stack.Screen name="Conversation" component={ConversationScreen} />
           <Stack.Screen name="Absences" component={AbsencesScreen} />
-          <Stack.Screen name="Announcements" component={AnnouncementsScreen} />
           <Stack.Screen name="RiderAudience" component={RiderAudienceScreen} />
         </>
       )}
