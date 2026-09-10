@@ -6,7 +6,6 @@ import { useCommunicationQuery, useExplicitSend } from "./hooks";
 import {
   Action,
   SendPreview,
-  AudienceSelector,
   QuickActionGrid,
   CancellationStrip,
   styles,
@@ -22,8 +21,6 @@ function useBroadcast() {
   const audience = useCommunicationQuery("/driver/riders");
   const templates = useCommunicationQuery("/conversations/presets");
   const sender = useExplicitSend("broadcast");
-  const [selected, setSelected] = useState(null);
-  const [selecting, setSelecting] = useState(false);
   const [preview, setPreview] = useState(null);
   const [announcementId, setAnnouncementId] = useState(null);
   const progress = useCommunicationQuery(
@@ -35,12 +32,7 @@ function useBroadcast() {
       .catch(() => {});
   }, [accountId]);
   const open = (preset, date) => {
-    const draft = announcementDraft(
-      preset,
-      audience.data || [],
-      selected,
-      date
-    );
+    const draft = announcementDraft(preset, audience.data || [], null, date);
     setPreview(draft);
     void sender.save(draft);
   };
@@ -69,22 +61,13 @@ function useBroadcast() {
   }, [restored, restoredDraft, clear, setFeedback]);
   const retry = useExplicitSend("broadcast-retry");
   const modals = (
-    <>
-      <AudienceSelector
-        visible={selecting}
-        rows={audience.data || []}
-        selected={selected}
-        onChange={setSelected}
-        onClose={() => setSelecting(false)}
-      />
-      <SendPreview
-        visible={!!preview}
-        draft={preview}
-        busy={sender.busy}
-        onSend={send}
-        onCancel={() => setPreview(null)}
-      />
-    </>
+    <SendPreview
+      visible={!!preview}
+      draft={preview}
+      busy={sender.busy}
+      onSend={send}
+      onCancel={() => setPreview(null)}
+    />
   );
   const feedback = (
     <View>
@@ -116,8 +99,6 @@ function useBroadcast() {
     audience,
     templates,
     sender,
-    selected,
-    setSelecting,
     open,
     modals,
     feedback,
@@ -153,14 +134,8 @@ export default function BroadcastPanel({ navigation }) {
         ) : null}
         <View style={styles.row}>
           <Action
-            label={`${
-              b.selected === null ? "All enrolled riders" : "Selected riders"
-            } · ${b.selected?.length ?? b.audience.data?.length ?? 0}`}
-            style={{ flex: 1 }}
-            onPress={() => b.setSelecting(true)}
-          />
-          <Action
             label={`Absences · ${changes.data?.absentCount || 0}`}
+            style={{ flex: 1 }}
             onPress={() => navigation.navigate("MainTabs", { screen: "Riders", params: { tab: "absences" } })}
           />
         </View>

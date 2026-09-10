@@ -16,7 +16,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { theme } from "../../theme";
-import { resourceId, colomboToday } from "./state";
+import { colomboToday } from "./state";
 import { useRiderAvatar } from "./riderAvatarCache";
 export const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.color.surface.page },
@@ -333,49 +333,6 @@ export function RiderIdentity({ name, code, driverName }) {
         ) : null}
       </View>
     </View>
-  );
-}
-export function AudienceSelector({
-  visible,
-  rows,
-  selected,
-  onChange,
-  onClose,
-}) {
-  return (
-    <Sheet visible={visible} title="Choose riders" onCancel={onClose}>
-      <Action
-        label={`All enrolled riders · ${rows.length}`}
-        primary={selected === null}
-        onPress={() => onChange(null)}
-      />
-      <View style={{ gap: theme.space[2] }}>
-        {rows.map((row) => {
-          const checked =
-            selected === null || selected.includes(resourceId(row.riderId));
-          return (
-            <Action
-              key={resourceId(row.riderId)}
-              label={`${checked ? "✓ " : ""}${row.riderName} · ${
-                row.riderCode || ""
-              }`}
-              onPress={() => {
-                const current =
-                  selected === null
-                    ? rows.map((r) => resourceId(r.riderId))
-                    : selected;
-                onChange(
-                  checked
-                    ? current.filter((r) => r !== resourceId(row.riderId))
-                    : [...current, resourceId(row.riderId)]
-                );
-              }}
-            />
-          );
-        })}
-      </View>
-      <Action label="Use this audience" primary onPress={onClose} />
-    </Sheet>
   );
 }
 export function CancellationStrip({
