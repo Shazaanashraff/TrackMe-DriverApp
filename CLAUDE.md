@@ -61,7 +61,8 @@ src/
                       VehicleRegistration, TripHistory, DriverProfile, Login)
   features/<domain>/  dashboard (DutyHero, GoButton, OnBoardCard, TripProgressCard,
                       dutyHeroState.ts, useSocketConnection), boarding, vehicle-registration,
-                      profile
+                      profile, communications (private messages, dated absences, quick
+                      broadcasts, and the app-owned realtime bridge)
   components/         ErrorBoundary, OfflineScreen, PermissionDeniedState, ShiftVehicleIcon (SVG
                       logo mark); components/ui/ = Signal Ink primitives
   context/
@@ -107,6 +108,7 @@ Tab screen names stay `Dashboard`/`TripHistory`/`DriverProfile` so existing
 `QRScanner`, `BoardingRoster`) are registered on the root stack above the tabs, so navigating to
 them from a tab bubbles up automatically.
 See `docs/redesign/SIGNAL_INK_PLAN.md` for the in-progress "Signal Ink" reskin driving this.
+See `docs/modules/COMMUNICATIONS.md` for message, absence, broadcast, push, and recovery contracts.
 
 ---
 

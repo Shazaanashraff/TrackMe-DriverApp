@@ -1,14 +1,16 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { useFonts, Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { AuthProvider } from './src/context/AuthContext';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import AppNavigator from './src/navigation/AppNavigator';
-import * as notificationService from './src/services/notificationService';
+import { CommunicationProvider } from './src/features/communications/provider';
+const navigationRef = createNavigationContainerRef();
 import { View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NetworkStatusProvider } from './src/context/NetworkStatusContext';
 import { queryClient, persistOptions } from './src/app/queryClient';
 // Registers the background location task. Must be imported at app entry, not from
@@ -30,22 +32,6 @@ function AppContent() {
     }
   }, [fontsLoaded]);
 
-  useEffect(() => {
-    // Initialize notifications once on app start
-    notificationService.initializePushNotifications().catch(err =>
-      console.warn('Notification initialization failed:', err)
-    );
-
-    // Setup notification response listener
-    const notificationSubscription = notificationService.setupNotificationResponseListener((data) => {
-      console.log('Notification tapped:', data);
-    });
-
-    return () => {
-      notificationSubscription?.remove();
-    };
-  }, []);
-
   if (!fontsLoaded) {
     return null;
   }
@@ -54,12 +40,13 @@ function AppContent() {
     <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
       <ErrorBoundary>
         <NavigationContainer
+          ref={navigationRef}
           documentTitle={{
             formatter: () => 'TrackMe'
           }}
         >
           <StatusBar style="dark" />
-          <AppNavigator />
+          <CommunicationProvider navigationRef={navigationRef}><AppNavigator /></CommunicationProvider>
         </NavigationContainer>
       </ErrorBoundary>
     </View>
@@ -68,12 +55,18 @@ function AppContent() {
 
 export default function App() {
   return (
-    <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
-      <AuthProvider>
-        <NetworkStatusProvider>
-          <AppContent />
-        </NetworkStatusProvider>
-      </AuthProvider>
-    </PersistQueryClientProvider>
+    // The build is edge-to-edge (android/gradle.properties `edgeToEdgeEnabled`), so screens
+    // draw behind the status and navigation bars. SafeAreaProvider feeds the real insets to
+    // the SafeAreaView/useSafeAreaInsets used by the screens; without it they get nothing and
+    // headers slide under the status bar.
+    <SafeAreaProvider>
+      <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+        <AuthProvider>
+          <NetworkStatusProvider>
+            <AppContent />
+          </NetworkStatusProvider>
+        </AuthProvider>
+      </PersistQueryClientProvider>
+    </SafeAreaProvider>
   );
 }

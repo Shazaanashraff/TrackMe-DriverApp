@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, SafeAreaView, StatusBar, View, StyleSheet } from 'react-native';
+import { Alert, ScrollView, StatusBar, View, StyleSheet } from 'react-native';
+// react-native's own SafeAreaView is a no-op on Android; only this one applies insets there.
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useAuth } from '../context/AuthContext';
@@ -19,6 +21,7 @@ import VehicleCard from '../features/dashboard/VehicleCard';
 import OnBoardCard from '../features/dashboard/OnBoardCard';
 import TripProgressCard from '../features/dashboard/TripProgressCard';
 import { useSocketConnection } from '../features/dashboard/useSocketConnection';
+import BroadcastPanel from '../features/communications/BroadcastPanel';
 
 type Vehicle = {
   vehicleId?: string;
@@ -191,6 +194,8 @@ const DriverDashboard = ({ navigation }: Props) => {
           <OnBoardCard vehicleId={vehicleId} onPress={() => navigation.navigate('BoardingRoster', { vehicleId })} />
         ) : null}
       </ScrollView>
+
+      <BroadcastPanel navigation={navigation} />
 
       <BackgroundLocationDisclosure
         visible={background.shouldOfferUpgrade && broadcast.permission === 'granted'}

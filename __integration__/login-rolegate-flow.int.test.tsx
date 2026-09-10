@@ -17,6 +17,10 @@ import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import LoginScreen from '../src/screens/LoginScreen';
 import DriverDashboard from '../src/screens/DriverDashboard';
 
+// The Home broadcast panel needs CommunicationProvider, which this journey does not
+// mount; it is not what this suite exercises. Same stub DriverDashboard.test.js uses.
+jest.mock('../src/features/communications/BroadcastPanel', () => () => null);
+
 jest.mock('../src/context/NetworkStatusContext', () => ({
   __esModule: true,
   useNetworkStatus: () => ({

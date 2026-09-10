@@ -46,6 +46,10 @@ jest.mock('socket.io-client', () => ({
 // this test exercise offline behavior — mock NetworkStatusContext to a static
 // online value the same way VehicleRegistrationScreen.test.js and
 // shift-lifecycle.int.test.tsx do, rather than wiring up the real provider.
+// The Home broadcast panel needs CommunicationProvider, which this journey does not
+// mount; it is not what this suite exercises. Same stub DriverDashboard.test.js uses.
+jest.mock('../src/features/communications/BroadcastPanel', () => () => null);
+
 jest.mock('../src/context/NetworkStatusContext', () => ({
   __esModule: true,
   useNetworkStatus: () => ({

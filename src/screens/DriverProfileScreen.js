@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { View, SafeAreaView, StatusBar, ScrollView, StyleSheet } from 'react-native';
+import { View, StatusBar, ScrollView, StyleSheet } from 'react-native';
+// react-native's own SafeAreaView is a no-op on Android; only this one applies insets there.
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { useLogout, useMeQuery, useMyEnrollmentKeyQuery } from '../hooks/auth';
 import { useMyVehicleQuery } from '../hooks/vehicle';

@@ -3,6 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
 import { disconnectSocket } from '../services/socket';
 import { queryClient } from '../app/queryClient';
+import { requestJson } from '../services/api/transport';
+import { authHeaders } from '../services/api/authHeaders';
+import { API_URL } from '../config';
 
 const AuthContext = createContext({});
 
@@ -110,11 +113,16 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     const currentToken = token;
+    const pushToken = await AsyncStorage.getItem('communication-push-token');
+    if (pushToken && currentToken) {
+      try { await requestJson(`${API_URL}/api/notifications/device-token`, { method: 'DELETE', headers: authHeaders(currentToken), body: JSON.stringify({ token: pushToken }) }); } catch { /* Server logout also retires registered tokens. */ }
+    }
 
     try {
       await AsyncStorage.removeItem('token');
       await AsyncStorage.removeItem('refreshToken');
       await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem('communication-push-token');
       clearBrowserAuthStorage();
       setToken(null);
       setRefreshToken(null);

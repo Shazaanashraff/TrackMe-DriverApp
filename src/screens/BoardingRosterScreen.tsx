@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, FlatList, SafeAreaView, RefreshControl, StyleSheet } from 'react-native';
+import { View, FlatList, RefreshControl, StyleSheet } from 'react-native';
+// react-native's own SafeAreaView is a no-op on Android; only this one applies insets there.
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../theme';
 import AppText from '../components/ui/AppText';
 import Card from '../components/ui/Card';

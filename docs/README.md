@@ -12,8 +12,11 @@ The documentation map for driver-app. [`../CLAUDE.md`](../CLAUDE.md) routes you 
   invisible in this app and surfaces as missing buses in `user-app`.
 
 ## Modules (per feature)
-All currently **stubs** — each names its source files and must be filled in by the next change
-touching it:
+- **[COMMUNICATIONS.md](modules/COMMUNICATIONS.md)** — dated absence changes, fixed quick
+  broadcasts, delivery progress, push setup, and recovery behavior.
+
+The rest are currently **stubs** — each names its source files and must be filled in by the next
+change touching it:
 [AUTH](modules/AUTH.md) · [DASHBOARD](modules/DASHBOARD.md) · [BOARDING](modules/BOARDING.md) ·
 [BUS_REGISTRATION](modules/BUS_REGISTRATION.md) · [ROUTE_MANAGEMENT](modules/ROUTE_MANAGEMENT.md) ·
 [EARNINGS](modules/EARNINGS.md) · [TRIP_HISTORY](modules/TRIP_HISTORY.md) ·

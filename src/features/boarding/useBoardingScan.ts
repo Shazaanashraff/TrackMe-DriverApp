@@ -20,6 +20,8 @@ export type BoardingScanResult = {
   timestamp?: string;
   tripId?: string;
   source?: string;
+  discrepancy?: string;
+  plannedAbsence?: { _id: string; revision: number; conversationId: string };
 };
 
 export type BoardingScanStatus = 'idle' | 'scanning' | 'success' | 'error' | 'debounced' | 'queued';

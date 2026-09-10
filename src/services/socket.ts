@@ -58,6 +58,10 @@ const updateConnectionState = (status: ConnectionStatus, error: string | null = 
 };
 
 export const connectSocket = (token: string): Socket => {
+  if (socket && socket.auth && typeof socket.auth !== 'function' && socket.auth.token !== token) {
+    socket.auth.token = token;
+    socket.disconnect().connect();
+  }
   if (!socket) {
     updateConnectionState('connecting');
     socket = io(SOCKET_URL, {
@@ -69,7 +73,7 @@ export const connectSocket = (token: string): Socket => {
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: Infinity,
       // Increase timeout to account for cold start + DB init
       timeout: 30000,
     });

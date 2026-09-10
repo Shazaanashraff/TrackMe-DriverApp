@@ -6,9 +6,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   StatusBar,
-  SafeAreaView,
   StyleSheet,
 } from 'react-native';
+// react-native's own SafeAreaView is a no-op on Android; only this one applies insets there.
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRegisterVehicle } from '../hooks/vehicle';
 import { AppError, normalizeError, userMessage } from '../lib/errors';

@@ -22,6 +22,35 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-09-10 — Rider–driver communications, merged into `main`
+- **Branch:** feature/comms-preset-trim (merged)
+- **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)
+- **What changed:** the four communications sessions below, previously unmerged, land together:
+  - **2026-09-08** — added the fixed two-action quick-broadcast panel, private messages, dated
+    absence review and acknowledgment, announcements, cached/offline drafts, app-shell socket
+    ownership, and native push registration. QR boarding stayed independent and surfaces a
+    planned-absence discrepancy after a valid scan.
+  - **2026-09-09** — bounded the Home broadcast panel in its own scroll region, and added
+    truthful loading/offline/error/empty states, safe-area protection, and long-name wrapping.
+  - **2026-09-10** — the quick-action grid now renders the two presets the backend serves
+    instead of six, and the open-ended delay preview dropped "Traffic is causing…" to match the
+    backend's canonical wording word for word.
+  - **2026-09-10** — removed the "More updates" action and the whole `AnnouncementsScreen`
+    behind it (its only entry point), dropping the custom composer, open-ended delay,
+    service-unavailability notice, and earlier-announcements history. Backend announcement
+    endpoints were left untouched.
+- **Why:** the communications module had never reached `main`; merging it before starting the
+  Riders-tab work avoids stacking further changes on an unmerged branch.
+- **Contract impact:** none new — consumes existing `/api/conversations/*`, `/api/driver/*` and
+  `/api/absences/*` endpoints.
+- **Tests:** `src/features/communications/__tests__/broadcast.test.js`.
+- **Docs updated:** `docs/modules/COMMUNICATIONS.md`, `docs/README.md`, `CLAUDE.md`.
+- **Follow-ups / known issues:** private messaging is slated for removal — the passenger app has
+  already dropped its Messages tab, so riders have no send path. The Messages tab becomes a
+  Riders directory next.
+
+---
+
 ## 2026-08-30 — Fix main CI: two `__integration__` suites missing `NetworkStatusContext`
 - **Branch:** issue/51-fix-network-status-context-integration-tests
 - **Modules touched:** [docs/modules/BUS_REGISTRATION.md](modules/BUS_REGISTRATION.md),

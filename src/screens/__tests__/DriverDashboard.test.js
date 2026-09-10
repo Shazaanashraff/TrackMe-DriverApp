@@ -5,6 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import DriverDashboard from '../DriverDashboard';
 import api from '../../services/api';
 import { AppError } from '../../lib/errors';
+// Broadcast interactions have their own real QueryClient behavior suite.
+jest.mock('../../features/communications/BroadcastPanel', () => () => null);
 
 // Covers the quick-actions block; the rest of the screen (live tracking, logout, etc.)
 // is covered by the feature-component tests + hook tests.

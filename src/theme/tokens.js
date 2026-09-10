@@ -47,6 +47,9 @@ export const palette = {
     hairline: '#DCE3EF',
     strong:   '#C2CBDA',
   },
+  overlay: {
+    scrim: 'rgba(23, 32, 51, 0.35)',
+  },
   // Ink surfaces — the navy duty hero (driver-app addition, STYLEGUIDE §2.2).
   ink: {
     base:  '#172033', // hero card background (== signal[900] / text.primary)
