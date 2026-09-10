@@ -261,11 +261,14 @@ export function AnnouncementsScreen({ navigation, route }) {
           onPress={() =>
             b.open(
               {
+                // Must stay word for word what canonical() builds for this
+                // template id in the backend, or the driver reviews one
+                // sentence and their riders receive another.
                 id: "traffic",
                 parameters: { minutes: Number(minutes) },
-                text: `Traffic is causing an estimated ${Number(
+                text: `I’m running about ${Number(
                   minutes
-                )}-minute delay. I’ll update you if this changes.`,
+                )} minutes behind. Sorry for the inconvenience, I’ll update you if this changes.`,
                 correctionOf,
               },
               colomboToday()

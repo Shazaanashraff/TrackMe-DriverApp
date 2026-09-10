@@ -2,7 +2,7 @@ import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import BroadcastPanel from "../BroadcastPanel";
+import BroadcastPanel, { AnnouncementsScreen } from "../BroadcastPanel";
 import { useCommunication } from "../provider";
 import { announcementDraft, mergeMessages } from "../state";
 jest.mock("../provider", () => ({ useCommunication: jest.fn() }));
@@ -11,26 +11,20 @@ jest.mock("react-native-safe-area-context", () => ({
   ...jest.requireActual("react-native-safe-area-context"),
   useSafeAreaInsets: () => ({ top: 24, bottom: 24, left: 0, right: 0 }),
 }));
+// Mirrors what GET /api/conversations/presets actually returns
+// (backend src/utils/communicationTemplates.js PRESETS). Keep the two in step:
+// this fixture standing in for a server response is the only reason the grid
+// renders at all here.
 const presets = [
   {
     id: "on_my_way",
     label: "On my way",
     text: "I’m on my way. Please be ready at your pickup point.",
   },
-  ...[5, 10, 15].map((n) => ({
-    id: `traffic_${n}`,
-    label: `Traffic · ${n} min`,
-    text: `Traffic is causing an estimated ${n}-minute delay. I’ll update you if this changes.`,
-  })),
   {
-    id: "service_paused",
-    label: "Service paused",
-    text: "Service is temporarily paused. Please wait for my next update.",
-  },
-  {
-    id: "service_resumed",
-    label: "Service resumed",
-    text: "Service has resumed. Please check live tracking for progress.",
+    id: "delay_10",
+    label: "Delay · 10 min",
+    text: "I’m running about 10 minutes behind. Sorry for the inconvenience, I’ll update you if this changes.",
   },
 ];
 const rows = [
@@ -151,4 +145,33 @@ test("bounds the fixed quick actions inside a scrollable viewport region", async
   expect(scroll.props.nestedScrollEnabled).toBe(true);
   expect(scroll.props.style.maxHeight).toBeGreaterThanOrEqual(280);
   expect(scroll.props.style.maxHeight).toBeLessThanOrEqual(560);
+});
+
+// The open-ended delay under More updates builds its own preview sentence
+// client-side, while the server rebuilds the same sentence from the template id
+// on send. If the two drift, a driver reviews one message and their riders get
+// another, silently. This locks the client half word for word against
+// backend src/utils/communicationTemplates.js canonical('traffic').
+test("open-ended delay previews the exact wording the server will send", async () => {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  });
+  clients.push(client);
+  const ui = render(
+    <QueryClientProvider client={client}>
+      <AnnouncementsScreen
+        navigation={{ navigate: jest.fn() }}
+        route={{ params: {} }}
+      />
+    </QueryClientProvider>
+  );
+  fireEvent.changeText(ui.getByLabelText("Delay minutes"), "25");
+  fireEvent.press(ui.getByText("Preview 25 minute delay"));
+  await waitFor(() =>
+    expect(
+      ui.getByText(
+        "I’m running about 25 minutes behind. Sorry for the inconvenience, I’ll update you if this changes."
+      )
+    ).toBeTruthy()
+  );
 });

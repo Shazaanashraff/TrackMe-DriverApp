@@ -1,6 +1,8 @@
 # Communications
 
-Driver Home keeps a Signal Ink quick-broadcast panel above bottom navigation in idle and active-trip states. The six fixed presets open a review sheet containing exact server wording, Colombo date, audience, and recipient count; Send is the second action. Audience selection and More updates expose selected riders, custom messages, other delays, future service-unavailability notices, and linked corrections.
+Driver Home keeps a Signal Ink quick-broadcast panel above bottom navigation in idle and active-trip states. The presets are whatever `GET /api/conversations/presets` returns, never a local list; today that is two, "On my way" and "Delay · 10 min". A driver mid-route taps rather than browses, so the grid stays short and everything less common lives under More updates. Each preset opens a review sheet containing exact server wording, Colombo date, audience, and recipient count; Send is the second action. Audience selection and More updates expose selected riders, custom messages, other delays, future service-unavailability notices, and linked corrections.
+
+The open-ended delay under More updates is the one place this app writes message wording itself, as a local preview while the server rebuilds the same sentence from the template id on send. The two must stay identical word for word, or a driver reviews one message and their riders receive another. `broadcast.test.js` locks it. Delay wording names no cause, because a driver seldom knows why they are behind.
 
 Failed/offline drafts persist in AsyncStorage and are sent only after an explicit retry. Stable request IDs prevent duplicate messages after lost responses. Broadcast progress persists near the panel, and retry submits failed recipients only. The cancellation strip remains until its exact absence revision is explicitly acknowledged.
 
