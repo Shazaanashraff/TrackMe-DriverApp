@@ -22,6 +22,28 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-09-11 — Absences becomes a plain absent list; riders list drops pictures; no polling
+- **Branch:** feature/restore-bento-ui
+- **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)
+- **What changed:**
+  - `AbsencesScreen` is driver-only and lists just the riders with status `ABSENT` on the
+    chosen date as `RiderRow`s (name, organization · pickup, tap to profile). The summary
+    count, "Changes on other dates" card, Coming after cancellation / History sections,
+    per-card acknowledge flow and the Updated/Refresh row are gone. `AbsenceCard` and
+    `RiderIdentity` were removed as unused.
+  - New shared `RiderRow` in `components.js`; `RiderDirectory` uses it and no longer shows
+    `RiderAvatar`. The picture remains on `RiderProfileScreen`.
+  - `useCommunicationQuery` no longer polls every 30 s. Lists load on open and reload when
+    the provider invalidates them (socket `communication:event`, reconnect, foreground, push).
+- **Why:** driver asked for the Absences tab to show only who is currently away, laid out like
+  the Riders list, without pictures, and to refresh on rider actions rather than a timer.
+- **Contract impact:** none. Same `GET /api/driver/absences?date=` and `GET /api/driver/riders`.
+- **Tests:** `features/communications/__tests__/riders.test.js` — new Absences segment cases,
+  list-has-no-picture case, avatar cases moved to the profile screen.
+- **Docs updated:** COMMUNICATIONS.md, TESTING_GUIDE.md rows.
+- **Follow-ups / known issues:** the rider roster no longer refreshes on a timer either; an
+  enrollment change shows on the next open or foreground.
+
 ## 2026-09-10 — The Messages tab becomes a Riders directory
 - **Branch:** feature/rider-directory-tab
 - **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)

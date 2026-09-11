@@ -6,9 +6,10 @@ import { useCommunication } from './provider';
 export function useCommunicationQuery(path, enabled = true) {
   const { request, accountId, online } = useCommunication();
   const focused = useIsFocused();
+  // No timer: lists reload on open and when the provider invalidates them
+  // (socket event, reconnect, foreground, push). See provider.js.
   const query = useQuery({ queryKey: ['communications', accountId, path], queryFn: () => request(path),
-    enabled: Boolean(accountId && path && enabled && online && focused), refetchInterval: focused && online ? 30000 : false,
-    staleTime: 0, retry: 1 });
+    enabled: Boolean(accountId && path && enabled && online && focused), staleTime: 0, retry: 1 });
   const refetch = query.refetch;
   useEffect(() => { if (focused && online && enabled && path) void refetch(); }, [focused, online, enabled, path, refetch]);
   return query;

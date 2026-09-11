@@ -1,8 +1,8 @@
 // The driver's Riders tab: who they carry, and who is away today.
 //
-// Only the visible segment is mounted. Both bodies poll their own endpoint every
-// 30 s while focused (hooks.js), so rendering the hidden one would double a
-// driver's background traffic for a list they are not looking at.
+// Only the visible segment is mounted. Each body loads its own endpoint on open
+// and again whenever the provider invalidates it (hooks.js), so rendering the
+// hidden one would fetch a list the driver is not looking at.
 import React, { useState } from "react";
 import { View } from "react-native";
 import { Page, Segmented, styles } from "./components";

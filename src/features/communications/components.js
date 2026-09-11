@@ -261,6 +261,29 @@ export function RiderAvatar({ rider, name, size = 48 }) {
   );
 }
 
+// One rider as a whole-row tap target, shared by the Riders list and the
+// absent list so the two read the same.
+export function RiderRow({ name, subtitle, onPress, testID }) {
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={`${name}. ${subtitle}`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.riderRow, pressed && { opacity: 0.7 }]}
+    >
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Text numberOfLines={1} style={styles.text}>
+          {name}
+        </Text>
+        <Text numberOfLines={1} style={styles.small}>
+          {subtitle}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
 // Two panes behind one tab. `accessibilityRole="tab"` so a screen reader
 // announces it as a switch rather than two unrelated buttons.
 export function Segmented({ options, value, onChange }) {
@@ -308,33 +331,6 @@ const localStyles = StyleSheet.create({
   segmentTextSelected: { color: theme.color.text.primary },
 });
 
-export function RiderIdentity({ name, code, driverName }) {
-  return (
-    <View style={styles.row}>
-      <View
-        accessibilityElementsHidden
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 18,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: theme.color.primary[50],
-        }}
-      >
-        <Text style={styles.buttonText}>{(name || "R").slice(0, 1)}</Text>
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.text}>{name || "Rider"}</Text>
-        {code || driverName ? (
-          <Text style={styles.small}>
-            {[code, driverName].filter(Boolean).join(" · ")}
-          </Text>
-        ) : null}
-      </View>
-    </View>
-  );
-}
 export function CancellationStrip({
   changes = [],
   onAcknowledge,
@@ -395,61 +391,6 @@ export function Freshness({ query, online }) {
         onPress={() => query.refetch()}
         disabled={!online}
       />
-    </View>
-  );
-}
-export function AbsenceCard({ absence: a, onCancel, onAcknowledge, busy }) {
-  const pending = a.status !== "RETIRED" && a.acknowledgedRevision < a.revision;
-  const editable = a.date >= colomboToday();
-  return (
-    <View style={styles.card}>
-      <RiderIdentity
-        name={a.riderId?.fullName}
-        code={a.riderId?.riderCode}
-        driverName={a.driverId?.name}
-      />
-      <Text style={styles.text}>
-        {a.date} ·{" "}
-        {a.status === "ABSENT"
-          ? "Absent all day"
-          : a.status === "CANCELLED"
-          ? "Coming after cancellation"
-          : "Notice retired"}
-      </Text>
-      <Text style={styles.small}>
-        {pending
-          ? "Acknowledgment pending"
-          : a.status === "RETIRED"
-          ? "Enrollment ended"
-          : "Driver acknowledged"}{" "}
-        · Revision {a.revision}
-      </Text>
-      {a.enrollmentId?.driverId?.organization?.name ? (
-        <Text style={styles.small}>
-          {a.enrollmentId.driverId.organization.name}
-        </Text>
-      ) : null}
-      {a.enrollmentId?.pickupPlaceId ? (
-        <Text style={styles.small}>
-          Pickup: {a.enrollmentId.pickupPlaceId.label} ·{" "}
-          {a.enrollmentId.pickupPlaceId.address}
-        </Text>
-      ) : null}
-      {editable && a.status === "ABSENT" && onCancel ? (
-        <Action
-          label="Cancel absence"
-          onPress={() => onCancel(a)}
-          disabled={busy}
-        />
-      ) : null}
-      {editable && pending && onAcknowledge ? (
-        <Action
-          label="Acknowledge change"
-          primary
-          onPress={() => onAcknowledge(a)}
-          disabled={busy}
-        />
-      ) : null}
     </View>
   );
 }
