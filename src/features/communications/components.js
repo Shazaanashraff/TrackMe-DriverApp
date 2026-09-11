@@ -319,10 +319,10 @@ const localStyles = StyleSheet.create({
   },
   segmentText: {
     ...theme.textStyle("label"),
-    color: theme.color.text.secondary,
+    color: theme.color.text.muted,
   },
   segmentTextSelected: {
-    color: theme.color.text.primary,
+    color: theme.color.primary[500],
   },
 });
 
