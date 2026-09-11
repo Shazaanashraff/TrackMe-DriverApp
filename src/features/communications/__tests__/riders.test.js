@@ -5,7 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import RidersScreen from "../RidersScreen";
 import RiderProfileScreen from "../RiderProfileScreen";
 import { useCommunication } from "../provider";
-import { gradeLine, toDisplayDate, fromDisplayDate } from "../state";
+import { gradeLine, toDisplayDate, colomboToday } from "../state";
 
 jest.mock("../provider", () => ({ useCommunication: jest.fn() }));
 jest.mock("@react-navigation/native", () => ({ useIsFocused: () => true }));
@@ -223,26 +223,16 @@ describe("the Absences segment", () => {
     expect(ui.navigation.navigate).toHaveBeenCalledWith("RiderProfile", { riderId: "rider-a" });
   });
 
-  // Riders can only report today, so shortcut buttons for other days had
-  // nothing to show. The field reads DD/MM/YYYY; the request stays ISO.
-  test("the date is one DD/MM/YYYY field that opens on today, with no shortcuts", async () => {
+  // Riders can only report today, so the driver never chooses a date: one
+  // read-only line says which day this is, and the request is always today.
+  test("shows today as a read-only DD/MM/YYYY line and asks for today", async () => {
     const ui = mount(RidersScreen, { tab: "absences" });
     await ui.findByText("Amal");
+    expect(ui.getByText(/^Today · \d{2}\/\d{2}\/\d{4}$/)).toBeTruthy();
+    expect(ui.queryByLabelText(/Date/)).toBeNull();
     expect(ui.queryByText("Today")).toBeNull();
     expect(ui.queryByText("Tomorrow")).toBeNull();
-    const field = ui.getByLabelText("Date DD/MM/YYYY");
-    expect(field.props.value).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
-    expect(request).toHaveBeenCalledWith(expect.stringMatching(/^\/driver\/absences\?date=\d{4}-\d{2}-\d{2}$/));
-
-    fireEvent.changeText(field, "25/12/2026");
-    await waitFor(() =>
-      expect(request).toHaveBeenCalledWith("/driver/absences?date=2026-12-25")
-    );
-    // A half-typed or impossible date does not fire a request.
-    const before = request.mock.calls.length;
-    fireEvent.changeText(field, "31/02/20");
-    fireEvent.changeText(field, "31/02/2026");
-    expect(request.mock.calls.length).toBe(before);
+    expect(request).toHaveBeenCalledWith(`/driver/absences?date=${colomboToday()}`);
   });
 
   test("a date with nobody absent says so", async () => {
@@ -251,7 +241,7 @@ describe("the Absences segment", () => {
       return {};
     });
     const ui = mount(RidersScreen, { tab: "absences" });
-    expect(await ui.findByText("No riders absent on this date.")).toBeTruthy();
+    expect(await ui.findByText("No riders absent today.")).toBeTruthy();
   });
 
   test("search narrows the absent list by name or code", async () => {
@@ -356,17 +346,10 @@ describe("gradeLine", () => {
   });
 });
 
-describe("display dates", () => {
-  test("ISO reads as DD/MM/YYYY and back", () => {
+describe("toDisplayDate", () => {
+  test("ISO reads as DD/MM/YYYY, and anything else as nothing", () => {
     expect(toDisplayDate("2026-09-11")).toBe("11/09/2026");
     expect(toDisplayDate("")).toBe("");
-    expect(fromDisplayDate("11/09/2026")).toBe("2026-09-11");
+    expect(toDisplayDate(undefined)).toBe("");
   });
-
-  test.each([["11/09/20"], ["2026-09-11"], ["31/02/2026"], ["00/01/2026"], [""], [null]])(
-    "%s is not a date",
-    (text) => {
-      expect(fromDisplayDate(text)).toBeNull();
-    }
-  );
 });

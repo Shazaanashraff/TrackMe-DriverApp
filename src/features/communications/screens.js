@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { ScrollView, Text, TextInput } from "react-native";
 import { useCommunication } from "./provider";
 import { useCommunicationQuery } from "./hooks";
-import { Page, DateField, RiderRow, styles } from "./components";
-import { colomboToday, resourceId } from "./state";
+import { Page, RiderRow, styles } from "./components";
+import { colomboToday, resourceId, toDisplayDate } from "./state";
 
 export function emptyListMessage(query, online, loading, error, empty) {
   if (!online && !query.data)
@@ -24,11 +24,12 @@ const subtitle = (a) =>
     .filter(Boolean)
     .join(" · ") || a.riderId?.riderCode;
 
-// Who is away on one date. Cancellations are acknowledged from the Home strip,
-// not here, so this list is only the riders the driver should not wait for.
+// Who is away today. Riders can only report the current day, so there is no
+// date to choose. Cancellations are acknowledged from the Home strip, not
+// here, so this list is only the riders the driver should not wait for.
 export function AbsencesScreen({ navigation, embedded = false }) {
   const { online } = useCommunication();
-  const [date, setDate] = useState(colomboToday());
+  const date = colomboToday();
   const [search, setSearch] = useState("");
   const query = useCommunicationQuery(`/driver/absences?date=${date}`);
   const absent = (query.data?.rows || []).filter(
@@ -44,7 +45,7 @@ export function AbsencesScreen({ navigation, embedded = false }) {
       contentInsetAdjustmentBehavior="automatic"
       keyboardShouldPersistTaps="handled"
     >
-      <DateField value={date} onChange={setDate} />
+      <Text style={styles.small}>Today · {toDisplayDate(date)}</Text>
       <TextInput
         accessibilityLabel="Search absences"
         placeholder="Search rider, code or organization"
@@ -61,7 +62,7 @@ export function AbsencesScreen({ navigation, embedded = false }) {
             "Could not load absences.",
             search
               ? "No riders match this search."
-              : "No riders absent on this date."
+              : "No riders absent today."
           )}
         </Text>
       ) : null}

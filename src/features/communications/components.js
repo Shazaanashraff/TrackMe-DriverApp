@@ -7,7 +7,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -16,7 +15,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { theme } from "../../theme";
-import { colomboToday, toDisplayDate, fromDisplayDate } from "./state";
+import { colomboToday } from "./state";
 import { useRiderAvatar } from "./riderAvatarCache";
 export const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.color.surface.page },
@@ -365,28 +364,6 @@ export function CancellationStrip({
           style={{ flex: 1 }}
         />
       </View>
-    </View>
-  );
-}
-// Shows DD/MM/YYYY; `value`/`onChange` stay ISO because that is what the API
-// takes. A half-typed date leaves the current one in place until it parses.
-export function DateField({ value, onChange }) {
-  const [text, setText] = React.useState(toDisplayDate(value));
-  return (
-    <View style={{ gap: 8 }}>
-      <Text style={styles.small}>Whole day · DD/MM/YYYY</Text>
-      <TextInput
-        accessibilityLabel="Date DD/MM/YYYY"
-        style={styles.field}
-        value={text}
-        onChangeText={(next) => {
-          setText(next);
-          const iso = fromDisplayDate(next);
-          if (iso) onChange(iso);
-        }}
-        maxLength={10}
-        keyboardType="numbers-and-punctuation"
-      />
     </View>
   );
 }
