@@ -22,6 +22,27 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-09-11 — No rider pictures in the driver app; ink restyle of the Riders tab
+- **Branch:** feature/restore-bento-ui
+- **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)
+- **What changed:**
+  - `RiderAvatar` and `riderAvatarCache.js` deleted. `RiderRow` and `RiderProfileScreen`
+    show the name only. An intermediate restyle had put the avatar back into `RiderRow`,
+    which showed photos on the Riders list but initials on Absences (absence rows carry no
+    `hasAvatar`); the driver is not meant to see pictures at all.
+  - Commits the Riders-tab restyle that was on disk: dark ink rows, a text Back link in
+    `Page`, segmented control on a field background with an elevated selected pane, and
+    divider-separated fields on the rider profile.
+- **Why:** driver asked that rider pictures not appear in the driver app, and the three
+  surfaces had drifted apart.
+- **Contract impact:** none. The roster still carries `hasAvatar`/`avatarVersion` and the
+  avatar endpoint remains; this app no longer reads them.
+- **Tests:** `features/communications/__tests__/riders.test.js` — "rider pictures" cases
+  removed; one case asserts no `Image`, no initials and no `/avatar` request on the list,
+  the absences segment and the profile.
+- **Docs updated:** COMMUNICATIONS.md, TESTING_GUIDE.md row.
+- **Follow-ups / known issues:** none.
+
 ## 2026-09-11 — Absences becomes a plain absent list; riders list drops pictures; no polling
 - **Branch:** feature/restore-bento-ui
 - **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)

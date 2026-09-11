@@ -3,19 +3,18 @@
 //
 // No address here, and none in the roster payload either — the row draws the
 // pickup label ("Home gate") and the server sends nothing more precise.
-// (Absence cards are a separate path and do still show a street address.)
 import React from "react";
 import { ScrollView, View, Text } from "react-native";
 import { useCommunicationQuery } from "./hooks";
 import { useCommunication } from "./provider";
-import { Page, RiderAvatar, styles } from "./components";
+import { Page, styles } from "./components";
 import { gradeLine } from "./state";
 import { theme } from "../../theme";
 
-function Field({ label, value }) {
+function Field({ label, value, hideDivider }) {
   return (
-    <View style={styles.profileField}>
-      <Text style={styles.small}>{label}</Text>
+    <View style={[{ paddingVertical: theme.space[3], paddingHorizontal: theme.space[4] }, !hideDivider && { borderTopWidth: 1, borderTopColor: theme.color.border.hairline }]}>
+      <Text style={[styles.small, { marginBottom: 4 }]}>{label}</Text>
       <Text selectable style={styles.text}>
         {value}
       </Text>
@@ -45,23 +44,23 @@ export default function RiderProfileScreen({ navigation, route }) {
   return (
     <Page title="Rider" navigation={navigation}>
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: 40 }]}
         contentInsetAdjustmentBehavior="automatic"
       >
         {rider ? (
           <>
-            <View style={{ alignItems: "center", gap: theme.space[3] }}>
-              <RiderAvatar rider={rider} name={rider.riderName} size={96} />
+            <View style={{ alignItems: "center", gap: theme.space[3], marginBottom: theme.space[4], marginTop: theme.space[4] }}>
               <Text accessibilityRole="header" style={styles.title}>
                 {rider.riderName}
               </Text>
             </View>
-            <View style={styles.card}>
-              {grade ? <Field label="Grade" value={grade} /> : null}
-              <Field label="Rider code" value={rider.riderCode} />
+            <View style={[styles.card, { padding: 0, gap: 0, overflow: 'hidden' }]}>
+              {grade ? <Field label="Grade" value={grade} hideDivider /> : null}
+              <Field label="Rider code" value={rider.riderCode} hideDivider={!grade} />
               <Field
                 label="Contact number"
                 value={rider.contactNumber || "Not provided"}
+                hideDivider={false}
               />
             </View>
           </>

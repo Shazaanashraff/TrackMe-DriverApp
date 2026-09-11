@@ -1,7 +1,7 @@
 import React from "react";
+import { Image } from "react-native";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import RidersScreen from "../RidersScreen";
 import RiderProfileScreen from "../RiderProfileScreen";
 import { useCommunication } from "../provider";
@@ -97,7 +97,6 @@ const profiles = {
 
 let request, online, clients;
 beforeEach(async () => {
-  await AsyncStorage.clear();
   online = true;
   clients = [];
   request = jest.fn(async (path) => {
@@ -186,10 +185,23 @@ describe("the Riders tab", () => {
     expect(ui.queryByTestId("rider-directory")).toBeNull();
   });
 
-  test("the riders list shows no picture and fetches none", async () => {
-    const ui = mount(RidersScreen);
-    await ui.findByText("Amal");
-    expect(ui.queryByText("A", { includeHiddenElements: true })).toBeNull();
+  // A driver has no use for a rider's face; the name and pickup are what they
+  // scan for. Nothing in this app renders or fetches a picture, even when the
+  // roster says one exists.
+  test("no picture anywhere: riders list, absences, or a rider's profile", async () => {
+    const noPicture = (ui) => {
+      expect(ui.UNSAFE_queryAllByType(Image)).toHaveLength(0);
+      expect(ui.queryByText(/^[A-Z]{1,2}$/, { includeHiddenElements: true })).toBeNull();
+    };
+    const list = mount(RidersScreen);
+    await list.findByText("Amal");
+    noPicture(list);
+    fireEvent.press(list.getByTestId("segment-absences"));
+    await list.findByText("Amal");
+    noPicture(list);
+    const profile = mount(RiderProfileScreen, { riderId: "rider-a" });
+    await profile.findByText("Amal");
+    noPicture(profile);
     expect(request.mock.calls.some(([path]) => path.endsWith("/avatar"))).toBe(false);
   });
 
@@ -280,55 +292,6 @@ describe("a rider's profile", () => {
     expect(
       await ui.findByText("This rider is no longer enrolled with you.", {}, { timeout: 5000 })
     ).toBeTruthy();
-  });
-});
-
-// The picture lives on the profile only; the list is names.
-describe("rider pictures", () => {
-  test("a rider with no picture never causes a request", async () => {
-    const ui = mount(RiderProfileScreen, { riderId: "rider-b" });
-    await ui.findByText("Nuwan");
-    expect(request.mock.calls.some(([path]) => path.endsWith("/avatar"))).toBe(false);
-  });
-
-  test("a picture is fetched once per version and then read from the cache", async () => {
-    const ui = mount(RiderProfileScreen, { riderId: "rider-a" });
-    await ui.findByText("Amal");
-    await waitFor(() =>
-      expect(request.mock.calls.filter(([path]) => path === "/driver/riders/rider-a/avatar")).toHaveLength(1)
-    );
-    expect(await AsyncStorage.getItem("riderAvatar:rider-a:2")).toBe("data:image/png;base64,AAAA");
-
-    ui.unmount();
-    const again = mount(RiderProfileScreen, { riderId: "rider-a" });
-    await again.findByText("Amal");
-    // The second look is free: same version, so the cached copy answers.
-    await waitFor(() => expect(again.getByText("Amal")).toBeTruthy());
-    expect(request.mock.calls.filter(([path]) => path === "/driver/riders/rider-a/avatar")).toHaveLength(1);
-  });
-
-  test("a changed picture is a new version, and the old copy is dropped", async () => {
-    await AsyncStorage.setItem("riderAvatar:rider-a:1", "data:image/png;base64,OLD");
-    const ui = mount(RiderProfileScreen, { riderId: "rider-a" });
-    await ui.findByText("Amal");
-    await waitFor(async () =>
-      expect(await AsyncStorage.getItem("riderAvatar:rider-a:2")).toBe("data:image/png;base64,AAAA")
-    );
-    expect(await AsyncStorage.getItem("riderAvatar:rider-a:1")).toBeNull();
-  });
-
-  test("an unreachable picture leaves the profile readable", async () => {
-    request.mockImplementation(async (path) => {
-      if (path === "/driver/riders/rider-a") return profiles["rider-a"];
-      if (path.endsWith("/avatar")) throw new Error("offline");
-      return {};
-    });
-    const ui = mount(RiderProfileScreen, { riderId: "rider-a" });
-    // The initial still stands in, and nothing throws. It is hidden from screen
-    // readers on purpose — the header already carries the rider's full name —
-    // so it has to be queried explicitly.
-    expect(await ui.findByText("Amal")).toBeTruthy();
-    expect(ui.getByText("A", { includeHiddenElements: true })).toBeTruthy();
   });
 });
 

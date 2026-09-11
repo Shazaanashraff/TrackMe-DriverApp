@@ -3,7 +3,6 @@ import {
   Modal,
   View,
   Text,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,7 +15,6 @@ import {
 } from "react-native-safe-area-context";
 import { theme } from "../../theme";
 import { colomboToday } from "./state";
-import { useRiderAvatar } from "./riderAvatarCache";
 export const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.color.surface.page },
   content: { padding: theme.space[4], gap: theme.space[3] },
@@ -140,7 +138,23 @@ export function Page({ title, navigation, children, showBack = true }) {
     >
       <View style={[styles.row, styles.pageHeader]}>
         {showBack && navigation?.canGoBack?.() ? (
-          <Action label="Back" onPress={() => navigation.goBack()} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            onPress={() => navigation.goBack()}
+            style={({ pressed }) => [
+              {
+                paddingVertical: theme.space[2],
+                paddingRight: theme.space[3],
+                marginRight: theme.space[2],
+              },
+              pressed && { opacity: 0.55 },
+            ]}
+          >
+            <Text style={{ ...theme.textStyle("body"), color: theme.color.primary[600] }}>
+              Back
+            </Text>
+          </Pressable>
         ) : null}
         <Text accessibilityRole="header" style={[styles.title, { flex: 1 }]}>
           {title}
@@ -231,35 +245,6 @@ export function QuickActionGrid({ actions, onSelect, disabled }) {
     </View>
   );
 }
-// A rider's face, or their initial while there is no picture to show. The image
-// is fetched one rider at a time and cached against `avatarVersion`, so a roster
-// costs one request per rider per photo change rather than one per render.
-export function RiderAvatar({ rider, name, size = 48 }) {
-  const uri = useRiderAvatar(rider);
-  const initial = String(name || "R").trim().slice(0, 1).toUpperCase();
-  return (
-    <View
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-      style={{
-        width: size,
-        height: size,
-        borderRadius: size / 2,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: theme.color.primary[50],
-        overflow: "hidden",
-      }}
-    >
-      {uri ? (
-        <Image source={{ uri }} style={{ width: size, height: size }} resizeMode="cover" />
-      ) : (
-        <Text style={[styles.buttonText, { fontSize: Math.round(size / 2.4) }]}>{initial}</Text>
-      )}
-    </View>
-  );
-}
-
 // One rider as a whole-row tap target, shared by the Riders list and the
 // absent list so the two read the same.
 export function RiderRow({ name, subtitle, onPress, testID }) {
@@ -269,13 +254,17 @@ export function RiderRow({ name, subtitle, onPress, testID }) {
       accessibilityRole="button"
       accessibilityLabel={`${name}. ${subtitle}`}
       onPress={onPress}
-      style={({ pressed }) => [styles.riderRow, pressed && { opacity: 0.7 }]}
+      style={({ pressed }) => [
+        styles.riderRow,
+        { backgroundColor: theme.color.ink.base, borderWidth: 0, paddingVertical: theme.space[3] },
+        pressed && { opacity: 0.8, backgroundColor: theme.color.ink.raised },
+      ]}
     >
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text numberOfLines={1} style={styles.text}>
+      <View style={{ flex: 1, minWidth: 0, justifyContent: "center" }}>
+        <Text numberOfLines={1} style={[styles.text, { color: theme.color.white, fontFamily: theme.fontFamily("medium") }]}>
           {name}
         </Text>
-        <Text numberOfLines={1} style={styles.small}>
+        <Text numberOfLines={1} style={[styles.small, { color: theme.color.primary[300], marginTop: 2 }]}>
           {subtitle}
         </Text>
       </View>
@@ -299,7 +288,7 @@ export function Segmented({ options, value, onChange }) {
             onPress={() => onChange(option.value)}
             style={[localStyles.segment, selected && localStyles.segmentSelected]}
           >
-            <Text style={[styles.small, selected && localStyles.segmentTextSelected]}>
+            <Text style={[localStyles.segmentText, selected && localStyles.segmentTextSelected]}>
               {option.label}
             </Text>
           </Pressable>
@@ -315,9 +304,7 @@ const localStyles = StyleSheet.create({
     gap: 4,
     padding: 4,
     borderRadius: theme.radius.card,
-    backgroundColor: theme.color.surface.page,
-    borderWidth: theme.borderWidth.hairline,
-    borderColor: theme.color.border.hairline,
+    backgroundColor: theme.color.surface.field,
   },
   segment: {
     flex: 1,
@@ -326,8 +313,17 @@ const localStyles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: theme.radius.control,
   },
-  segmentSelected: { backgroundColor: theme.color.surface.card },
-  segmentTextSelected: { color: theme.color.text.primary },
+  segmentSelected: {
+    backgroundColor: theme.color.surface.card,
+    ...theme.elevation.card,
+  },
+  segmentText: {
+    ...theme.textStyle("label"),
+    color: theme.color.text.secondary,
+  },
+  segmentTextSelected: {
+    color: theme.color.text.primary,
+  },
 });
 
 export function CancellationStrip({
