@@ -120,12 +120,16 @@ function mount(Screen, params = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   clients.push(client);
   const navigation = { navigate: jest.fn(), goBack: jest.fn() };
-  const ui = render(
+  const tree = (nextParams) => (
     <QueryClientProvider client={client}>
-      <Screen navigation={navigation} route={{ params }} />
+      <Screen navigation={navigation} route={{ params: nextParams }} />
     </QueryClientProvider>
   );
-  return { ...ui, navigation };
+  const ui = render(tree(params));
+  // A bottom-tab screen stays mounted, so a later navigate reaches it as new
+  // params on the same instance; this is that, without a navigator.
+  const setParams = (nextParams) => ui.rerender(tree(nextParams));
+  return { ...ui, navigation, setParams };
 }
 
 describe("the Riders tab", () => {
@@ -183,6 +187,24 @@ describe("the Riders tab", () => {
       expect(request.mock.calls.some(([path]) => path.startsWith("/driver/absences"))).toBe(true)
     );
     expect(ui.queryByTestId("rider-directory")).toBeNull();
+  });
+
+  // The tab keeps living after its first visit. Tapping the Home pill again
+  // used to leave it on whichever segment it was last on, because only the
+  // initial params were ever read.
+  test("a later tap on the Home pill still moves an already-open tab to absences", async () => {
+    const ui = mount(RidersScreen);
+    await ui.findByText("Amal");
+
+    ui.setParams({ tab: "absences", openedAt: 1 });
+    await waitFor(() => expect(ui.queryByTestId("rider-directory")).toBeNull());
+
+    // The driver flips back to the directory by hand, then taps the pill again:
+    // same tab value, new openedAt, and the segment must still move.
+    fireEvent.press(ui.getByTestId("segment-riders"));
+    await ui.findByText("Amal");
+    ui.setParams({ tab: "absences", openedAt: 2 });
+    await waitFor(() => expect(ui.queryByTestId("rider-directory")).toBeNull());
   });
 
   // A driver has no use for a rider's face; the name and pickup are what they

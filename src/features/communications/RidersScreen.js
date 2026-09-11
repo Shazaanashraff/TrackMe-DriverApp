@@ -16,7 +16,18 @@ const SEGMENTS = [
 
 export default function RidersScreen({ navigation, route }) {
   // The Home panel's absence actions deep-link straight to the second segment.
-  const [segment, setSegment] = useState(route.params?.tab === "absences" ? "absences" : "riders");
+  const tab = route.params?.tab;
+  const openedAt = route.params?.openedAt;
+  const [segment, setSegment] = useState(tab === "absences" ? "absences" : "riders");
+  // A bottom-tab screen stays mounted, so the initial state above only
+  // covers the first visit. A later tap on the Home pill arrives as a new
+  // `openedAt` on the already-mounted screen; adopt the requested segment
+  // the moment it changes (derived state, adjusted during render).
+  const [seenOpenedAt, setSeenOpenedAt] = useState(openedAt);
+  if (openedAt !== seenOpenedAt) {
+    setSeenOpenedAt(openedAt);
+    if (tab === "absences" || tab === "riders") setSegment(tab);
+  }
 
   return (
     <Page title="Riders" navigation={navigation} showBack={false}>

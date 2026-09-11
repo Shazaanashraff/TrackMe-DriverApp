@@ -326,38 +326,33 @@ const localStyles = StyleSheet.create({
   },
 });
 
-export function CancellationStrip({
-  changes = [],
-  onAcknowledge,
-  onView,
-  busy,
-}) {
+// One pending absence change at a time, a fresh absence as much as a
+// cancellation: the driver answers it with Okay and the next one, if any,
+// takes its place. The server keeps it in `changes` until that exact revision
+// is acknowledged.
+export function CancellationStrip({ changes = [], onAcknowledge, busy }) {
   const a = changes[0];
   if (!a) return null;
+  const name = a.riderId?.fullName || "Rider";
+  const when = a.date === colomboToday() ? "today" : `on ${a.date}`;
+  const copy =
+    a.status === "ABSENT"
+      ? `${name} will be absent ${when}.`
+      : `${name} is coming ${when} · absence cancelled.`;
   return (
     <View
       testID="cancellation-strip"
       style={[styles.card, { backgroundColor: theme.color.warning.bg }]}
     >
-      <Text style={styles.text}>
-        {a.riderId?.fullName || "Rider"} is coming{" "}
-        {a.date === colomboToday() ? "today" : `on ${a.date}`} · absence
-        cancelled.
-      </Text>
+      <Text style={styles.text}>{copy}</Text>
       <View style={styles.row}>
         <Action
-          label="Acknowledge"
+          label="Okay"
           primary
           disabled={busy}
           onPress={() => onAcknowledge(a)}
           style={{ flex: 1 }}
-        />
-        <Action
-          label={`View changes${
-            changes.length > 1 ? ` · ${changes.length}` : ""
-          }`}
-          onPress={onView}
-          style={{ flex: 1 }}
+          testID="cancellation-strip-okay"
         />
       </View>
     </View>

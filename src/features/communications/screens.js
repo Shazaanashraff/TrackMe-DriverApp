@@ -25,8 +25,8 @@ const subtitle = (a) =>
     .join(" · ") || a.riderId?.riderCode;
 
 // Who is away today. Riders can only report the current day, so there is no
-// date to choose. Cancellations are acknowledged from the Home strip, not
-// here, so this list is only the riders the driver should not wait for.
+// date to choose. Absences and cancellations are acknowledged from the Home
+// strip, not here, so this list is only the riders the driver should not wait for.
 export function AbsencesScreen({ navigation, embedded = false }) {
   const { online } = useCommunication();
   const date = colomboToday();

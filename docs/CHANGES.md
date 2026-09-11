@@ -22,6 +22,30 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-09-12 — Okay on absence requests and cancellations; the pill opens the absence list
+- **Branch:** feature/absence-request-ack
+- **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)
+- **What changed:**
+  - The Home strip branches on the pending change's `status`: "<rider> will be absent
+    today." for a fresh absence, the existing "is coming today · absence cancelled." for a
+    cancellation. One action, **Okay**, acknowledges that revision; "View changes" is gone
+    (`components.js` `CancellationStrip`, `BroadcastPanel.js`).
+  - The "Absences · N" pill passes `openedAt: Date.now()` with `tab: "absences"`, and
+    `RidersScreen` adopts the requested segment whenever `openedAt` changes, so a tap after
+    the tab's first visit lands on the Absences segment instead of wherever it was left.
+- **Why:** a rider marking themselves absent got no acknowledgment from the driver (the
+  server only listed cancellations), and the pill stopped working after the first visit
+  because the tab stays mounted and read its params once.
+- **Contract impact:** consumes the widened `changes` from `GET /api/driver/absences`
+  (backend `feature/absence-request-ack`, `docs/modules/COMMUNICATIONS.md` updated there).
+- **Tests:** `features/communications/__tests__/broadcast.test.js` (strip copy for both
+  statuses, Okay acknowledges the row's revision, nothing with no change, pill target and
+  fresh `openedAt`), `riders.test.js` (segment follows a later param change, twice).
+- **Docs updated:** COMMUNICATIONS.md, TESTING_GUIDE.md rows.
+- **Follow-ups / known issues:** `riders.test.js` is flaky under the full parallel `npm test`
+  run on this machine (passes alone); a failed Okay still leaves a draft under
+  `communication-draft:<driverId>:home-acknowledgment` with no retry affordance.
+
 ## 2026-09-11 — No rider pictures in the driver app; ink restyle of the Riders tab
 - **Branch:** feature/restore-bento-ui
 - **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)

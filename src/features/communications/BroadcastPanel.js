@@ -119,7 +119,6 @@ export default function BroadcastPanel({ navigation }) {
         <CancellationStrip
           changes={changes.data?.changes}
           busy={ack.busy}
-          onView={() => navigation.navigate("MainTabs", { screen: "Riders", params: { tab: "absences" } })}
           onAcknowledge={(a) =>
             ack.submit({
               path: `/absences/${a._id}/acknowledge`,
@@ -133,10 +132,19 @@ export default function BroadcastPanel({ navigation }) {
           </Text>
         ) : null}
         <View style={styles.row}>
+          {/* `openedAt` changes on every tap so the Riders tab, which stays
+              mounted, sees a new param and switches to the Absences segment
+              even when it was last left on the directory. */}
           <Action
             label={`Absences · ${changes.data?.absentCount || 0}`}
             style={{ flex: 1 }}
-            onPress={() => navigation.navigate("MainTabs", { screen: "Riders", params: { tab: "absences" } })}
+            testID="absences-pill"
+            onPress={() =>
+              navigation.navigate("MainTabs", {
+                screen: "Riders",
+                params: { tab: "absences", openedAt: Date.now() },
+              })
+            }
           />
         </View>
         <QuickActionGrid
