@@ -35,6 +35,9 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
     `RiderAvatar`. The picture remains on `RiderProfileScreen`.
   - The Updated/Refresh row is gone from the Riders list too, and `Freshness` with it.
     Load-failure copy now says the list reloads when the tab is reopened.
+  - `DateField` shows DD/MM/YYYY and has no Today/Tomorrow buttons: the rider app can only
+    report today, so a Tomorrow list was always empty. `toDisplayDate`/`fromDisplayDate` in
+    `state.js` convert; the request stays ISO.
   - `useCommunicationQuery` no longer polls every 30 s. Lists load on open and reload when
     the provider invalidates them (socket `communication:event`, reconnect, foreground, push).
 - **Why:** driver asked for the Absences tab to show only who is currently away, laid out like

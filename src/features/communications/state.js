@@ -27,3 +27,14 @@ export function gradeLine(category, grade) {
   if (category !== 'SCHOOL' || !value) return '';
   return /^\d/.test(value) ? `Grade ${value}` : value;
 }
+
+// ISO 'YYYY-MM-DD' <-> 'DD/MM/YYYY' as the driver reads it. fromDisplayDate
+// answers null for anything but a complete, real calendar date.
+export const toDisplayDate = iso => (/^\d{4}-\d{2}-\d{2}$/.test(iso) ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : '');
+export function fromDisplayDate(text) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(text || '').trim());
+  if (!m) return null;
+  const iso = `${m[3]}-${m[2]}-${m[1]}`;
+  const parsed = Date.parse(iso);
+  return Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 10) === iso ? iso : null;
+}
