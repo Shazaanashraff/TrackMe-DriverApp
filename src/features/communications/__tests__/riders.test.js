@@ -192,6 +192,17 @@ describe("the Riders tab", () => {
     expect(ui.queryByText("A", { includeHiddenElements: true })).toBeNull();
     expect(request.mock.calls.some(([path]) => path.endsWith("/avatar"))).toBe(false);
   });
+
+  // Lists reload on open and on socket events, so there is nothing for a
+  // Refresh button to do that opening the tab does not.
+  test("neither segment offers a Refresh button", async () => {
+    const ui = mount(RidersScreen);
+    await ui.findByText("Amal");
+    expect(ui.queryByText("Refresh")).toBeNull();
+    fireEvent.press(ui.getByTestId("segment-absences"));
+    await ui.findByText("Amal");
+    expect(ui.queryByText("Refresh")).toBeNull();
+  });
 });
 
 describe("the Absences segment", () => {
@@ -204,7 +215,6 @@ describe("the Absences segment", () => {
     expect(ui.queryByText(/Coming after cancellation/)).toBeNull();
     expect(ui.queryByText(/History/)).toBeNull();
     expect(ui.queryByText(/absent ·/)).toBeNull();
-    expect(ui.queryByText("Refresh")).toBeNull();
   });
 
   test("tapping an absent rider opens that rider", async () => {

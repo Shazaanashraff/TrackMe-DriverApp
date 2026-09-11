@@ -5,18 +5,12 @@ import { useCommunicationQuery } from "./hooks";
 import { Page, DateField, RiderRow, styles } from "./components";
 import { colomboToday, resourceId } from "./state";
 
-export function emptyListMessage(
-  query,
-  online,
-  loading,
-  error,
-  empty,
-  retry = " Use Refresh to try again."
-) {
+export function emptyListMessage(query, online, loading, error, empty) {
   if (!online && !query.data)
     return error.replace("Could not load", "Offline · no cached");
   if (query.isLoading) return loading;
-  if (query.isError && !query.data) return `${error}${retry}`;
+  if (query.isError && !query.data)
+    return `${error} It reloads when you reopen this tab.`;
   return empty;
 }
 
@@ -67,8 +61,7 @@ export function AbsencesScreen({ navigation, embedded = false }) {
             "Could not load absences.",
             search
               ? "No riders match this search."
-              : "No riders absent on this date.",
-            " It reloads when you reopen this tab."
+              : "No riders absent on this date."
           )}
         </Text>
       ) : null}

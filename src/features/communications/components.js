@@ -368,32 +368,6 @@ export function CancellationStrip({
     </View>
   );
 }
-export function Freshness({ query, online }) {
-  return (
-    <View style={styles.row}>
-      <Text
-        accessibilityLiveRegion="polite"
-        style={[styles.small, { flex: 1 }]}
-      >
-        {!online
-          ? "Offline · cached list"
-          : query.isError
-          ? "Could not refresh · stale list"
-          : query.isFetching
-          ? "Refreshing…"
-          : "Updated"}
-        {query.dataUpdatedAt
-          ? ` · ${new Date(query.dataUpdatedAt).toLocaleTimeString()}`
-          : ""}
-      </Text>
-      <Action
-        label="Refresh"
-        onPress={() => query.refetch()}
-        disabled={!online}
-      />
-    </View>
-  );
-}
 export function DateField({ value, onChange }) {
   return (
     <View style={{ gap: 8 }}>

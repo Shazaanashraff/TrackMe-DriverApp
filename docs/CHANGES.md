@@ -33,13 +33,16 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
     `RiderIdentity` were removed as unused.
   - New shared `RiderRow` in `components.js`; `RiderDirectory` uses it and no longer shows
     `RiderAvatar`. The picture remains on `RiderProfileScreen`.
+  - The Updated/Refresh row is gone from the Riders list too, and `Freshness` with it.
+    Load-failure copy now says the list reloads when the tab is reopened.
   - `useCommunicationQuery` no longer polls every 30 s. Lists load on open and reload when
     the provider invalidates them (socket `communication:event`, reconnect, foreground, push).
 - **Why:** driver asked for the Absences tab to show only who is currently away, laid out like
   the Riders list, without pictures, and to refresh on rider actions rather than a timer.
 - **Contract impact:** none. Same `GET /api/driver/absences?date=` and `GET /api/driver/riders`.
 - **Tests:** `features/communications/__tests__/riders.test.js` — new Absences segment cases,
-  list-has-no-picture case, avatar cases moved to the profile screen.
+  list-has-no-picture case, no-Refresh-on-either-segment case, avatar cases moved to the
+  profile screen.
 - **Docs updated:** COMMUNICATIONS.md, TESTING_GUIDE.md rows.
 - **Follow-ups / known issues:** the rider roster no longer refreshes on a timer either; an
   enrollment change shows on the next open or foreground.

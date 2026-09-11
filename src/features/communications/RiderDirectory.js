@@ -6,7 +6,7 @@ import React, { useState } from "react";
 import { FlatList, View, Text, TextInput } from "react-native";
 import { useCommunication } from "./provider";
 import { useCommunicationQuery } from "./hooks";
-import { RiderRow, Freshness, styles } from "./components";
+import { RiderRow, styles } from "./components";
 import { emptyListMessage } from "./screens";
 import { resourceId, gradeLine } from "./state";
 import { theme } from "../../theme";
@@ -28,7 +28,7 @@ export function RiderDirectory({ navigation }) {
 
   return (
     <>
-      <View style={{ paddingHorizontal: theme.space[4], gap: theme.space[2] }}>
+      <View style={{ paddingHorizontal: theme.space[4] }}>
         <TextInput
           accessibilityLabel="Search riders"
           style={styles.field}
@@ -36,7 +36,6 @@ export function RiderDirectory({ navigation }) {
           onChangeText={setSearch}
           placeholder="Search name or rider code"
         />
-        <Freshness query={query} online={online} />
       </View>
       <FlatList
         testID="rider-directory"
