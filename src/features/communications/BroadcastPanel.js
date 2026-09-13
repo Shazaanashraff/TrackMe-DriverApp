@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, ScrollView, useWindowDimensions } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Text } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCommunication } from "./provider";
 import { useCommunicationQuery, useExplicitSend } from "./hooks";
 import {
   Action,
   SendPreview,
-  AudienceSelector,
   QuickActionGrid,
   CancellationStrip,
   styles,
@@ -22,8 +21,6 @@ function useBroadcast() {
   const audience = useCommunicationQuery("/driver/riders");
   const templates = useCommunicationQuery("/conversations/presets");
   const sender = useExplicitSend("broadcast");
-  const [selected, setSelected] = useState(null);
-  const [selecting, setSelecting] = useState(false);
   const [preview, setPreview] = useState(null);
   const [announcementId, setAnnouncementId] = useState(null);
   const progress = useCommunicationQuery(
@@ -35,12 +32,7 @@ function useBroadcast() {
       .catch(() => {});
   }, [accountId]);
   const open = (preset, date) => {
-    const draft = announcementDraft(
-      preset,
-      audience.data || [],
-      selected,
-      date
-    );
+    const draft = announcementDraft(preset, audience.data || [], null, date);
     setPreview(draft);
     void sender.save(draft);
   };
@@ -53,41 +45,39 @@ function useBroadcast() {
       await AsyncStorage.setItem(`last-announcement:${accountId}`, result._id);
     }
   };
+  // This card offers no way to reopen a saved draft, so one restored from a
+  // previous session would only sit here as a line of text a driver can't act
+  // on. Drop it once, on the restore, not on the drafts this session saves
+  // before each send. The absences screen keeps its own review action.
+  const droppedRestored = useRef(false);
+  const { restored, draft: restoredDraft, clear, setFeedback } = sender;
+  useEffect(() => {
+    if (droppedRestored.current || !restored) return;
+    droppedRestored.current = true;
+    if (restoredDraft) {
+      void clear();
+      setFeedback("");
+    }
+  }, [restored, restoredDraft, clear, setFeedback]);
   const retry = useExplicitSend("broadcast-retry");
   const modals = (
-    <>
-      <AudienceSelector
-        visible={selecting}
-        rows={audience.data || []}
-        selected={selected}
-        onChange={setSelected}
-        onClose={() => setSelecting(false)}
-      />
-      <SendPreview
-        visible={!!preview}
-        draft={preview}
-        busy={sender.busy}
-        onSend={send}
-        onCancel={() => setPreview(null)}
-      />
-    </>
+    <SendPreview
+      visible={!!preview}
+      draft={preview}
+      busy={sender.busy}
+      onSend={send}
+      onCancel={() => setPreview(null)}
+    />
   );
   const feedback = (
     <View>
       <Text accessibilityLiveRegion="polite" style={styles.feedback}>
-        {sender.busy || sender.draft
+        {sender.busy
           ? sender.feedback
           : progress.data
           ? deliverySummary(progress.data)
           : sender.feedback}
       </Text>
-      {sender.draft && !preview ? (
-        <Action
-          label="Review saved broadcast"
-          onPress={() => setPreview(sender.draft)}
-          disabled={sender.busy}
-        />
-      ) : null}
       {progress.data?.recipients?.some((r) => r.state === "failed") ? (
         <Action
           label="Retry failed recipients only"
@@ -109,8 +99,6 @@ function useBroadcast() {
     audience,
     templates,
     sender,
-    selected,
-    setSelecting,
     open,
     modals,
     feedback,
@@ -122,24 +110,15 @@ export default function BroadcastPanel({ navigation }) {
     `/driver/absences?date=${colomboToday()}`
   );
   const ack = useExplicitSend("home-acknowledgment");
-  const { height, fontScale } = useWindowDimensions();
-  const maxHeight = Math.min(
-    560,
-    Math.max(280, height * (fontScale > 1.2 ? 0.55 : 0.58))
-  );
+  // A section of the dashboard, not a fixed panel pinned under it. It used to
+  // claim up to 58% of the screen height with its own nested scroll, which left
+  // the vehicle and quick actions squeezed into a strip above it.
   return (
-    <View testID="fixed-broadcast-panel" style={styles.panel}>
-      <ScrollView
-        testID="fixed-broadcast-scroll"
-        style={{ maxHeight }}
-        contentContainerStyle={styles.panelContent}
-        nestedScrollEnabled
-        keyboardShouldPersistTaps="handled"
-      >
+    <View testID="broadcast-section" style={styles.panel}>
+      <View style={styles.panelContent}>
         <CancellationStrip
           changes={changes.data?.changes}
           busy={ack.busy}
-          onView={() => navigation.navigate("Absences")}
           onAcknowledge={(a) =>
             ack.submit({
               path: `/absences/${a._id}/acknowledge`,
@@ -153,16 +132,19 @@ export default function BroadcastPanel({ navigation }) {
           </Text>
         ) : null}
         <View style={styles.row}>
-          <Action
-            label={`${
-              b.selected === null ? "All enrolled riders" : "Selected riders"
-            } · ${b.selected?.length ?? b.audience.data?.length ?? 0}`}
-            style={{ flex: 1 }}
-            onPress={() => b.setSelecting(true)}
-          />
+          {/* `openedAt` changes on every tap so the Riders tab, which stays
+              mounted, sees a new param and switches to the Absences segment
+              even when it was last left on the directory. */}
           <Action
             label={`Absences · ${changes.data?.absentCount || 0}`}
-            onPress={() => navigation.navigate("Absences")}
+            style={{ flex: 1 }}
+            testID="absences-pill"
+            onPress={() =>
+              navigation.navigate("MainTabs", {
+                screen: "Riders",
+                params: { tab: "absences", openedAt: Date.now() },
+              })
+            }
           />
         </View>
         <QuickActionGrid
@@ -173,7 +155,7 @@ export default function BroadcastPanel({ navigation }) {
           }
         />
         {b.feedback}
-      </ScrollView>
+      </View>
       {b.modals}
     </View>
   );

@@ -22,6 +22,118 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-09-12 — Okay on absence requests and cancellations; the pill opens the absence list
+- **Branch:** feature/absence-request-ack
+- **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)
+- **What changed:**
+  - The Home strip branches on the pending change's `status`: "<rider> will be absent
+    today." for a fresh absence, the existing "is coming today · absence cancelled." for a
+    cancellation. One action, **Okay**, acknowledges that revision; "View changes" is gone
+    (`components.js` `CancellationStrip`, `BroadcastPanel.js`).
+  - The "Absences · N" pill passes `openedAt: Date.now()` with `tab: "absences"`, and
+    `RidersScreen` adopts the requested segment whenever `openedAt` changes, so a tap after
+    the tab's first visit lands on the Absences segment instead of wherever it was left.
+- **Why:** a rider marking themselves absent got no acknowledgment from the driver (the
+  server only listed cancellations), and the pill stopped working after the first visit
+  because the tab stays mounted and read its params once.
+- **Contract impact:** consumes the widened `changes` from `GET /api/driver/absences`
+  (backend `feature/absence-request-ack`, `docs/modules/COMMUNICATIONS.md` updated there).
+- **Tests:** `features/communications/__tests__/broadcast.test.js` (strip copy for both
+  statuses, Okay acknowledges the row's revision, nothing with no change, pill target and
+  fresh `openedAt`), `riders.test.js` (segment follows a later param change, twice).
+- **Docs updated:** COMMUNICATIONS.md, TESTING_GUIDE.md rows.
+- **Follow-ups / known issues:** `riders.test.js` is flaky under the full parallel `npm test`
+  run on this machine (passes alone); a failed Okay still leaves a draft under
+  `communication-draft:<driverId>:home-acknowledgment` with no retry affordance.
+
+## 2026-09-11 — No rider pictures in the driver app; ink restyle of the Riders tab
+- **Branch:** feature/restore-bento-ui
+- **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)
+- **What changed:**
+  - `RiderAvatar` and `riderAvatarCache.js` deleted. `RiderRow` and `RiderProfileScreen`
+    show the name only. An intermediate restyle had put the avatar back into `RiderRow`,
+    which showed photos on the Riders list but initials on Absences (absence rows carry no
+    `hasAvatar`); the driver is not meant to see pictures at all.
+  - Commits the Riders-tab restyle that was on disk: dark ink rows, a text Back link in
+    `Page`, segmented control on a field background with an elevated selected pane, and
+    divider-separated fields on the rider profile.
+- **Why:** driver asked that rider pictures not appear in the driver app, and the three
+  surfaces had drifted apart.
+- **Contract impact:** none. The roster still carries `hasAvatar`/`avatarVersion` and the
+  avatar endpoint remains; this app no longer reads them.
+- **Tests:** `features/communications/__tests__/riders.test.js` — "rider pictures" cases
+  removed; one case asserts no `Image`, no initials and no `/avatar` request on the list,
+  the absences segment and the profile.
+- **Docs updated:** COMMUNICATIONS.md, TESTING_GUIDE.md row.
+- **Follow-ups / known issues:** none.
+
+## 2026-09-11 — Absences becomes a plain absent list; riders list drops pictures; no polling
+- **Branch:** feature/restore-bento-ui
+- **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)
+- **What changed:**
+  - `AbsencesScreen` is driver-only and lists just the riders with status `ABSENT` on the
+    chosen date as `RiderRow`s (name, organization · pickup, tap to profile). The summary
+    count, "Changes on other dates" card, Coming after cancellation / History sections,
+    per-card acknowledge flow and the Updated/Refresh row are gone. `AbsenceCard` and
+    `RiderIdentity` were removed as unused.
+  - New shared `RiderRow` in `components.js`; `RiderDirectory` uses it and no longer shows
+    `RiderAvatar`. The picture remains on `RiderProfileScreen`.
+  - The Updated/Refresh row is gone from the Riders list too, and `Freshness` with it.
+    Load-failure copy now says the list reloads when the tab is reopened.
+  - The date input is gone (`DateField` deleted): the rider app can only report today, so
+    the driver never chooses a day. One read-only `Today · DD/MM/YYYY` caption
+    (`toDisplayDate` in `state.js`) sits above the search box and the request is always
+    for today.
+  - `useCommunicationQuery` no longer polls every 30 s. Lists load on open and reload when
+    the provider invalidates them (socket `communication:event`, reconnect, foreground, push).
+- **Why:** driver asked for the Absences tab to show only who is currently away, laid out like
+  the Riders list, without pictures, and to refresh on rider actions rather than a timer.
+- **Contract impact:** none. Same `GET /api/driver/absences?date=` and `GET /api/driver/riders`.
+- **Tests:** `features/communications/__tests__/riders.test.js` — new Absences segment cases,
+  list-has-no-picture case, no-Refresh-on-either-segment case, avatar cases moved to the
+  profile screen.
+- **Docs updated:** COMMUNICATIONS.md, TESTING_GUIDE.md rows.
+- **Follow-ups / known issues:** the rider roster no longer refreshes on a timer either; an
+  enrollment change shows on the next open or foreground.
+
+## 2026-09-10 — The Messages tab becomes a Riders directory
+- **Branch:** feature/rider-directory-tab
+- **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)
+- **What changed:**
+  - Removed private rider-driver messaging: `MessagesScreen`, `ConversationScreen`,
+    `ConversationContent`, `MessageBubble`, `UnreadBadge`, `mergeMessages`, the
+    `Conversation`/`RiderAudience`/`Absences` stack routes, and the provider's
+    deep-link-to-conversation poller. The in-app banner is now dismiss-only.
+  - The freed tab is **Riders**: a segmented screen over a rider directory and the
+    existing driver absence review. Only the visible segment mounts, since each polls
+    every 30 s while focused. The Home panel's two absence actions now deep-link into
+    the Absences segment — they pointed at a stack route that no longer exists.
+  - The directory is a row per rider (picture, name, then grade · organization · pickup)
+    opening a rider profile: name, grade, rider code, one contact number. No address.
+  - Pictures come from the new per-rider avatar endpoint and are cached in AsyncStorage
+    against `avatarVersion` (`riderAvatarCache.js`, ported from user-app). A rider with
+    no picture causes no request and shows their initial.
+- **Why:** the inbox had nothing to receive — user-app dropped its conversation screens,
+  so riders have had no send path. The two things a driver actually uses were buried in
+  chips on the Home panel.
+- **Contract impact:** consumes the additive backend change of the same date —
+  `GET /api/driver/riders` gains `category`/`grade`/`hasAvatar`, plus new
+  `GET /api/driver/riders/:riderId` and `.../avatar`. Backend doc:
+  `backend/docs/modules/COMMUNICATIONS.md`.
+- **Tests:** new `features/communications/__tests__/riders.test.js` (20 cases: segment
+  defaulting and single-mount polling, row subtitle and tap-through, search, 404 copy,
+  no address, avatar cache per version incl. no-request and eviction, `gradeLine` table).
+  `broadcast.test.js` lost its `mergeMessages` case. Full suite **604/604 passing, 70
+  suites**, up from 584; lint 0 errors.
+- **Docs updated:** `docs/modules/COMMUNICATIONS.md`, `docs/TESTING_GUIDE.md` row,
+  `CLAUDE.md` navigation map.
+- **Follow-ups / known issues:** **not yet exercised in a browser** — the automated
+  checks pass and the web bundle compiles with 0 console errors on load, but no one has
+  clicked through the tab against real data yet. Also: a notification tap no longer
+  navigates anywhere now that the conversation deep link is gone.
+
+---
+
 ## 2026-09-10 — Rider–driver communications, merged into `main`
 - **Branch:** feature/comms-preset-trim (merged)
 - **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)

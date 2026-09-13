@@ -6,7 +6,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -15,7 +14,7 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { theme } from "../../theme";
-import { resourceId, colomboToday } from "./state";
+import { colomboToday } from "./state";
 export const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: theme.color.surface.page },
   content: { padding: theme.space[4], gap: theme.space[3] },
@@ -28,6 +27,21 @@ export const styles = StyleSheet.create({
   title: { ...theme.textStyle("h1"), color: theme.color.text.primary },
   text: { ...theme.textStyle("body"), color: theme.color.text.primary },
   small: { ...theme.textStyle("caption"), color: theme.color.text.secondary },
+  segmentedWrap: { paddingHorizontal: theme.space[4], paddingBottom: theme.space[3] },
+  // A whole-row target: a driver taps this in a moving vehicle.
+  riderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.space[3],
+    minHeight: 64,
+    paddingVertical: theme.space[2],
+    paddingHorizontal: theme.space[3],
+    borderRadius: theme.radius.card,
+    backgroundColor: theme.color.surface.card,
+    borderWidth: 1,
+    borderColor: theme.color.border.hairline,
+  },
+  profileField: { gap: 2, paddingVertical: theme.space[2] },
   card: {
     padding: theme.space[3],
     borderRadius: theme.radius.card,
@@ -80,11 +94,13 @@ export const styles = StyleSheet.create({
   sheetScroll: { flexShrink: 1 },
   sheetContent: { gap: theme.space[3] },
   panel: {
+    marginTop: theme.space[4],
+    borderRadius: theme.radius.card,
     backgroundColor: theme.color.surface.card,
-    borderTopWidth: theme.borderWidth.hairline,
+    borderWidth: theme.borderWidth.hairline,
     borderColor: theme.color.border.hairline,
   },
-  panelContent: { padding: theme.space[2], gap: theme.space[2] },
+  panelContent: { padding: theme.space[3], gap: theme.space[2] },
   pageHeader: { minHeight: 56, paddingHorizontal: theme.space[4] },
 });
 export function Action({ label, onPress, disabled, primary, style, testID }) {
@@ -122,7 +138,23 @@ export function Page({ title, navigation, children, showBack = true }) {
     >
       <View style={[styles.row, styles.pageHeader]}>
         {showBack && navigation?.canGoBack?.() ? (
-          <Action label="Back" onPress={() => navigation.goBack()} />
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back"
+            onPress={() => navigation.goBack()}
+            style={({ pressed }) => [
+              {
+                paddingVertical: theme.space[2],
+                paddingRight: theme.space[3],
+                marginRight: theme.space[2],
+              },
+              pressed && { opacity: 0.55 },
+            ]}
+          >
+            <Text style={{ ...theme.textStyle("body"), color: theme.color.primary[600] }}>
+              Back
+            </Text>
+          </Pressable>
         ) : null}
         <Text accessibilityRole="header" style={[styles.title, { flex: 1 }]}>
           {title}
@@ -213,273 +245,114 @@ export function QuickActionGrid({ actions, onSelect, disabled }) {
     </View>
   );
 }
-export function RiderIdentity({ name, code, driverName, unread }) {
+// One rider as a whole-row tap target, shared by the Riders list and the
+// absent list so the two read the same.
+export function RiderRow({ name, subtitle, onPress, testID }) {
   return (
-    <View style={styles.row}>
-      <View
-        accessibilityElementsHidden
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 18,
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: theme.color.primary[50],
-        }}
-      >
-        <Text style={styles.buttonText}>{(name || "R").slice(0, 1)}</Text>
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={`${name}. ${subtitle}`}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.riderRow,
+        { backgroundColor: theme.color.ink.base, borderWidth: 0, paddingVertical: theme.space[3] },
+        pressed && { opacity: 0.8, backgroundColor: theme.color.ink.raised },
+      ]}
+    >
+      <View style={{ flex: 1, minWidth: 0, justifyContent: "center" }}>
+        <Text numberOfLines={1} style={[styles.text, { color: theme.color.white, fontFamily: theme.fontFamily("medium") }]}>
+          {name}
+        </Text>
+        <Text numberOfLines={1} style={[styles.small, { color: theme.color.primary[300], marginTop: 2 }]}>
+          {subtitle}
+        </Text>
       </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.text}>{name || "Rider"}</Text>
-        {code || driverName ? (
-          <Text style={styles.small}>
-            {[code, driverName].filter(Boolean).join(" · ")}
-          </Text>
-        ) : null}
-      </View>
-      <UnreadBadge count={unread} />
+    </Pressable>
+  );
+}
+
+// Two panes behind one tab. `accessibilityRole="tab"` so a screen reader
+// announces it as a switch rather than two unrelated buttons.
+export function Segmented({ options, value, onChange }) {
+  return (
+    <View accessibilityRole="tablist" style={localStyles.segmented}>
+      {options.map((option) => {
+        const selected = option.value === value;
+        return (
+          <Pressable
+            key={option.value}
+            accessibilityRole="tab"
+            accessibilityState={{ selected }}
+            testID={`segment-${option.value}`}
+            onPress={() => onChange(option.value)}
+            style={[localStyles.segment, selected && localStyles.segmentSelected]}
+          >
+            <Text style={[localStyles.segmentText, selected && localStyles.segmentTextSelected]}>
+              {option.label}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
-export function UnreadBadge({ count }) {
-  return count > 0 ? (
-    <Text
-      accessibilityLabel={`${count} unread messages`}
-      style={[styles.buttonText, { padding: 8 }]}
-    >
-      {count}
-    </Text>
-  ) : null;
-}
-export function AudienceSelector({
-  visible,
-  rows,
-  selected,
-  onChange,
-  onClose,
-}) {
-  return (
-    <Sheet visible={visible} title="Choose riders" onCancel={onClose}>
-      <Action
-        label={`All enrolled riders · ${rows.length}`}
-        primary={selected === null}
-        onPress={() => onChange(null)}
-      />
-      <View style={{ gap: theme.space[2] }}>
-        {rows.map((row) => {
-          const checked =
-            selected === null || selected.includes(resourceId(row.riderId));
-          return (
-            <Action
-              key={resourceId(row.riderId)}
-              label={`${checked ? "✓ " : ""}${row.riderName} · ${
-                row.riderCode || ""
-              }`}
-              onPress={() => {
-                const current =
-                  selected === null
-                    ? rows.map((r) => resourceId(r.riderId))
-                    : selected;
-                onChange(
-                  checked
-                    ? current.filter((r) => r !== resourceId(row.riderId))
-                    : [...current, resourceId(row.riderId)]
-                );
-              }}
-            />
-          );
-        })}
-      </View>
-      <Action label="Use this audience" primary onPress={onClose} />
-    </Sheet>
-  );
-}
-export function CancellationStrip({
-  changes = [],
-  onAcknowledge,
-  onView,
-  busy,
-}) {
+
+const localStyles = StyleSheet.create({
+  segmented: {
+    flexDirection: "row",
+    gap: 4,
+    padding: 4,
+    borderRadius: theme.radius.card,
+    backgroundColor: theme.color.surface.field,
+  },
+  segment: {
+    flex: 1,
+    minHeight: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: theme.radius.control,
+  },
+  segmentSelected: {
+    backgroundColor: theme.color.surface.card,
+    ...theme.elevation.card,
+  },
+  segmentText: {
+    ...theme.textStyle("label"),
+    color: theme.color.text.muted,
+  },
+  segmentTextSelected: {
+    color: theme.color.primary[500],
+  },
+});
+
+// One pending absence change at a time, a fresh absence as much as a
+// cancellation: the driver answers it with Okay and the next one, if any,
+// takes its place. The server keeps it in `changes` until that exact revision
+// is acknowledged.
+export function CancellationStrip({ changes = [], onAcknowledge, busy }) {
   const a = changes[0];
   if (!a) return null;
+  const name = a.riderId?.fullName || "Rider";
+  const when = a.date === colomboToday() ? "today" : `on ${a.date}`;
+  const copy =
+    a.status === "ABSENT"
+      ? `${name} will be absent ${when}.`
+      : `${name} is coming ${when} · absence cancelled.`;
   return (
     <View
       testID="cancellation-strip"
       style={[styles.card, { backgroundColor: theme.color.warning.bg }]}
     >
-      <Text style={styles.text}>
-        {a.riderId?.fullName || "Rider"} is coming{" "}
-        {a.date === colomboToday() ? "today" : `on ${a.date}`}—absence
-        cancelled.
-      </Text>
+      <Text style={styles.text}>{copy}</Text>
       <View style={styles.row}>
         <Action
-          label="Acknowledge"
+          label="Okay"
           primary
           disabled={busy}
           onPress={() => onAcknowledge(a)}
           style={{ flex: 1 }}
-        />
-        <Action
-          label={`View changes${
-            changes.length > 1 ? ` · ${changes.length}` : ""
-          }`}
-          onPress={onView}
-          style={{ flex: 1 }}
-        />
-      </View>
-    </View>
-  );
-}
-export function Freshness({ query, online }) {
-  return (
-    <View style={styles.row}>
-      <Text
-        accessibilityLiveRegion="polite"
-        style={[styles.small, { flex: 1 }]}
-      >
-        {!online
-          ? "Offline · cached list"
-          : query.isError
-          ? "Could not refresh · stale list"
-          : query.isFetching
-          ? "Refreshing…"
-          : "Updated"}
-        {query.dataUpdatedAt
-          ? ` · ${new Date(query.dataUpdatedAt).toLocaleTimeString()}`
-          : ""}
-      </Text>
-      <Action
-        label="Refresh"
-        onPress={() => query.refetch()}
-        disabled={!online}
-      />
-    </View>
-  );
-}
-export function AbsenceCard({
-  absence: a,
-  onConversation,
-  onCancel,
-  onAcknowledge,
-  busy,
-}) {
-  const pending = a.status !== "RETIRED" && a.acknowledgedRevision < a.revision;
-  const editable = a.date >= colomboToday();
-  return (
-    <View style={styles.card}>
-      <RiderIdentity
-        name={a.riderId?.fullName}
-        code={a.riderId?.riderCode}
-        driverName={a.driverId?.name}
-      />
-      <Text style={styles.text}>
-        {a.date} ·{" "}
-        {a.status === "ABSENT"
-          ? "Absent all day"
-          : a.status === "CANCELLED"
-          ? "Coming after cancellation"
-          : "Notice retired"}
-      </Text>
-      <Text style={styles.small}>
-        {pending
-          ? "Acknowledgment pending"
-          : a.status === "RETIRED"
-          ? "Enrollment ended"
-          : "Driver acknowledged"}{" "}
-        · Revision {a.revision}
-      </Text>
-      {a.enrollmentId?.driverId?.organization?.name ? (
-        <Text style={styles.small}>
-          {a.enrollmentId.driverId.organization.name}
-        </Text>
-      ) : null}
-      {a.enrollmentId?.pickupPlaceId ? (
-        <Text style={styles.small}>
-          Pickup: {a.enrollmentId.pickupPlaceId.label} ·{" "}
-          {a.enrollmentId.pickupPlaceId.address}
-        </Text>
-      ) : null}
-      {onConversation ? (
-        <Action label="Open private conversation" onPress={onConversation} />
-      ) : null}
-      {editable && a.status === "ABSENT" && onCancel ? (
-        <Action
-          label="Cancel absence"
-          onPress={() => onCancel(a)}
-          disabled={busy}
-        />
-      ) : null}
-      {editable && pending && onAcknowledge ? (
-        <Action
-          label="Acknowledge change"
-          primary
-          onPress={() => onAcknowledge(a)}
-          disabled={busy}
-        />
-      ) : null}
-    </View>
-  );
-}
-export function MessageBubble({ message, own, read }) {
-  return (
-    <View
-      style={[
-        styles.card,
-        {
-          alignSelf: own ? "flex-end" : "flex-start",
-          maxWidth: "92%",
-          backgroundColor: own
-            ? theme.color.primary[50]
-            : theme.color.surface.card,
-        },
-      ]}
-    >
-      {message.announcementId ? (
-        <Text style={styles.small}>
-          {message.correctionOf
-            ? "Correction to earlier announcement"
-            : "Driver announcement"}
-        </Text>
-      ) : null}
-      <Text selectable style={styles.text}>
-        {message.text}
-      </Text>
-      <Text style={styles.small}>
-        {new Date(message.createdAt).toLocaleString()}{" "}
-        {own ? `· ${read ? "Read" : "Sent"}` : ""}
-      </Text>
-    </View>
-  );
-}
-export function DateField({ value, onChange }) {
-  return (
-    <View style={{ gap: 8 }}>
-      <Text style={styles.small}>Whole day · Asia/Colombo · YYYY-MM-DD</Text>
-      <TextInput
-        accessibilityLabel="Date YYYY-MM-DD"
-        style={styles.field}
-        value={value}
-        onChangeText={onChange}
-        maxLength={10}
-        keyboardType="numbers-and-punctuation"
-      />
-      <View style={styles.row}>
-        <Action
-          label="Today"
-          onPress={() => onChange(colomboToday())}
-          style={{ flex: 1 }}
-        />
-        <Action
-          label="Tomorrow"
-          onPress={() =>
-            onChange(
-              new Date(Date.parse(colomboToday()) + 86400000)
-                .toISOString()
-                .slice(0, 10)
-            )
-          }
-          style={{ flex: 1 }}
+          testID="cancellation-strip-okay"
         />
       </View>
     </View>

@@ -21,7 +21,7 @@ const mockKeyQuery = jest.fn(() => ({
 // included).
 const mockVehicleQuery = jest.fn(() => ({
   data: { vehicleName: 'Shuttle 1', registrationNumber: 'ABC-123', seatCapacity: 20 },
-  isLoading: false,
+  isPending: false,
   isError: false,
 }));
 
@@ -54,17 +54,17 @@ beforeEach(() => {
   });
   mockVehicleQuery.mockReturnValue({
     data: { vehicleName: 'Shuttle 1', registrationNumber: 'ABC-123', seatCapacity: 20 },
-    isLoading: false,
+    isPending: false,
     isError: false,
   });
 });
 
 describe('DriverProfileScreen', () => {
-  it('shows the header, avatar initial, and identity details', async () => {
+  it('shows the hero, avatar initial, and identity details', async () => {
     const { getByText, getAllByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
-    expect(getByText('Profile')).toBeTruthy();
+    expect(getByText('Active Driver')).toBeTruthy();
     expect(getByText('N')).toBeTruthy();
-    // Appears twice: the identity block heading and the "Your details" InfoRow.
+    // Appears twice: the hero name and the Full Name detail row.
     expect(getAllByText('Nadia Perera').length).toBe(2);
     expect(getByText('nadia@test.com')).toBeTruthy();
     expect(await findByText('Shuttle 1')).toBeTruthy();
@@ -117,7 +117,7 @@ describe('DriverProfileScreen', () => {
     const { getAllByText, queryByText, findByText } = render(<DriverProfileScreen navigation={navigation} />);
     await findByText('Shuttle 1');
     expect(queryByText('nadia@test.com')).toBeNull();
-    expect(getAllByText('-')).toHaveLength(1);
+    expect(getAllByText('Not provided')).toHaveLength(1);
   });
 
   it('falls back to the stored account while the server read is in flight', async () => {
@@ -134,9 +134,9 @@ describe('DriverProfileScreen', () => {
   });
 
   it('navigates to Vehicle registration from the vehicle card CTA when there is no vehicle', async () => {
-    mockVehicleQuery.mockReturnValue({ data: null, isLoading: false, isError: false });
+    mockVehicleQuery.mockReturnValue({ data: null, isPending: false, isError: false });
     const { findByText } = render(<DriverProfileScreen navigation={navigation} />);
-    fireEvent.press(await findByText('Add my vehicle'));
+    fireEvent.press(await findByText('No vehicle yet'));
     expect(navigation.navigate).toHaveBeenCalledWith('VehicleRegistration');
   });
 
@@ -192,13 +192,13 @@ describe('DriverProfileScreen', () => {
     it('keeps showing the cached vehicle when a background refetch fails', async () => {
       mockVehicleQuery.mockReturnValue({
         data: { vehicleName: 'Shuttle 1', registrationNumber: 'ABC-123', seatCapacity: 20 },
-        isLoading: false,
+        isPending: false,
         isError: true, // e.g. offline
       });
 
       const { getByText, queryByText } = render(<DriverProfileScreen navigation={navigation} />);
       expect(getByText('Shuttle 1')).toBeTruthy();
-      expect(queryByText('Add my vehicle')).toBeNull();
+      expect(queryByText('No vehicle yet')).toBeNull();
     });
   });
 });

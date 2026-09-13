@@ -10,18 +10,16 @@ import { useCommunicationTransport } from './transport';
 import { theme } from '../../theme';
 const Context = createContext(null);
 export const useCommunication = () => useContext(Context);
-export function CommunicationProvider({ children, navigationRef }) {
+export function CommunicationProvider({ children }) {
   const { user, token } = useAuth();
   const { isOffline } = useNetworkStatus();
   const request = useCommunicationTransport();
   const queryClient = useQueryClient();
   const accountId = user?._id || user?.id;
   const [banner, setBanner] = useState(null);
-  const pending = useRef(null);
   const seen = useRef(new Set());
   const requestRef = useRef(request);
   useEffect(() => { requestRef.current = request; }, [request]);
-  const open = data => { if (data?.conversationId) pending.current = data; };
   useEffect(() => {
     if (!accountId || !token) { disconnectSocket(); seen.current.clear(); return undefined; }
     const socket = connectSocket(token);
@@ -42,24 +40,8 @@ export function CommunicationProvider({ children, navigationRef }) {
   useEffect(() => () => disconnectSocket(), []);
   useEffect(() => { if (!banner) return undefined; const timer = setTimeout(() => setBanner(null), 5000); return () => clearTimeout(timer); }, [banner]);
   useEffect(() => {
-    if (!accountId) return undefined;
-    let navigating = false;
-    const timer = setInterval(async () => {
-      const data = pending.current;
-      if (!data || navigating || !navigationRef.current?.isReady() || !navigationRef.current?.getRootState()?.routeNames?.includes('Conversation')) return;
-      navigating = true;
-      try {
-        await requestRef.current(`/conversations/${data.conversationId}/messages?limit=1`);
-        navigationRef.current.navigate('Conversation', { conversationId: data.conversationId, riderId: data.riderId || data.studentId });
-        pending.current = null;
-      } catch (e) { if (e.status === 403 || e.status === 404) pending.current = null; }
-      finally { navigating = false; }
-    }, 500);
-    return () => clearInterval(timer);
-  }, [accountId, navigationRef]);
-  useEffect(() => {
     if (Platform.OS === 'web') return undefined;
-    let notifications; let received; let response; let rotation; let foreground; let stopped = false;
+    let notifications; let received; let rotation; let foreground; let stopped = false;
     const register = async () => {
       if (!accountId || stopped) return;
       try {
@@ -83,16 +65,14 @@ export function CommunicationProvider({ children, navigationRef }) {
         void queryClient.invalidateQueries({ queryKey: ['communications', accountId] });
         if (!seen.current.has(data.eventId)) { seen.current.add(data.eventId); setBanner({ ...data, title: n.request.content.title }); }
       });
-      response = notifications.addNotificationResponseReceivedListener(r => open(r.notification.request.content.data));
-      notifications.getLastNotificationResponseAsync().then(r => { if (r && !stopped) open(r.notification.request.content.data); }).catch(() => {});
       rotation = notifications.addPushTokenListener(register);
       foreground = AppState.addEventListener('change', state => { if (state === 'active') void register(); });
       void register();
     } catch { return undefined; }
     const timer = setInterval(register, 60000);
-    return () => { stopped = true; clearInterval(timer); received?.remove(); response?.remove(); rotation?.remove(); foreground?.remove(); };
+    return () => { stopped = true; clearInterval(timer); received?.remove(); rotation?.remove(); foreground?.remove(); };
   }, [accountId, queryClient]);
-  return <Context.Provider value={{ request, accountId, online: !isOffline, role: user?.role, open }}>
-    <View style={{ flex: 1 }}>{children}{banner && accountId ? <Pressable accessibilityRole="button" accessibilityLabel="Open new message" onPress={() => { open(banner); setBanner(null); }} style={{ position: 'absolute', top: 48, left: 16, right: 16, padding: 12, borderRadius: 12, backgroundColor: theme.color.primary[50], borderColor: theme.color.border.hairline, borderWidth: 1 }}><Text numberOfLines={2} style={{ color: theme.color.text.primary }}>{banner.title || 'New message'}</Text></Pressable> : null}</View>
+  return <Context.Provider value={{ request, accountId, online: !isOffline, role: user?.role }}>
+    <View style={{ flex: 1 }}>{children}{banner && accountId ? <Pressable accessibilityRole="button" accessibilityLabel="Dismiss notice" onPress={() => setBanner(null)} style={{ position: 'absolute', top: 48, left: 16, right: 16, padding: 12, borderRadius: 12, backgroundColor: theme.color.primary[50], borderColor: theme.color.border.hairline, borderWidth: 1 }}><Text numberOfLines={2} style={{ color: theme.color.text.primary }}>{banner.title || 'New message'}</Text></Pressable> : null}</View>
   </Context.Provider>;
 }

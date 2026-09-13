@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BroadcastPanel from "../BroadcastPanel";
 import { useCommunication } from "../provider";
-import { announcementDraft, mergeMessages } from "../state";
+import { announcementDraft, colomboToday } from "../state";
 jest.mock("../provider", () => ({ useCommunication: jest.fn() }));
 jest.mock("@react-navigation/native", () => ({ useIsFocused: () => true }));
 jest.mock("react-native-safe-area-context", () => ({
@@ -31,11 +31,12 @@ const rows = [
   { riderId: "rider-a", riderName: "Amal" },
   { riderId: "rider-b", riderName: "Sibling" },
 ];
-let request, online, clients;
+let request, online, clients, absences;
 beforeEach(async () => {
   await AsyncStorage.clear();
   online = true;
   clients = [];
+  absences = { rows: [], changes: [], absentCount: 0 };
   request = jest.fn(async (path, method) => {
     if (method === "POST")
       return {
@@ -44,8 +45,7 @@ beforeEach(async () => {
       };
     if (path === "/driver/riders") return rows;
     if (path === "/conversations/presets") return { presets };
-    if (path.startsWith("/driver/absences"))
-      return { rows: [], changes: [], absentCount: 0 };
+    if (path.startsWith("/driver/absences")) return absences;
     return { recipients: rows.map((r) => ({ ...r, state: "sent" })) };
   });
   useCommunication.mockImplementation(() => ({
@@ -56,17 +56,86 @@ beforeEach(async () => {
   }));
 });
 afterEach(() => clients.forEach((c) => c.clear()));
-function mount() {
+function mount(navigation = { navigate: jest.fn() }) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   clients.push(client);
   return render(
     <QueryClientProvider client={client}>
-      <BroadcastPanel navigation={{ navigate: jest.fn() }} />
+      <BroadcastPanel navigation={navigation} />
     </QueryClientProvider>
   );
 }
+const change = (status, id = "absence-1") => ({
+  _id: id,
+  status,
+  revision: status === "ABSENT" ? 1 : 2,
+  date: colomboToday(),
+  riderId: { fullName: "Amal Perera" },
+});
+
+// The Home strip is where the driver answers an absence change, a fresh
+// absence as much as a cancellation, with a single Okay. There is no
+// "View changes" any more: the pill below is the way to the list.
+describe("absence strip", () => {
+  test("asks about a fresh absence with Okay and no View changes", async () => {
+    absences = { rows: [change("ABSENT")], changes: [change("ABSENT")], absentCount: 1 };
+    const ui = mount();
+    await waitFor(() => expect(ui.getByTestId("cancellation-strip")).toBeTruthy());
+
+    expect(ui.getByText("Amal Perera will be absent today.")).toBeTruthy();
+    expect(ui.getByText("Okay")).toBeTruthy();
+    expect(ui.queryByText("Acknowledge")).toBeNull();
+    expect(ui.queryByText(/View changes/)).toBeNull();
+  });
+
+  test("still tells a cancellation apart", async () => {
+    absences = { rows: [], changes: [change("CANCELLED")], absentCount: 0 };
+    const ui = mount();
+    await waitFor(() => expect(ui.getByTestId("cancellation-strip")).toBeTruthy());
+    expect(ui.getByText("Amal Perera is coming today · absence cancelled.")).toBeTruthy();
+  });
+
+  test("Okay acknowledges that exact revision", async () => {
+    absences = { rows: [change("ABSENT")], changes: [change("ABSENT")], absentCount: 1 };
+    const ui = mount();
+    await waitFor(() => expect(ui.getByTestId("cancellation-strip-okay")).toBeTruthy());
+
+    fireEvent.press(ui.getByTestId("cancellation-strip-okay"));
+    await waitFor(() =>
+      expect(request.mock.calls.filter((c) => c[1] === "POST")).toHaveLength(1)
+    );
+    const [path, , body] = request.mock.calls.find((c) => c[1] === "POST");
+    expect(path).toBe("/absences/absence-1/acknowledge");
+    expect(body).toMatchObject({ expectedRevision: 1 });
+    expect(body.requestId).toBeTruthy();
+  });
+
+  test("shows nothing when there is nothing to answer", async () => {
+    const ui = mount();
+    await waitFor(() =>
+      expect(ui.getByTestId("quick-on_my_way").props.accessibilityState.disabled).toBe(false)
+    );
+    expect(ui.queryByTestId("cancellation-strip")).toBeNull();
+  });
+});
+
+test("the Absences pill opens the Absences segment, with a fresh param each tap", async () => {
+  absences = { rows: [change("ABSENT")], changes: [], absentCount: 1 };
+  const navigate = jest.fn();
+  const ui = mount({ navigate });
+  await waitFor(() => expect(ui.getByText("Absences · 1")).toBeTruthy());
+
+  fireEvent.press(ui.getByTestId("absences-pill"));
+  fireEvent.press(ui.getByTestId("absences-pill"));
+  expect(navigate).toHaveBeenCalledTimes(2);
+  const [first, second] = navigate.mock.calls.map((c) => c[1]);
+  expect(first).toMatchObject({ screen: "Riders", params: { tab: "absences" } });
+  expect(navigate.mock.calls[0][0]).toBe("MainTabs");
+  expect(typeof first.params.openedAt).toBe("number");
+  expect(second.params.openedAt).toBeGreaterThanOrEqual(first.params.openedAt);
+});
 test.each(presets)(
   "$label takes exactly preset + Send, with no keyboard",
   async (preset) => {
@@ -90,7 +159,7 @@ test.each(presets)(
     });
   }
 );
-test("cancel sends nothing; offline explicit retry retains original request ID", async () => {
+test("cancel sends nothing; an offline send is stored, not sent, then goes out online", async () => {
   const ui = mount();
   await waitFor(() =>
     expect(
@@ -100,40 +169,35 @@ test("cancel sends nothing; offline explicit retry retains original request ID",
   fireEvent.press(ui.getByTestId("quick-on_my_way"));
   fireEvent.press(ui.getByText("Cancel"));
   expect(request.mock.calls.filter((c) => c[1] === "POST")).toHaveLength(0);
-  await waitFor(() =>
-    expect(ui.getByText("Review saved broadcast")).toBeTruthy()
-  );
+
   online = false;
-  fireEvent.press(ui.getByText("All enrolled riders · 2"));
-  fireEvent.press(ui.getByText("Cancel"));
-  fireEvent.press(ui.getByText("Review saved broadcast"));
+  fireEvent.press(ui.getByTestId("quick-on_my_way"));
   fireEvent.press(ui.getByTestId("send-broadcast"));
-  await waitFor(() => expect(ui.getByText("Not sent—offline")).toBeTruthy());
-  const original = JSON.parse(
+  await waitFor(() => expect(ui.getByText("Not sent, offline")).toBeTruthy());
+  expect(request.mock.calls.filter((c) => c[1] === "POST")).toHaveLength(0);
+
+  // The unsent broadcast is still written to storage before the network call,
+  // so nothing is lost even though this card no longer offers a review action
+  // for it. Re-sending starts from the preset again.
+  const stored = JSON.parse(
     await AsyncStorage.getItem("communication-draft:driver-1:broadcast")
   );
-  expect(request.mock.calls.filter((c) => c[1] === "POST")).toHaveLength(0);
+  expect(stored.body.requestId).toBeTruthy();
+
   online = true;
-  fireEvent.press(ui.getByText("All enrolled riders · 2"));
-  fireEvent.press(ui.getByText("Cancel"));
-  fireEvent.press(ui.getByText("Review saved broadcast"));
+  fireEvent.press(ui.getByTestId("quick-on_my_way"));
   fireEvent.press(ui.getByTestId("send-broadcast"));
   await waitFor(() =>
-    expect(request.mock.calls.find((c) => c[1] === "POST")[2].requestId).toBe(
-      original.body.requestId
-    )
+    expect(request.mock.calls.filter((c) => c[1] === "POST")).toHaveLength(1)
   );
 });
-test("audience preview is copied and socket/poll messages deduplicate", () => {
-  const selected = ["rider-a"];
-  const draft = announcementDraft(presets[0], rows, selected, "2026-09-08");
-  selected.push("rider-b");
-  expect(draft.body.riderIds).toEqual(["rider-a"]);
-  const message = { _id: "1", eventId: "event-1" };
-  expect(mergeMessages([message], [message])).toHaveLength(1);
-});
 
-test("bounds the fixed quick actions inside a scrollable viewport region", async () => {
+test("a draft left over from a previous session shows nothing to review", async () => {
+  await AsyncStorage.setItem(
+    "communication-draft:driver-1:broadcast",
+    JSON.stringify(announcementDraft(presets[0], rows, null, "2026-09-08"))
+  );
+
   const ui = mount();
   await waitFor(() =>
     expect(
@@ -141,8 +205,33 @@ test("bounds the fixed quick actions inside a scrollable viewport region", async
     ).toBe(false)
   );
 
-  const scroll = ui.getByTestId("fixed-broadcast-scroll");
-  expect(scroll.props.nestedScrollEnabled).toBe(true);
-  expect(scroll.props.style.maxHeight).toBeGreaterThanOrEqual(280);
-  expect(scroll.props.style.maxHeight).toBeLessThanOrEqual(560);
+  expect(ui.queryByText("Review saved broadcast")).toBeNull();
+  expect(ui.queryByText("Draft saved, review and retry")).toBeNull();
+  await waitFor(async () =>
+    expect(
+      await AsyncStorage.getItem("communication-draft:driver-1:broadcast")
+    ).toBeNull()
+  );
+});
+
+test("audience preview is copied, not aliased", () => {
+  const selected = ["rider-a"];
+  const draft = announcementDraft(presets[0], rows, selected, "2026-09-08");
+  selected.push("rider-b");
+  expect(draft.body.riderIds).toEqual(["rider-a"]);
+});
+
+test("renders the quick actions as a dashboard section, not a fixed panel", async () => {
+  const ui = mount();
+  await waitFor(() =>
+    expect(
+      ui.getByTestId("quick-on_my_way").props.accessibilityState.disabled
+    ).toBe(false)
+  );
+
+  // It scrolls with the page now. A nested scroll with its own height cap took
+  // over half the screen and squeezed everything above it into a strip.
+  const section = ui.getByTestId("broadcast-section");
+  expect(section.props.style.maxHeight).toBeUndefined();
+  expect(ui.queryByTestId("fixed-broadcast-scroll")).toBeNull();
 });

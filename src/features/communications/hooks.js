@@ -6,9 +6,10 @@ import { useCommunication } from './provider';
 export function useCommunicationQuery(path, enabled = true) {
   const { request, accountId, online } = useCommunication();
   const focused = useIsFocused();
+  // No timer: lists reload on open and when the provider invalidates them
+  // (socket event, reconnect, foreground, push). See provider.js.
   const query = useQuery({ queryKey: ['communications', accountId, path], queryFn: () => request(path),
-    enabled: Boolean(accountId && path && enabled && online && focused), refetchInterval: focused && online ? 30000 : false,
-    staleTime: 0, retry: 1 });
+    enabled: Boolean(accountId && path && enabled && online && focused), staleTime: 0, retry: 1 });
   const refetch = query.refetch;
   useEffect(() => { if (focused && online && enabled && path) void refetch(); }, [focused, online, enabled, path, refetch]);
   return query;
@@ -27,7 +28,7 @@ export function useExplicitSend(name) {
   useEffect(() => {
     let alive = true;
     setRestored(false); setDraft(null); setFeedback('');
-    AsyncStorage.getItem(key).then(value => { if (alive && value) { setDraft(JSON.parse(value)); setFeedback('Draft saved—review and retry'); } }).catch(() => {}).finally(() => { if (alive) setRestored(true); });
+    AsyncStorage.getItem(key).then(value => { if (alive && value) { setDraft(JSON.parse(value)); setFeedback('Draft saved, review and retry'); } }).catch(() => {}).finally(() => { if (alive) setRestored(true); });
     return () => { alive = false; };
   }, [key]);
   const save = useCallback(async value => {
@@ -39,7 +40,7 @@ export function useExplicitSend(name) {
     lock.current = true; setBusy(true);
     try {
       await save(value);
-      if (!online) { setFeedback('Not sent—offline'); return null; }
+      if (!online) { setFeedback('Not sent, offline'); return null; }
       setFeedback('Sending…');
       const result = await request(value.path, value.method || 'POST', value.body);
       if (result?.results?.some(r => !r.success)) {
@@ -48,7 +49,7 @@ export function useExplicitSend(name) {
       await queryClient.invalidateQueries({ queryKey: ['communications', accountId] });
       return result;
     } catch (error) {
-      setFeedback(error.kind === 'offline' || !online ? 'Not sent—offline' : `${error.message || 'Not confirmed'} · Review and retry`);
+      setFeedback(error.kind === 'offline' || !online ? 'Not sent, offline' : `${error.message || 'Not confirmed'} · Review and retry`);
       return null;
     } finally { lock.current = false; setBusy(false); }
   };

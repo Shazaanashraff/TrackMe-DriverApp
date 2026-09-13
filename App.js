@@ -46,7 +46,7 @@ function AppContent() {
           }}
         >
           <StatusBar style="dark" />
-          <CommunicationProvider navigationRef={navigationRef}><AppNavigator /></CommunicationProvider>
+          <CommunicationProvider><AppNavigator /></CommunicationProvider>
         </NavigationContainer>
       </ErrorBoundary>
     </View>
