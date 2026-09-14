@@ -22,6 +22,21 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-09-14 — Build-time guard against a placeholder production API URL
+
+- **Branch:** main
+- **Modules touched:** none dedicated — release config only (`app.config.js`)
+- **What changed:** `app.config.js` now throws during an `eas build --profile production` if
+  `EXPO_PUBLIC_API_URL` is unset or still contains `your-backend` — the exact template default
+  that shipped in production once already (see the entry below). Catches the mistake at build
+  time instead of relying on someone noticing a wrong URL after store submission.
+- **Why:** `AUDIT_2026-08-17/AUDIT.md` S1-1 proposed this guard alongside the URL fix; only the
+  URL was fixed in the entry below, not the guard.
+- **Contract impact:** none
+- **Tests:** none — config only, no behavior to assert; would need an EAS build to exercise.
+- **Docs updated:** n/a
+- **Follow-ups / known issues:** none
+
 ## 2026-09-14 — Play Store readiness: real Android package id, fix the placeholder production API URL
 
 - **Branch:** main
