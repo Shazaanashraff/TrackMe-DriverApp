@@ -14,7 +14,7 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://your-backend.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://bus-tracking-backend.onrender.com"
       }
     }
   },

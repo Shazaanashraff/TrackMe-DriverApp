@@ -39,7 +39,7 @@
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_LOCATION"
       ],
-      "package": "com.anonymous.driverapp"
+      "package": "com.TrackMe.driverapp"
     },
     "web": {
       "name": "TrackMe",

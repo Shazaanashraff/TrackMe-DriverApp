@@ -22,6 +22,34 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-09-14 — Play Store readiness: real Android package id, fix the placeholder production API URL
+
+- **Branch:** main
+- **Modules touched:** none dedicated — release config only (`app.json`, `eas.json`,
+  `docs/guides/RELEASING.md`)
+- **What changed:**
+  - Changed the Android `package` in `app.json` from Expo's default placeholder
+    `com.anonymous.driverapp` to `com.TrackMe.driverapp` (matching user-app's
+    `com.TrackMe.userapp` convention). This is a one-time, unchangeable-after-first-upload
+    setting — **confirm this value before the first real Play Console upload.**
+  - Replaced the unedited template placeholder `https://your-backend.onrender.com` in
+    `eas.json`'s `production.env.EXPO_PUBLIC_API_URL` with the real backend,
+    `https://bus-tracking-backend.onrender.com` (confirmed live via its Render routing header;
+    it is currently suspended by the account owner, not deployed to a domain we don't own —
+    audit finding S1-1, same issue user-app had).
+  - Updated `docs/guides/RELEASING.md`: it still said "no eas.json exists yet" even though one
+    is now present with production/preview/development profiles; added a "Before the first
+    store submission" checklist.
+- **Why:** local audit `AUDIT_2026-08-17/AUDIT.md` flagged the placeholder API URL as
+  must-fix-before-ship (S1-1); the package-name placeholder and stale release doc were found
+  while addressing it.
+- **Contract impact:** none
+- **Tests:** none — config only, no behavior to assert.
+- **Docs updated:** `docs/guides/RELEASING.md`
+- **Follow-ups / known issues:** no signing credentials configured yet; no privacy policy or
+  store graphics exist yet; OTA (`expo-updates`) still not decided/set up; the Render backend
+  service is suspended and needs to be resumed before a real production build.
+
 ## 2026-09-12 — Okay on absence requests and cancellations; the pill opens the absence list
 - **Branch:** feature/absence-request-ack
 - **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)
