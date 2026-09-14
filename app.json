@@ -64,6 +64,12 @@
         }
       ],
       "expo-notifications"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b3c63a70-c218-40d7-ba61-16e1784c35aa"
+      }
+    },
+    "owner": "shazaanashraff"
   }
 }
