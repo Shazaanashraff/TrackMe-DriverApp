@@ -14,6 +14,8 @@ The documentation map for driver-app. [`../CLAUDE.md`](../CLAUDE.md) routes you 
 ## Modules (per feature)
 - **[COMMUNICATIONS.md](modules/COMMUNICATIONS.md)** — dated absence changes, fixed quick
   broadcasts, delivery progress, push setup, and recovery behavior.
+- **[APP_UPDATES.md](modules/APP_UPDATES.md)** — native-binary Android update check + in-app
+  APK download/install. Not OTA/`expo-updates`; no iOS UI by design.
 
 The rest are currently **stubs** — each names its source files and must be filled in by the next
 change touching it:

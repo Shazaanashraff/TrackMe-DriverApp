@@ -46,6 +46,7 @@ git config core.hooksPath .githooks
 | Trip history | [`docs/modules/TRIP_HISTORY.md`](docs/modules/TRIP_HISTORY.md) |
 | Driver profile | [`docs/modules/PROFILE.md`](docs/modules/PROFILE.md) |
 | Offline / backend-status handling | [`docs/modules/OFFLINE_STATUS.md`](docs/modules/OFFLINE_STATUS.md) |
+| Native-binary update check / APK download+install (Android only) | [`docs/modules/APP_UPDATES.md`](docs/modules/APP_UPDATES.md) |
 | Data fetching / caching | [`docs/DATA_LAYER.md`](docs/DATA_LAYER.md) |
 | Error taxonomy + UI states | [`docs/ERROR_HANDLING.md`](docs/ERROR_HANDLING.md) |
 | Folder structure / layering / TS policy | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) |

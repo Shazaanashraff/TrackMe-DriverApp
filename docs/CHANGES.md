@@ -22,6 +22,57 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-10-02 — Native Android update check + in-app APK install
+
+- **Branch:** main
+- **Modules touched:** [`docs/modules/APP_UPDATES.md`](modules/APP_UPDATES.md) (new)
+- **What changed:**
+  - Added `src/services/api/appReleases.ts` (`getLatestAppRelease()` — public GET
+    `/api/app-releases/latest?app=driver&platform=android`).
+  - Added `src/hooks/useAppUpdateCheck.ts`: Android-only, skipped entirely in `__DEV__`; checks
+    once on mount, compares the backend's `versionCode` against `Application.nativeBuildVersion`,
+    and exposes `downloadAndInstall()` (download the APK with progress → resolve a `content://`
+    URI → hand it to `expo-intent-launcher`'s `startActivityAsync` to trigger the OS package
+    installer). Android still shows its own native "Install this app?" confirmation after that —
+    nothing short of a device-owner/MDM profile can skip it; the hook only gets the driver to that
+    tap as fast as possible.
+  - Added `src/components/UpdateAvailableBanner.tsx`: version + release notes + download/progress
+    UI, dismissible unless `release.mandatory` is true (dismissal is in-memory only, re-shows next
+    launch).
+  - Mounted `<UpdateAvailableBanner />` in `App.js`, gated on `user` so it never shows over the
+    login screen.
+  - `app.json`: appended `android.permission.REQUEST_INSTALL_PACKAGES` to `android.permissions`.
+  - New deps (via `npx expo install`, SDK-54-compatible): `expo-application@~7.0.8`,
+    `expo-file-system@~19.0.24`, `expo-intent-launcher@~13.0.8`.
+- **Why:** this app isn't store-listed yet, so there was no way to get a newer native build onto a
+  driver's device short of reinstalling the APK by hand. Mirrors the backend contract built
+  alongside the other three apps in the same initiative.
+- **Contract impact:** depends on the backend's new `GET /api/app-releases/latest` endpoint
+  (public, no auth) — see `backend/docs/modules/` for that side; confirm it has landed before
+  relying on this in a build.
+- **Tests:** added `src/hooks/__tests__/useAppUpdateCheck.test.ts` (platform/`__DEV__` gating,
+  version comparison, download→content-URI→install-intent ordering, progress callback, error
+  surfacing on download/install/check failure) and
+  `src/components/__tests__/UpdateAvailableBanner.test.tsx` (empty state, version/notes/button
+  render, download wiring, progress indicator, dismiss vs. mandatory, error display). Full suite
+  green: 73 suites / 633 tests. `test:e2e:dry` not run — Maestro CLI isn't installed in this
+  environment; no new user journey was added (a passive banner, not a new flow) so no new flow
+  was written either.
+- **Docs updated:** new [`docs/modules/APP_UPDATES.md`](modules/APP_UPDATES.md) (filled, not a
+  stub); [`docs/README.md`](README.md) module list; [`CLAUDE.md`](../CLAUDE.md) "Where to look"
+  table; [`docs/TESTING_GUIDE.md`](TESTING_GUIDE.md) new "App updates" section;
+  [`docs/guides/RELEASING.md`](guides/RELEASING.md) — distinguished this (shipped) from OTA/
+  `expo-updates` (still not set up).
+- **Follow-ups / known issues:**
+  - `expo-file-system` SDK 54 moved `cacheDirectory` / `createDownloadResumable` /
+    `getContentUriAsync` behind the `expo-file-system/legacy` subpath — importing them from the
+    bare package throws at runtime in this SDK. This module imports from the `/legacy` subpath
+    deliberately; see APP_UPDATES.md §6 before "cleaning up" that import.
+  - No real-device verification yet (APK install flow needs a physical Android device + a
+    published release row to exercise end-to-end); only the hook/component logic is unit-tested.
+  - No AsyncStorage persistence for dismissal — acceptable per the spec (re-show next launch is
+    the intended behavior), but flagging in case product wants it remembered later.
+
 ## 2026-09-14 — Build-time guard against a placeholder production API URL
 
 - **Branch:** main

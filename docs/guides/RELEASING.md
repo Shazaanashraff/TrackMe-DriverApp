@@ -1,14 +1,23 @@
 # Releasing — driver-app
 
-> ⚠️ **OTA is not set up yet.** `eas.json` now exists (mirrors user-app's `development` /
-> `preview` / `production` profiles, `appVersionSource: "remote"`, production `autoIncrement`),
-> so an EAS build/submit is possible. There is still:
+> ⚠️ **OTA (JS-bundle updates) is still not set up.** `eas.json` now exists (mirrors user-app's
+> `development` / `preview` / `production` profiles, `appVersionSource: "remote"`, production
+> `autoIncrement`), so an EAS build/submit is possible. There is still:
 > - **no OTA update path** — `expo-updates` is absent, so a JS-only fix cannot be pushed to
 >   installed builds,
 > - no `updates.url` / `runtimeVersion` policy in `app.json`.
 >
 > Do not assume OTA works here just because user-app has it. **The remaining release task is to
 > decide whether OTA is wanted**, then update this guide.
+>
+> **This is separate from native-binary update checking, which IS now done.** See
+> [`../modules/APP_UPDATES.md`](../modules/APP_UPDATES.md): the app checks
+> `GET /api/app-releases/latest?app=driver&platform=android` on mount (Android only) and, if a
+> newer `versionCode` is published, offers an in-app APK download + OS-install-intent flow via
+> `useAppUpdateCheck` / `UpdateAvailableBanner`. That mechanism ships a whole new native binary
+> through a normal Android package install (with the OS's own confirmation dialog); it does not
+> touch the JS bundle and is not a substitute for OTA. iOS has no equivalent in-app UI — see that
+> doc's §5 for why.
 
 ---
 
@@ -20,7 +29,8 @@
 | Build tooling | Expo (SDK ~54) — `npm start` for dev only |
 | EAS config | `eas.json` present — `development`/`preview`/`production` build profiles, `submit.production` |
 | Android package | `com.TrackMe.driverapp` (set 2026-09-14 — was the Expo default `com.anonymous.driverapp`; **confirm before the first Play Console upload**, it cannot change after) |
-| OTA | **absent** (`expo-updates` not installed) |
+| OTA (JS-bundle) | **absent** (`expo-updates` not installed) |
+| Native-binary update check (Android) | **shipped** — [`../modules/APP_UPDATES.md`](../modules/APP_UPDATES.md). Each build's `android.versionCode` must be published to the backend's `app-releases` collection for the in-app banner to find it; a build with no matching release record simply shows no banner (fails open, not an error). |
 | Git tag | the only versioning signal available right now |
 
 ## Release gates (apply regardless of delivery model)

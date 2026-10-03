@@ -4,10 +4,11 @@ import { NavigationContainer, createNavigationContainerRef } from '@react-naviga
 import { useFonts, Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { AuthProvider } from './src/context/AuthContext';
+import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
 import AppNavigator from './src/navigation/AppNavigator';
 import { CommunicationProvider } from './src/features/communications/provider';
+import UpdateAvailableBanner from './src/components/UpdateAvailableBanner';
 const navigationRef = createNavigationContainerRef();
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -25,6 +26,7 @@ function AppContent() {
     Inter_400Regular,
     Inter_500Medium,
   });
+  const { user } = useAuth();
 
   const onLayoutRootView = useCallback(async () => {
     if (fontsLoaded) {
@@ -48,6 +50,8 @@ function AppContent() {
           <StatusBar style="dark" />
           <CommunicationProvider><AppNavigator /></CommunicationProvider>
         </NavigationContainer>
+        {/* Signed-in only — never shows over the login/auth screens. */}
+        {user ? <UpdateAvailableBanner /> : null}
       </ErrorBoundary>
     </View>
   );

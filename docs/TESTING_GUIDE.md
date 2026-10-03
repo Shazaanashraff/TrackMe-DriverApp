@@ -114,6 +114,12 @@
 | Home absence strip and pill | behavior | features/communications/__tests__/broadcast.test.js (`absence strip`, `the Absences pill …`) | a pending ABSENT change reads "<rider> will be absent today." with one Okay and no Acknowledge/View changes; a CANCELLED change keeps "is coming today · absence cancelled."; Okay POSTs `/absences/:id/acknowledge` with that row's `expectedRevision`; nothing renders with no pending change; the pill navigates to `MainTabs` › `Riders` with `tab: "absences"` and a fresh numeric `openedAt` per tap | the strip's copy or action, or the pill's target change |
 | Riders tab follows the Home pill after mount | behavior | features/communications/__tests__/riders.test.js (`a later tap on the Home pill …`) | new `tab: "absences"` params on an already-mounted screen switch the segment, and again after the driver has flipped back to the directory by hand (same tab, new `openedAt`) | `RidersScreen` param handling changes |
 
+## App updates (native Android version check)
+| Item | Type | Test file | Cases | Update when |
+|---|---|---|---|---|
+| useAppUpdateCheck | unit | hooks/__tests__/useAppUpdateCheck.test.ts | skips entirely on iOS and in `__DEV__`; no update when the backend `versionCode` is equal or lower than `Application.nativeBuildVersion`; `updateAvailable: true` + `release` set when the backend `versionCode` is higher; `downloadAndInstall` calls `createDownloadResumable().downloadAsync()` → `getContentUriAsync()` → `IntentLauncher.startActivityAsync('android.intent.action.VIEW', …)` in order with the exact flags/type/data payload; progress callback updates `downloadProgress`; a download failure, an install-intent failure, or a release-check failure each surface via `error` without throwing | update-check gating, version comparison, or the download/install sequence changes |
+| UpdateAvailableBanner | unit (Jest+RTL) | components/__tests__/UpdateAvailableBanner.test.tsx | renders nothing when no update is available; shows version + release notes + a download button when available; download button calls `downloadAndInstall`; shows a progress indicator while `isDownloading`; dismissible (local state, re-shows next launch) when not mandatory; no dismiss control + shows the "required" note when `mandatory`; surfaces a download error string | banner UI, mandatory-update behavior, or dismiss semantics change |
+
 ## Motion, copy, a11y pass (Phase 5)
 | Item | Type | Test file | Cases | Update when |
 |---|---|---|---|---|
