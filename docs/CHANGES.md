@@ -29,10 +29,15 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
   - Trip Progress is removed from Home, along with its distance helper. Its numbers were
     never real: nobody knows a shuttle's actual daily route or destination, so a covered/
     remaining distance along the stop list could only mislead.
-- **Why:** owner request while preparing the driver video tutorial.
-- **Contract impact:** none.
-- **Tests:** `TripProgressCard.test.js` and `tripProgress.test.js` removed with the code.
-- **Docs updated:** CLAUDE.md map.
+  - QR boarding is optional: Home shows the On board card and "Scan rider QR" only when the
+    vehicle's route has the manager's per-route switch on (`Route.qrEnabled`). Not every
+    transport office scans passes. Before, Scan always showed and the card only vanished
+    through a roster 403.
+- **Why:** owner requests while preparing the driver video tutorial.
+- **Contract impact:** none (reads `qrEnabled`, which `GET /api/routes/:routeId` already returns).
+- **Tests:** `TripProgressCard.test.js` and `tripProgress.test.js` removed with the code;
+  `DriverDashboard.test.js` covers QR on, off, still loading, and no vehicle.
+- **Docs updated:** CLAUDE.md map, DASHBOARD.md and BOARDING.md notes, TESTING_GUIDE.md row.
 - **Follow-ups / known issues:** none.
 
 ## 2026-09-12 — Okay on absence requests and cancellations; the pill opens the absence list

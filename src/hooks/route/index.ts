@@ -18,6 +18,8 @@ export interface RouteDetails {
   destination?: string;
   distance?: number;
   stops?: RouteStop[];
+  // The manager's per-route QR boarding switch; drives the On board card and scanner.
+  qrEnabled?: boolean;
 }
 
 function unwrap<T>(response: unknown): T {

@@ -17,6 +17,13 @@ here — that is the change protocol, not optional extra work.
 > `useLocationBroadcast` / `useBackgroundTracking` / keep-awake on `tracking || pending`. Full
 > description in [`../LOCATION_TRACKING.md`](../LOCATION_TRACKING.md) §"Offline go-on-duty".
 
+> **QR boarding is optional (2026-10-06).** The On board card and the "Scan rider QR" quick
+> action render only when the driver has a vehicle **and** its route has the manager's per-route
+> switch on (`Route.qrEnabled`, read through `useRouteDetailsQuery`). Off, still loading, or no
+> route means neither shows. The route is cached for 5 minutes (and persisted), so a manager's
+> change reaches the driver within that window. Trip Progress was removed the same day: its
+> distance along the stop list was never the shuttle's real route.
+
 ## What this doc must cover
 
 Template section order: Purpose · Key files (one job each) · Data flow · Contracts (API/socket/

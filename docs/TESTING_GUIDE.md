@@ -143,6 +143,7 @@
 |---|---|---|---|---|
 | api/boarding.getBoardingRoster + useBoardingRosterQuery | unit | src/hooks/boarding/__tests__/useBoardingRosterQuery.test.ts | GET URL/`{vehicleId}` arg, unwraps `{data}`, disabled without vehicleId, error surface | roster endpoint contract or query key/cache policy changes |
 | OnBoardCard (Home "X / Y on board") | unit (Jest+RTL) | src/features/dashboard/__tests__/OnBoardCard.test.tsx | count render + navigate on press, no-enrolled empty state (non-pressable), loading skeleton, hidden on query error | card copy, gating, or navigation target changes |
+| DriverDashboard QR boarding gate | unit (Jest+RTL) | src/screens/__tests__/DriverDashboard.test.js | Scan rider QR and the On board card show only with a vehicle on a route whose `qrEnabled` is true; hidden with QR off, while the route loads, and without a vehicle | the per-route QR switch or what it gates on Home changes |
 | BoardingRosterScreen (enrolled roster page) | unit (Jest+RTL) | src/screens/__tests__/BoardingRosterScreen.test.tsx | count summary, every rider + status pill (ON/OFF/NOT_BOARDED), guests section, empty state, error state, back | roster page layout, status mapping, or guests handling changes |
 | On-board roster flow | e2e | .maestro/on-board-roster.yaml | login → tap "On board" card → assert roster page | Home card entry point or roster screen title changes |
 
