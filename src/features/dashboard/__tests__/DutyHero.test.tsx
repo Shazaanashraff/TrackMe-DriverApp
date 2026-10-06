@@ -53,7 +53,7 @@ describe('DutyHero', () => {
       const { getByText, getByLabelText } = render(
         <DutyHero {...baseProps} hasVehicle={false} onGoPress={onGoPress} />
       );
-      expect(getByText('Vehicle registration required')).toBeTruthy();
+      expect(getByText('No vehicle assigned yet')).toBeTruthy();
       fireEvent.press(getByLabelText('Go online'));
       expect(onGoPress).not.toHaveBeenCalled();
     });
@@ -63,7 +63,7 @@ describe('DutyHero', () => {
         <DutyHero {...baseProps} hasVehicle={false} hadVehicleBefore />
       );
       expect(getByText('Vehicle assignment removed')).toBeTruthy();
-      expect(queryByText('Vehicle registration required')).toBeNull();
+      expect(queryByText('No vehicle assigned yet')).toBeNull();
     });
   });
 

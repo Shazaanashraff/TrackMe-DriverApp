@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render } from '@testing-library/react-native';
 import { Ionicons } from '@expo/vector-icons';
 import VehicleCard from '../VehicleCard';
 
@@ -8,7 +8,6 @@ describe('VehicleCard', () => {
     const { getByText, queryByText } = render(
       <VehicleCard
         vehicle={{ vehicleName: 'Shuttle 1' }}
-        onRegisterPress={jest.fn()}
       />
     );
     expect(getByText('Shuttle 1')).toBeTruthy();
@@ -20,7 +19,6 @@ describe('VehicleCard', () => {
     const { getByText } = render(
       <VehicleCard
         vehicle={{ vehicleName: 'Shuttle 1', routeName: 'Campus Loop' }}
-        onRegisterPress={jest.fn()}
       />
     );
     expect(getByText('Campus Loop')).toBeTruthy();
@@ -28,7 +26,7 @@ describe('VehicleCard', () => {
 
   it('renders a real bus glyph rather than the missing-icon placeholder', () => {
     const { UNSAFE_getByType } = render(
-      <VehicleCard vehicle={{ vehicleName: 'Shuttle 1' }} onRegisterPress={jest.fn()} />
+      <VehicleCard vehicle={{ vehicleName: 'Shuttle 1' }} />
     );
     // "vehicle" is not an Ionicons name and silently rendered "?" on screen.
     expect(UNSAFE_getByType(Ionicons).props.name).toBe('bus');
@@ -41,7 +39,6 @@ describe('VehicleCard', () => {
     const gated = render(
       <VehicleCard
         vehicle={{ vehicleName: 'Shuttle 1', driverId: { isPrivate: true } }}
-        onRegisterPress={jest.fn()}
       />
     );
     expect(gated.getByText('Private')).toBeTruthy();
@@ -50,7 +47,6 @@ describe('VehicleCard', () => {
     const open = render(
       <VehicleCard
         vehicle={{ vehicleName: 'Shuttle 1', driverId: { isPrivate: false } }}
-        onRegisterPress={jest.fn()}
       />
     );
     expect(open.getByText('Public')).toBeTruthy();
@@ -63,26 +59,24 @@ describe('VehicleCard', () => {
     const asId = render(
       <VehicleCard
         vehicle={{ vehicleName: 'Shuttle 1', driverId: '65f0aa11bb22cc33dd44ee55' }}
-        onRegisterPress={jest.fn()}
       />
     );
     expect(asId.getByText('Public')).toBeTruthy();
   });
 
   it('shows no privacy pill when there is no vehicle', () => {
-    const { queryByTestId } = render(<VehicleCard vehicle={null} onRegisterPress={jest.fn()} />);
+    const { queryByTestId } = render(<VehicleCard vehicle={null} />);
     expect(queryByTestId('vehicle-privacy-pill')).toBeNull();
   });
 
-  it('renders the no-vehicle empty state and fires onRegisterPress when it is tapped', () => {
-    const onRegisterPress = jest.fn();
-    const { getByText } = render(<VehicleCard vehicle={null} onRegisterPress={onRegisterPress} />);
+  // The manager assigns vehicles in WebAdmin; the driver app has no form to send
+  // them to, so the empty state says who to ask and is not a button.
+  it('renders the no-vehicle empty state pointing the driver to their manager', () => {
+    const { getByText, getByTestId } = render(<VehicleCard vehicle={null} />);
 
     expect(getByText('No vehicle yet')).toBeTruthy();
-    expect(getByText('Add your vehicle so riders can find it')).toBeTruthy();
-    // The redesign made the whole row pressable with a chevron, replacing the
-    // old EmptyState's labelled "Add my vehicle" button. Press bubbles to it.
-    fireEvent.press(getByText('No vehicle yet'));
-    expect(onRegisterPress).toHaveBeenCalledTimes(1);
+    expect(getByText('Ask your manager to assign one')).toBeTruthy();
+    expect(getByTestId('vehicle-card-empty').props.accessibilityRole).toBeUndefined();
+    expect(getByTestId('vehicle-card-empty').props.onPress).toBeUndefined();
   });
 });

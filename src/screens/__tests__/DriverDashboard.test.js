@@ -334,7 +334,7 @@ describe('DriverDashboard — unassigned-vehicle messaging (issue #21)', () => {
 
     const { findByText, queryByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
 
-    expect(await findByText('Vehicle registration required')).toBeTruthy();
+    expect(await findByText('No vehicle assigned yet')).toBeTruthy();
     expect(queryByText('Vehicle assignment removed')).toBeNull();
   });
 
@@ -345,7 +345,7 @@ describe('DriverDashboard — unassigned-vehicle messaging (issue #21)', () => {
     const { findByText, queryByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
 
     expect(await findByText('Vehicle assignment removed')).toBeTruthy();
-    expect(queryByText('Vehicle registration required')).toBeNull();
+    expect(queryByText('No vehicle assigned yet')).toBeNull();
   });
 
   it('persists that this driver has had a vehicle once one is seen', async () => {

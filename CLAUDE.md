@@ -40,7 +40,7 @@ git config core.hooksPath .githooks
 | Driver sign-in / session / role gate | [`docs/modules/AUTH.md`](docs/modules/AUTH.md) |
 | The Home/duty screen (DutyHero, GoButton, vehicle card) | [`docs/modules/DASHBOARD.md`](docs/modules/DASHBOARD.md) |
 | QR scanning + boarding/alighting + the on-board roster | [`docs/modules/BOARDING.md`](docs/modules/BOARDING.md) |
-| Registering / selecting a bus | [`docs/modules/BUS_REGISTRATION.md`](docs/modules/BUS_REGISTRATION.md) |
+| Vehicle registration (removed: managers assign vehicles) | [`docs/modules/BUS_REGISTRATION.md`](docs/modules/BUS_REGISTRATION.md) |
 | Recording + submitting custom routes | [`docs/modules/ROUTE_MANAGEMENT.md`](docs/modules/ROUTE_MANAGEMENT.md) |
 | Earnings, payouts, daily breakdown | [`docs/modules/EARNINGS.md`](docs/modules/EARNINGS.md) |
 | Trip history | [`docs/modules/TRIP_HISTORY.md`](docs/modules/TRIP_HISTORY.md) |
@@ -58,9 +58,9 @@ git config core.hooksPath .githooks
 ```
 src/
   screens/            One file per screen (DriverDashboard, QRScanner, BoardingRoster,
-                      VehicleRegistration, TripHistory, DriverProfile, Login)
+                      TripHistory, DriverProfile, Login)
   features/<domain>/  dashboard (DutyHero, GoButton, OnBoardCard,
-                      dutyHeroState.ts, useSocketConnection), boarding, vehicle-registration,
+                      dutyHeroState.ts, useSocketConnection), boarding,
                       profile, communications (private messages, dated absences, quick
                       broadcasts, and the app-owned realtime bridge)
   components/         ErrorBoundary, OfflineScreen, PermissionDeniedState, ShiftVehicleIcon (SVG
@@ -90,7 +90,7 @@ src/
 App.js
 └── AppNavigator (root native stack)
     ├── [logged out]   → Login            (only role `driver` may sign in — enforced in LoginScreen)
-    └── [logged in]    → MainTabs (bottom tabs) + pushed: VehicleRegistration, QRScanner, BoardingRoster, RiderProfile
+    └── [logged in]    → MainTabs (bottom tabs) + pushed: QRScanner, BoardingRoster, RiderProfile
                            MainTabs:
                            ├── Dashboard      ("Home" tab — DutyHero + VehicleCard + OnBoardCard)
                            ├── Riders         ("Riders" tab — rider directory | absences, segmented)
@@ -105,8 +105,8 @@ query layer subscribe to it, but no offline state is threaded into `AppNavigator
 `OfflineScreen.js` is currently an orphan: nothing renders it.
 Only `driver` role users may log in (enforced in `LoginScreen`).
 Tab screen names stay `Dashboard`/`TripHistory`/`DriverProfile` so existing
-`navigation.navigate('…')` call sites keep working; pushed screens (`VehicleRegistration`,
-`QRScanner`, `BoardingRoster`) are registered on the root stack above the tabs, so navigating to
+`navigation.navigate('…')` call sites keep working; pushed screens (`QRScanner`,
+`BoardingRoster`) are registered on the root stack above the tabs, so navigating to
 them from a tab bubbles up automatically.
 See `docs/redesign/SIGNAL_INK_PLAN.md` for the in-progress "Signal Ink" reskin driving this.
 See `docs/modules/COMMUNICATIONS.md` for message, absence, broadcast, push, and recovery contracts.

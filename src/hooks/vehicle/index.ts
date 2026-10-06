@@ -25,17 +25,6 @@ export function useMyVehicleQuery() {
   });
 }
 
-export function useRegisterVehicle() {
-  const { token } = useAuth() as AuthCtx;
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (vehicleData: Record<string, unknown>) => api.registerVehicle(vehicleData, token!),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: qk.myVehicle() });
-    },
-  });
-}
-
 export function useUpdateVehicle() {
   const { token } = useAuth() as AuthCtx;
   const queryClient = useQueryClient();

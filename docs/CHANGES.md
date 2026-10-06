@@ -33,11 +33,19 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
     vehicle's route has the manager's per-route switch on (`Route.qrEnabled`). Not every
     transport office scans passes. Before, Scan always showed and the card only vanished
     through a roster 403.
+  - The "Your vehicle" registration form is gone. It never sent a `routeId`, so every save
+    failed; managers create and assign vehicles in WebAdmin. The empty vehicle card now reads
+    "Ask your manager to assign one" and is not pressable, and the hero's status line reads
+    "No vehicle assigned yet". `useRegisterVehicle` and `api.registerVehicle` went with it.
 - **Why:** owner requests while preparing the driver video tutorial.
 - **Contract impact:** none (reads `qrEnabled`, which `GET /api/routes/:routeId` already returns).
 - **Tests:** `TripProgressCard.test.js` and `tripProgress.test.js` removed with the code;
-  `DriverDashboard.test.js` covers QR on, off, still loading, and no vehicle.
-- **Docs updated:** CLAUDE.md map, DASHBOARD.md and BOARDING.md notes, TESTING_GUIDE.md row.
+  `DriverDashboard.test.js` covers QR on, off, still loading, and no vehicle;
+  `VehicleRegistrationScreen.test.js` and `bus-registration-dashboard.int.test.tsx` removed with
+  the form, register cases dropped from the vehicle hook and contract tests, VehicleCard /
+  DriverProfileScreen / navigator tests updated.
+- **Docs updated:** CLAUDE.md map, DASHBOARD.md and BOARDING.md notes, BUS_REGISTRATION.md
+  (now a short REMOVED note), TESTING_GUIDE.md rows.
 - **Follow-ups / known issues:** none.
 
 ## 2026-09-12 — Okay on absence requests and cancellations; the pill opens the absence list

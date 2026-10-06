@@ -18,7 +18,6 @@ const api = {
 
   // vehicle
   getMyVehicle: vehicle.getMyVehicle,
-  registerVehicle: vehicle.registerVehicle,
   updateVehicle: vehicle.updateVehicle,
 
   // routes

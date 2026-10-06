@@ -172,10 +172,7 @@ const DriverDashboard = ({ navigation }: Props) => {
           />
 
           <AppText variant="overline" color={theme.color.text.muted} style={styles.sectionTitle}>YOUR VEHICLE</AppText>
-          <VehicleCard
-            vehicle={vehicle}
-            onRegisterPress={() => navigation.navigate('VehicleRegistration')}
-          />
+          <VehicleCard vehicle={vehicle} />
 
           {qrBoarding ? (
             <OnBoardCard vehicleId={vehicleId} onPress={() => navigation.navigate('BoardingRoster', { vehicleId })} />

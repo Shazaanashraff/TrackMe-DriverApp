@@ -133,11 +133,12 @@ describe('DriverProfileScreen', () => {
     expect(queryByText('My routes')).toBeNull();
   });
 
-  it('navigates to Vehicle registration from the vehicle card CTA when there is no vehicle', async () => {
+  it('tells a driver with no vehicle to ask their manager, without opening a form', async () => {
     mockVehicleQuery.mockReturnValue({ data: null, isPending: false, isError: false });
-    const { findByText } = render(<DriverProfileScreen navigation={navigation} />);
+    const { findByText, getByText } = render(<DriverProfileScreen navigation={navigation} />);
     fireEvent.press(await findByText('No vehicle yet'));
-    expect(navigation.navigate).toHaveBeenCalledWith('VehicleRegistration');
+    expect(getByText('Ask your manager to assign one')).toBeTruthy();
+    expect(navigation.navigate).not.toHaveBeenCalled();
   });
 
   it('opens a ConfirmSheet before logging out, and confirming calls the mutation', async () => {

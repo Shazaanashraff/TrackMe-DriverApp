@@ -9,7 +9,6 @@ import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import ForgotPasswordOtpScreen from '../screens/ForgotPasswordOtpScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import DriverDashboard from '../screens/DriverDashboard';
-import VehicleRegistrationScreen from '../screens/VehicleRegistrationScreen';
 import TripHistoryScreen from '../screens/TripHistoryScreen';
 import DriverProfileScreen from '../screens/DriverProfileScreen';
 import QRScannerScreen from '../screens/QRScannerScreen';
@@ -96,7 +95,6 @@ const AppNavigator = () => {
       ) : (
         <>
           <Stack.Screen name="MainTabs" component={MainTabs} />
-          <Stack.Screen name="VehicleRegistration" component={VehicleRegistrationScreen} />
           <Stack.Screen name="QRScanner" component={QRScannerScreen} />
           <Stack.Screen name="BoardingRoster" component={BoardingRosterScreen} />
           <Stack.Screen name="RiderProfile" component={RiderProfileScreen} />

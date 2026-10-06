@@ -13,8 +13,8 @@ jest.mock('../../screens/DriverDashboard', () => {
   return function MockDashboard({ navigation }) {
     return (
       <TouchableOpacity
-        onPress={() => navigation.navigate('VehicleRegistration')}
-        testID="go-to-vehicle-registration"
+        onPress={() => navigation.navigate('QRScanner')}
+        testID="go-to-qr-scanner"
       >
         <Text>Dashboard Screen</Text>
       </TouchableOpacity>
@@ -31,12 +31,6 @@ jest.mock('../../screens/DriverProfileScreen', () => {
   const { Text } = require('react-native');
   return function MockProfile() {
     return <Text>Profile Screen</Text>;
-  };
-});
-jest.mock('../../screens/VehicleRegistrationScreen', () => {
-  const { Text } = require('react-native');
-  return function MockVehicleRegistration() {
-    return <Text>Vehicle Registration Screen</Text>;
   };
 });
 jest.mock('../../screens/LoginScreen', () => {
@@ -84,10 +78,10 @@ describe('AppNavigator', () => {
     expect(queryByText('Dashboard Screen')).toBeNull();
   });
 
-  it('pushes VehicleRegistration above the tabs', async () => {
+  it('pushes a screen (the QR scanner) above the tabs', async () => {
     const { getByTestId, findByText } = renderNav();
-    fireEvent.press(getByTestId('go-to-vehicle-registration'));
-    expect(await findByText('Vehicle Registration Screen')).toBeTruthy();
+    fireEvent.press(getByTestId('go-to-qr-scanner'));
+    expect(await findByText('QR Scanner Screen')).toBeTruthy();
   });
 
   it('shows the login screen when logged out', () => {
