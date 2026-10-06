@@ -53,7 +53,7 @@ const LoginScreen = ({ navigation }: { navigation?: { navigate: (screen: string)
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
           <ShiftVehicleIcon size={56} />
-          <AppText variant="h1" onInk style={styles.appName}>TrackMe</AppText>
+          <AppText variant="h1" onInk style={styles.appName}>PinGo</AppText>
           <AppText variant="label" color={theme.color.primary[300]}>Drive. Go live. Keep riders in the loop.</AppText>
         </View>
 

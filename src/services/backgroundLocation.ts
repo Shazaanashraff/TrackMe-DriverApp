@@ -81,7 +81,7 @@ export async function startBackgroundTracking(): Promise<boolean> {
       // Android kills a background location process within minutes without a
       // foreground service; this notification is what keeps the shift alive.
       foregroundService: {
-        notificationTitle: 'TrackMe is sharing your location',
+        notificationTitle: 'PinGo is sharing your location',
         notificationBody: 'Your passengers and manager can see this vehicle.',
         notificationColor: '#2563eb',
         killServiceOnDestroy: false,

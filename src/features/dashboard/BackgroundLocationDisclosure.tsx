@@ -26,7 +26,7 @@ export default function BackgroundLocationDisclosure({
         <View style={styles.sheet}>
           <AppText variant="h2">Keep sharing when your screen is off</AppText>
           <AppText variant="label" color={theme.color.text.secondary} style={styles.body}>
-            TrackMe collects this vehicle&apos;s location, including while the app is closed or
+            PinGo collects this vehicle&apos;s location, including while the app is closed or
             not in use, so your passengers and your manager can see where the vehicle is for the
             whole journey.
           </AppText>

@@ -45,6 +45,11 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
     its two screens, three hooks and API calls are removed. Login asks for a "Driver ID"
     (email still works for older accounts) and the tagline is "Drive. Go live. Keep riders in
     the loop." instead of the earnings-era "Get paid".
+  - The app is called PinGo wherever a driver sees a name: the Android app name, the camera,
+    location and background-location permission texts, the "PinGo is sharing your location"
+    notification, the enrollment-key share message, the scanner's camera notes, the login
+    wordmark and the browser tab title. Package ids, the slug and code identifiers are
+    unchanged.
 - **Why:** owner requests while preparing the driver video tutorial.
 - **Contract impact:** none (reads `qrEnabled`, which `GET /api/routes/:routeId` already returns).
 - **Tests:** `TripProgressCard.test.js` and `tripProgress.test.js` removed with the code;

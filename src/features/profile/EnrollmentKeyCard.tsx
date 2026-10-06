@@ -21,8 +21,8 @@ export function buildShareMessage(
   { driverName }: { driverName?: string } = {}
 ) {
   const opener = driverName
-    ? `Join ${driverName}'s shuttle on TrackMe.`
-    : 'Join my shuttle on TrackMe.';
+    ? `Join ${driverName}'s shuttle on PinGo.`
+    : 'Join my shuttle on PinGo.';
   return [opener, '', 'Enrollment key:', enrollmentKey].join('\n');
 }
 
