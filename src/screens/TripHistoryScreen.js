@@ -1,3 +1,5 @@
+// Unmounted (2026-10-06): the Trips tab is hidden in AppNavigator until ending a journey
+// records a trip. Kept with its tests so the tab can return once the backend logs trips.
 import React, { useCallback, useState } from 'react';
 import { FlatList, RefreshControl, StatusBar, StyleSheet, View } from 'react-native';
 // react-native's own SafeAreaView is a no-op on Android; only this one applies insets there.

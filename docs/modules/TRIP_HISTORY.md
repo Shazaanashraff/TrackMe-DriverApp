@@ -7,6 +7,11 @@ Do not read its absence as "no such feature". Read the source below, then fill t
 [`../guides/_MODULE_TEMPLATE.md`](../guides/_MODULE_TEMPLATE.md) as part of your next change
 here — that is the change protocol, not optional extra work.
 
+> **Hidden (2026-10-06).** The Trips tab is unmounted from `AppNavigator`. Ending a journey
+> only marks the vehicle offline (backend `utils/liveVehicles.js` `endSession`); nothing calls
+> `POST /api/driver/trips/log`, so the list could only ever be empty. The screen and its tests
+> stay so the tab can come back once the backend records a trip when a journey ends.
+
 ## Source of truth until this doc exists
 
 `src/screens/TripHistoryScreen.js`

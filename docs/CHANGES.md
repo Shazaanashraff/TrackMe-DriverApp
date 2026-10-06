@@ -37,15 +37,19 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
     failed; managers create and assign vehicles in WebAdmin. The empty vehicle card now reads
     "Ask your manager to assign one" and is not pressable, and the hero's status line reads
     "No vehicle assigned yet". `useRegisterVehicle` and `api.registerVehicle` went with it.
+  - The Trips tab is hidden. Ending a journey only marks the vehicle offline and nothing calls
+    `POST /api/driver/trips/log`, so it could only ever say "No trips yet". The screen and its
+    tests stay, unmounted, for when the backend records trips.
 - **Why:** owner requests while preparing the driver video tutorial.
 - **Contract impact:** none (reads `qrEnabled`, which `GET /api/routes/:routeId` already returns).
 - **Tests:** `TripProgressCard.test.js` and `tripProgress.test.js` removed with the code;
   `DriverDashboard.test.js` covers QR on, off, still loading, and no vehicle;
   `VehicleRegistrationScreen.test.js` and `bus-registration-dashboard.int.test.tsx` removed with
   the form, register cases dropped from the vehicle hook and contract tests, VehicleCard /
-  DriverProfileScreen / navigator tests updated.
+  DriverProfileScreen / navigator tests updated; the navigator test now expects Home, Riders and
+  Profile only.
 - **Docs updated:** CLAUDE.md map, DASHBOARD.md and BOARDING.md notes, BUS_REGISTRATION.md
-  (now a short REMOVED note), TESTING_GUIDE.md rows.
+  (now a short REMOVED note), TRIP_HISTORY.md note, TESTING_GUIDE.md rows.
 - **Follow-ups / known issues:** none.
 
 ## 2026-09-12 — Okay on absence requests and cancellations; the pill opens the absence list

@@ -9,7 +9,6 @@ import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import ForgotPasswordOtpScreen from '../screens/ForgotPasswordOtpScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import DriverDashboard from '../screens/DriverDashboard';
-import TripHistoryScreen from '../screens/TripHistoryScreen';
 import DriverProfileScreen from '../screens/DriverProfileScreen';
 import QRScannerScreen from '../screens/QRScannerScreen';
 import BoardingRosterScreen from '../screens/BoardingRosterScreen';
@@ -22,17 +21,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// The Trips tab is hidden until trip logging exists: ending a journey only marks the
+// vehicle offline and saves no trip, so the tab could only ever show "No trips yet".
+// TripHistoryScreen is kept, unmounted, for when the backend records trips.
+
 const TAB_ICONS = {
   Riders: { outline: 'people-outline', filled: 'people' },
   Dashboard: { outline: 'home-outline', filled: 'home' },
-  TripHistory: { outline: 'time-outline', filled: 'time' },
   DriverProfile: { outline: 'person-outline', filled: 'person' },
 };
 
 const TAB_LABELS = {
   Riders: 'Riders',
   Dashboard: 'Home',
-  TripHistory: 'Trips',
   DriverProfile: 'Profile',
 };
 
@@ -64,7 +65,6 @@ function MainTabs() {
     >
       <Tab.Screen name="Dashboard" component={DriverDashboard} />
       <Tab.Screen name="Riders" component={RidersScreen} />
-      <Tab.Screen name="TripHistory" component={TripHistoryScreen} />
       <Tab.Screen name="DriverProfile" component={DriverProfileScreen} />
     </Tab.Navigator>
   );

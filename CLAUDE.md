@@ -58,7 +58,7 @@ git config core.hooksPath .githooks
 ```
 src/
   screens/            One file per screen (DriverDashboard, QRScanner, BoardingRoster,
-                      TripHistory, DriverProfile, Login)
+                      TripHistory (unmounted), DriverProfile, Login)
   features/<domain>/  dashboard (DutyHero, GoButton, OnBoardCard,
                       dutyHeroState.ts, useSocketConnection), boarding,
                       profile, communications (private messages, dated absences, quick
@@ -94,7 +94,6 @@ App.js
                            MainTabs:
                            ├── Dashboard      ("Home" tab — DutyHero + VehicleCard + OnBoardCard)
                            ├── Riders         ("Riders" tab — rider directory | absences, segmented)
-                           ├── TripHistory    ("Trips" tab)
                            └── DriverProfile  ("Profile" tab)
 ```
 
@@ -104,7 +103,7 @@ unreachable. `startBackendHealthMonitor()` still runs in `App.js`, and `OfflineB
 query layer subscribe to it, but no offline state is threaded into `AppNavigator`.
 `OfflineScreen.js` is currently an orphan: nothing renders it.
 Only `driver` role users may log in (enforced in `LoginScreen`).
-Tab screen names stay `Dashboard`/`TripHistory`/`DriverProfile` so existing
+Tab screen names stay `Dashboard`/`DriverProfile` so existing
 `navigation.navigate('…')` call sites keep working; pushed screens (`QRScanner`,
 `BoardingRoster`) are registered on the root stack above the tabs, so navigating to
 them from a tab bubbles up automatically.
