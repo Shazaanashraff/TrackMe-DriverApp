@@ -18,7 +18,6 @@ import ConfirmSheet from '../components/ui/ConfirmSheet';
 import DutyHero from '../features/dashboard/DutyHero';
 import VehicleCard from '../features/dashboard/VehicleCard';
 import OnBoardCard from '../features/dashboard/OnBoardCard';
-import TripProgressCard from '../features/dashboard/TripProgressCard';
 import { useSocketConnection } from '../features/dashboard/useSocketConnection';
 import BroadcastPanel from '../features/communications/BroadcastPanel';
 
@@ -171,11 +170,6 @@ const DriverDashboard = ({ navigation }: Props) => {
             onRegisterPress={() => navigation.navigate('VehicleRegistration')}
           />
 
-          <TripProgressCard
-            routeId={routeId}
-            fix={onDuty ? broadcast.lastFix : null}
-            isTracking={onDuty}
-          />
 
           {vehicle ? (
             <OnBoardCard vehicleId={vehicleId} onPress={() => navigation.navigate('BoardingRoster', { vehicleId })} />

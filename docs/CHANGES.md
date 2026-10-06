@@ -22,6 +22,19 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-10-06 - Tutorial readiness fixes
+- **Branch:** feature/tutorial-readiness
+- **Modules touched:** [docs/modules/DASHBOARD.md](modules/DASHBOARD.md)
+- **What changed:**
+  - Trip Progress is removed from Home, along with its distance helper. Its numbers were
+    never real: nobody knows a shuttle's actual daily route or destination, so a covered/
+    remaining distance along the stop list could only mislead.
+- **Why:** owner request while preparing the driver video tutorial.
+- **Contract impact:** none.
+- **Tests:** `TripProgressCard.test.js` and `tripProgress.test.js` removed with the code.
+- **Docs updated:** CLAUDE.md map.
+- **Follow-ups / known issues:** none.
+
 ## 2026-09-12 — Okay on absence requests and cancellations; the pill opens the absence list
 - **Branch:** feature/absence-request-ack
 - **Modules touched:** [docs/modules/COMMUNICATIONS.md](modules/COMMUNICATIONS.md)

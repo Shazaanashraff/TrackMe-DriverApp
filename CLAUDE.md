@@ -59,7 +59,7 @@ git config core.hooksPath .githooks
 src/
   screens/            One file per screen (DriverDashboard, QRScanner, BoardingRoster,
                       VehicleRegistration, TripHistory, DriverProfile, Login)
-  features/<domain>/  dashboard (DutyHero, GoButton, OnBoardCard, TripProgressCard,
+  features/<domain>/  dashboard (DutyHero, GoButton, OnBoardCard,
                       dutyHeroState.ts, useSocketConnection), boarding, vehicle-registration,
                       profile, communications (private messages, dated absences, quick
                       broadcasts, and the app-owned realtime bridge)
@@ -80,7 +80,7 @@ src/
                            # at module scope — the OS can launch the process headless, so this
                            # registration must never move into a screen)
   lib/                 queryKeys, errors
-  helpers/             formatters, geo (haversine), locationUtils (shouldEmit throttle), tripProgress
+  helpers/             formatters, geo (haversine), locationUtils (shouldEmit throttle)
   theme/               Signal Ink tokens + `theme` object; constants/theme.js is a compat shim
 ```
 
@@ -92,7 +92,7 @@ App.js
     ├── [logged out]   → Login            (only role `driver` may sign in — enforced in LoginScreen)
     └── [logged in]    → MainTabs (bottom tabs) + pushed: VehicleRegistration, QRScanner, BoardingRoster, RiderProfile
                            MainTabs:
-                           ├── Dashboard      ("Home" tab — DutyHero + VehicleCard + OnBoardCard + TripProgressCard)
+                           ├── Dashboard      ("Home" tab — DutyHero + VehicleCard + OnBoardCard)
                            ├── Riders         ("Riders" tab — rider directory | absences, segmented)
                            ├── TripHistory    ("Trips" tab)
                            └── DriverProfile  ("Profile" tab)
