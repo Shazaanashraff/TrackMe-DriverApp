@@ -32,7 +32,7 @@ const LoginScreen = ({ navigation }: { navigation?: { navigate: (screen: string)
 
     let hasError = false;
     if (!identifier.trim()) {
-      setIdentifierError('Driver ID or email is required');
+      setIdentifierError('Driver ID is required');
       hasError = true;
     }
     if (!password) {
@@ -54,17 +54,18 @@ const LoginScreen = ({ navigation }: { navigation?: { navigate: (screen: string)
         <View style={styles.hero}>
           <ShiftVehicleIcon size={56} />
           <AppText variant="h1" onInk style={styles.appName}>TrackMe</AppText>
-          <AppText variant="label" color={theme.color.primary[300]}>Drive. Go live. Get paid.</AppText>
+          <AppText variant="label" color={theme.color.primary[300]}>Drive. Go live. Keep riders in the loop.</AppText>
         </View>
 
         <View style={styles.form}>
           <FormInput
-            label="Driver ID or email"
+            label="Driver ID"
             icon="id-card-outline"
             value={identifier}
             onChangeText={setIdentifier}
-            placeholder="DRV-4K7P-9XQ2 or driver@company.com"
-            // Left uncapitalized so an email is not shouted back at the driver;
+            placeholder="DRV-4K7P-9XQ2"
+            // Labelled for the Driver ID every manager-created driver has. Older
+            // accounts can still type an email here, so it stays uncapitalized;
             // the server accepts a driver ID in any case.
             autoCapitalize="none"
             autoCorrect={false}

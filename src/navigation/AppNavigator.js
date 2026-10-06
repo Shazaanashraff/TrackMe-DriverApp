@@ -6,8 +6,6 @@ import { useAuth } from '../context/AuthContext';
 
 import LoginScreen from '../screens/LoginScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
-import ForgotPasswordOtpScreen from '../screens/ForgotPasswordOtpScreen';
-import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import DriverDashboard from '../screens/DriverDashboard';
 import DriverProfileScreen from '../screens/DriverProfileScreen';
 import QRScannerScreen from '../screens/QRScannerScreen';
@@ -89,8 +87,6 @@ const AppNavigator = () => {
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-          <Stack.Screen name="ForgotPasswordOtp" component={ForgotPasswordOtpScreen} />
-          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
         </>
       ) : (
         <>

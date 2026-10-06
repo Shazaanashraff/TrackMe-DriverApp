@@ -62,7 +62,7 @@ beforeEach(() => {
   mockUseNetworkStatus.mockReturnValue({ isOnline: true, isOffline: false, isDegraded: false });
 });
 
-const ID_INPUT = 'input-Driver ID or email';
+const ID_INPUT = 'input-Driver ID';
 
 describe('LoginScreen', () => {
   it('renders the identifier and password inputs', () => {
@@ -71,12 +71,23 @@ describe('LoginScreen', () => {
     expect(getByTestId('input-Password')).toBeTruthy();
   });
 
+  // Drivers sign in with the Driver ID their manager gives them; the earnings
+  // tagline went with the earnings feature.
+  it('asks for a Driver ID and uses the shuttle tagline', () => {
+    const { getByText, getByTestId, getByPlaceholderText, queryByText } = render(<LoginScreen />);
+    // FormInput derives its testID from the label.
+    expect(getByTestId('input-Driver ID')).toBeTruthy();
+    expect(getByPlaceholderText('DRV-4K7P-9XQ2')).toBeTruthy();
+    expect(getByText('Drive. Go live. Keep riders in the loop.')).toBeTruthy();
+    expect(queryByText(/Get paid/)).toBeNull();
+  });
+
   it('blocks submit and shows inline errors when fields are empty', () => {
     const { getByText, getByTestId } = render(<LoginScreen />);
     fireEvent.press(getByTestId('primary-btn'));
 
     expect(mutate).not.toHaveBeenCalled();
-    expect(getByText('Driver ID or email is required')).toBeTruthy();
+    expect(getByText('Driver ID is required')).toBeTruthy();
     expect(getByText('Password is required')).toBeTruthy();
   });
 

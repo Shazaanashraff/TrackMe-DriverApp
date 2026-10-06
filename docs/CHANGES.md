@@ -40,6 +40,11 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
   - The Trips tab is hidden. Ending a journey only marks the vehicle offline and nothing calls
     `POST /api/driver/trips/log`, so it could only ever say "No trips yet". The screen and its
     tests stay, unmounted, for when the backend records trips.
+  - "Forgot password?" now says the transport manager resets it (WebAdmin already can). The
+    emailed-code flow silently failed for manager-created drivers, who have no identity email;
+    its two screens, three hooks and API calls are removed. Login asks for a "Driver ID"
+    (email still works for older accounts) and the tagline is "Drive. Go live. Keep riders in
+    the loop." instead of the earnings-era "Get paid".
 - **Why:** owner requests while preparing the driver video tutorial.
 - **Contract impact:** none (reads `qrEnabled`, which `GET /api/routes/:routeId` already returns).
 - **Tests:** `TripProgressCard.test.js` and `tripProgress.test.js` removed with the code;
@@ -47,9 +52,10 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
   `VehicleRegistrationScreen.test.js` and `bus-registration-dashboard.int.test.tsx` removed with
   the form, register cases dropped from the vehicle hook and contract tests, VehicleCard /
   DriverProfileScreen / navigator tests updated; the navigator test now expects Home, Riders and
-  Profile only.
+  Profile only; ForgotPasswordScreen and LoginScreen tests rewritten for the new copy, reset
+  screen and hook tests removed.
 - **Docs updated:** CLAUDE.md map, DASHBOARD.md and BOARDING.md notes, BUS_REGISTRATION.md
-  (now a short REMOVED note), TRIP_HISTORY.md note, TESTING_GUIDE.md rows.
+  (now a short REMOVED note), TRIP_HISTORY.md and AUTH.md notes, TESTING_GUIDE.md rows.
 - **Follow-ups / known issues:** none.
 
 ## 2026-09-12 — Okay on absence requests and cancellations; the pill opens the absence list
