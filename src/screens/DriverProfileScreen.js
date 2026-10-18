@@ -99,7 +99,7 @@ const DriverProfileScreen = ({ navigation }) => {
           <Skeleton height={80} radius={theme.radius.card} style={styles.card} />
         ) : (
           <View style={styles.card}>
-            <VehicleCard vehicle={vehicle} onRegisterPress={() => navigation.navigate('VehicleRegistration')} />
+            <VehicleCard vehicle={vehicle} />
           </View>
         )}
 

@@ -13,30 +13,18 @@ jest.mock('../../screens/DriverDashboard', () => {
   return function MockDashboard({ navigation }) {
     return (
       <TouchableOpacity
-        onPress={() => navigation.navigate('VehicleRegistration')}
-        testID="go-to-vehicle-registration"
+        onPress={() => navigation.navigate('QRScanner')}
+        testID="go-to-qr-scanner"
       >
         <Text>Dashboard Screen</Text>
       </TouchableOpacity>
     );
   };
 });
-jest.mock('../../screens/TripHistoryScreen', () => {
-  const { Text } = require('react-native');
-  return function MockTrips() {
-    return <Text>Trips Screen</Text>;
-  };
-});
 jest.mock('../../screens/DriverProfileScreen', () => {
   const { Text } = require('react-native');
   return function MockProfile() {
     return <Text>Profile Screen</Text>;
-  };
-});
-jest.mock('../../screens/VehicleRegistrationScreen', () => {
-  const { Text } = require('react-native');
-  return function MockVehicleRegistration() {
-    return <Text>Vehicle Registration Screen</Text>;
   };
 });
 jest.mock('../../screens/LoginScreen', () => {
@@ -68,26 +56,28 @@ describe('AppNavigator', () => {
     useAuth.mockReturnValue({ user: { name: 'Driver' }, loading: false });
   });
 
-  it('renders all three tab labels with Home active by default', () => {
+  it('renders the Home, Riders and Profile tabs with Home active by default', () => {
     const { getByText, queryByText } = renderNav();
     expect(getByText('Dashboard Screen')).toBeTruthy();
     expect(getByText('Home')).toBeTruthy();
-    expect(getByText('Trips')).toBeTruthy();
+    expect(getByText('Riders')).toBeTruthy();
     expect(getByText('Profile')).toBeTruthy();
     expect(queryByText('Earnings')).toBeNull();
+    // Trips is hidden until ending a journey records a trip.
+    expect(queryByText('Trips')).toBeNull();
   });
 
   it('switches tabs on tap', () => {
     const { getByText, queryByText } = renderNav();
-    fireEvent.press(getByText('Trips'));
-    expect(getByText('Trips Screen')).toBeTruthy();
+    fireEvent.press(getByText('Profile'));
+    expect(getByText('Profile Screen')).toBeTruthy();
     expect(queryByText('Dashboard Screen')).toBeNull();
   });
 
-  it('pushes VehicleRegistration above the tabs', async () => {
+  it('pushes a screen (the QR scanner) above the tabs', async () => {
     const { getByTestId, findByText } = renderNav();
-    fireEvent.press(getByTestId('go-to-vehicle-registration'));
-    expect(await findByText('Vehicle Registration Screen')).toBeTruthy();
+    fireEvent.press(getByTestId('go-to-qr-scanner'));
+    expect(await findByText('QR Scanner Screen')).toBeTruthy();
   });
 
   it('shows the login screen when logged out', () => {

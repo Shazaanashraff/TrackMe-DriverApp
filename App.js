@@ -42,7 +42,7 @@ function AppContent() {
         <NavigationContainer
           ref={navigationRef}
           documentTitle={{
-            formatter: () => 'TrackMe'
+            formatter: () => 'Pingo'
           }}
         >
           <StatusBar style="dark" />

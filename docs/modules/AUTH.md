@@ -11,6 +11,11 @@ here — that is the change protocol, not optional extra work.
 
 `src/screens/LoginScreen.tsx`, `src/context/AuthContext.js`, `src/hooks/auth/index.ts`
 
+> **Password recovery (2026-10-06).** Drivers sign in with the Driver ID their manager issues;
+> most have no email, so the emailed-code reset flow (ForgotPasswordOtp / ResetPassword screens and
+> their hooks) is gone. "Forgot password?" opens an info screen: the transport manager resets it in
+> WebAdmin (Manager › Drivers › Reset password). Email sign-in still works for older accounts.
+
 ## What this doc must cover
 
 Template section order: Purpose · Key files (one job each) · Data flow · Contracts (API/socket/

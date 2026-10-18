@@ -68,11 +68,19 @@ jest.mock('../../hooks/auth', () => ({
   useLogout: () => ({ mutate: jest.fn(), isPending: false }),
 }));
 
-// TripProgressCard fetches route geometry via react-query; stub it so the dashboard
-// test needs no QueryClientProvider (undefined data => the card renders nothing).
+// The vehicle's route carries the manager's QR boarding switch (qrEnabled). Stubbed so
+// the dashboard test needs no QueryClientProvider; each test sets the route it wants.
+let mockRoute;
 jest.mock('../../hooks/route', () => ({
-  useRouteDetailsQuery: () => ({ data: undefined }),
+  useRouteDetailsQuery: () => ({ data: mockRoute }),
 }));
+
+jest.mock('../../features/dashboard/OnBoardCard', () => {
+  const { View } = jest.requireActual('react-native');
+  return function MockOnBoardCard() {
+    return <View testID="on-board-card" />;
+  };
+});
 
 jest.mock('../../features/dashboard/useSocketConnection', () => ({
   useSocketConnection: () => ({ connecting: false }),
@@ -108,6 +116,7 @@ jest.mock('../../context/AuthContext', () => ({
 beforeEach(async () => {
   jest.clearAllMocks();
   mockBufferedCount = 0;
+  mockRoute = undefined;
   await AsyncStorage.clear();
   mockUseTrackingSession.mockReturnValue({
     status: 'idle',
@@ -169,18 +178,44 @@ describe('DriverDashboard — lost connection warning (issue #30)', () => {
 });
 
 describe('DriverDashboard — quick actions', () => {
-  it('offers the QR scanner and nothing else', () => {
+  it('offers the QR scanner and nothing else when the route uses QR boarding', () => {
+    mockRoute = { routeId: 'GVC-MORNING', qrEnabled: true };
     const { getByTestId, queryByTestId, queryByText } = render(
       <DriverDashboard navigation={{ navigate: jest.fn() }} />
     );
 
     expect(getByTestId('scan-rider-qr-row')).toBeTruthy();
+    expect(getByTestId('on-board-card')).toBeTruthy();
 
     // My Routes and custom-route recording were both removed from this screen.
     expect(queryByTestId('my-routes-row')).toBeNull();
     expect(queryByText('My routes')).toBeNull();
     expect(queryByTestId('update-route-banner')).toBeNull();
     expect(queryByTestId('mock-recorder')).toBeNull();
+  });
+
+  // Not every shuttle scans passes: QR boarding is the manager's per-route switch.
+  it('hides the scanner and On board when the route has QR boarding off', () => {
+    mockRoute = { routeId: 'HBT-EAST', qrEnabled: false };
+    const { queryByTestId, queryByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+    expect(queryByTestId('scan-rider-qr-row')).toBeNull();
+    expect(queryByText('Scan rider QR')).toBeNull();
+    expect(queryByTestId('on-board-card')).toBeNull();
+  });
+
+  it('hides the scanner and On board until the route has loaded', () => {
+    mockRoute = undefined;
+    const { queryByTestId } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+    expect(queryByTestId('scan-rider-qr-row')).toBeNull();
+    expect(queryByTestId('on-board-card')).toBeNull();
+  });
+
+  it('hides them without a vehicle, even on a QR route', () => {
+    mockRoute = { routeId: 'GVC-MORNING', qrEnabled: true };
+    mockUseMyVehicleQuery.mockReturnValue({ data: null, isLoading: false, error: null });
+    const { queryByTestId } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
+    expect(queryByTestId('scan-rider-qr-row')).toBeNull();
+    expect(queryByTestId('on-board-card')).toBeNull();
   });
 
   it('does not call the deleted custom-route endpoints', () => {
@@ -299,7 +334,7 @@ describe('DriverDashboard — unassigned-vehicle messaging (issue #21)', () => {
 
     const { findByText, queryByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
 
-    expect(await findByText('Vehicle registration required')).toBeTruthy();
+    expect(await findByText('No vehicle assigned yet')).toBeTruthy();
     expect(queryByText('Vehicle assignment removed')).toBeNull();
   });
 
@@ -310,7 +345,7 @@ describe('DriverDashboard — unassigned-vehicle messaging (issue #21)', () => {
     const { findByText, queryByText } = render(<DriverDashboard navigation={{ navigate: jest.fn() }} />);
 
     expect(await findByText('Vehicle assignment removed')).toBeTruthy();
-    expect(queryByText('Vehicle registration required')).toBeNull();
+    expect(queryByText('No vehicle assigned yet')).toBeNull();
   });
 
   it('persists that this driver has had a vehicle once one is seen', async () => {

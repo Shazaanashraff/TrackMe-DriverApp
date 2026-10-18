@@ -7,7 +7,6 @@ describe('api surface stability', () => {
     'refreshToken',
     'logout',
     'getMyVehicle',
-    'registerVehicle',
     'updateVehicle',
     'getRouteById',
     'getDriverTrips',

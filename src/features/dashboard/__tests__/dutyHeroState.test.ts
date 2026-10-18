@@ -24,7 +24,7 @@ describe('deriveDutyHeroState', () => {
 
   it('off duty without a vehicle disables GO', () => {
     const state = deriveDutyHeroState({ ...base, hasVehicle: false });
-    expect(state.subline).toBe('Vehicle registration required');
+    expect(state.subline).toBe('No vehicle assigned yet');
     expect(state.goDisabled).toBe(true);
   });
 

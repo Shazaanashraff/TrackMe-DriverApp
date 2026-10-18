@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "TrackMe",
+    "name": "Pingo",
     "slug": "driver-app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -16,7 +16,7 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app needs location access to track the bus position",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs location access to track the bus position",
-        "NSCameraUsageDescription": "TrackMe uses the camera to scan a passenger's QR pass when they board or alight.",
+        "NSCameraUsageDescription": "Pingo uses the camera to scan a passenger's QR pass when they board or alight.",
         "UIBackgroundModes": [
           "location"
         ]
@@ -42,8 +42,8 @@
       "package": "com.TrackMe.driverapp"
     },
     "web": {
-      "name": "TrackMe",
-      "shortName": "TrackMe",
+      "name": "Pingo",
+      "shortName": "Pingo",
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
@@ -51,7 +51,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "TrackMe shares this vehicle's location with your passengers and manager while you are on duty, including when the app is in the background.",
+          "locationAlwaysAndWhenInUsePermission": "Pingo shares this vehicle's location with your passengers and manager while you are on duty, including when the app is in the background.",
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }
@@ -60,7 +60,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "TrackMe uses the camera to scan a passenger's QR pass when they board or alight."
+          "cameraPermission": "Pingo uses the camera to scan a passenger's QR pass when they board or alight."
         }
       ],
       "expo-notifications"

@@ -141,7 +141,7 @@ export function deriveDutyHeroState({
       headline: "You're off duty",
       subline: hadVehicleBefore
         ? 'Vehicle assignment removed'
-        : 'Vehicle registration required',
+        : 'No vehicle assigned yet',
       dot: 'off',
       showAllowLocation: false,
       goDisabled: true,

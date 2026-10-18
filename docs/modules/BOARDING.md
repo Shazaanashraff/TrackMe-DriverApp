@@ -11,6 +11,10 @@ here — that is the change protocol, not optional extra work.
 
 `src/screens/QRScannerScreen.tsx`, `src/screens/BoardingRosterScreen.tsx`, `src/features/boarding/`, `src/hooks/boarding/index.ts`
 
+> **Gated by the route (2026-10-06).** Home shows the scanner entry and the On board card only
+> when the vehicle's route has QR boarding switched on (`Route.qrEnabled`); see DASHBOARD.md.
+> The backend enforces the same switch on scans and the roster (403 when off).
+
 ## What this doc must cover
 
 Template section order: Purpose · Key files (one job each) · Data flow · Contracts (API/socket/

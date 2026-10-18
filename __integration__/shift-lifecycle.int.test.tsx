@@ -168,8 +168,8 @@ describe('shift lifecycle: login → go on duty → location stream → end duty
       const { getByLabelText, getByText, findByText, findByLabelText } = renderApp();
 
       // 1) LOGIN — a real driver signs in through the real LoginScreen + useLogin + AuthContext.
-      await waitFor(() => getByLabelText('Driver ID or email'));
-      fireEvent.changeText(getByLabelText('Driver ID or email'), 'nadia@trackme.test');
+      await waitFor(() => getByLabelText('Driver ID'));
+      fireEvent.changeText(getByLabelText('Driver ID'), 'nadia@trackme.test');
       fireEvent.changeText(getByLabelText('Password'), 'Passw0rd!');
       fireEvent.press(getByText('Sign in'));
 

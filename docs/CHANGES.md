@@ -64,6 +64,46 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 - **Follow-ups / known issues:** no signing credentials configured yet; no privacy policy or
   store graphics exist yet; OTA (`expo-updates`) still not decided/set up; the Render backend
   service is suspended and needs to be resumed before a real production build.
+## 2026-10-06 - Tutorial readiness fixes
+- **Branch:** feature/tutorial-readiness
+- **Modules touched:** [docs/modules/DASHBOARD.md](modules/DASHBOARD.md)
+- **What changed:**
+  - Trip Progress is removed from Home, along with its distance helper. Its numbers were
+    never real: nobody knows a shuttle's actual daily route or destination, so a covered/
+    remaining distance along the stop list could only mislead.
+  - QR boarding is optional: Home shows the On board card and "Scan rider QR" only when the
+    vehicle's route has the manager's per-route switch on (`Route.qrEnabled`). Not every
+    transport office scans passes. Before, Scan always showed and the card only vanished
+    through a roster 403.
+  - The "Your vehicle" registration form is gone. It never sent a `routeId`, so every save
+    failed; managers create and assign vehicles in WebAdmin. The empty vehicle card now reads
+    "Ask your manager to assign one" and is not pressable, and the hero's status line reads
+    "No vehicle assigned yet". `useRegisterVehicle` and `api.registerVehicle` went with it.
+  - The Trips tab is hidden. Ending a journey only marks the vehicle offline and nothing calls
+    `POST /api/driver/trips/log`, so it could only ever say "No trips yet". The screen and its
+    tests stay, unmounted, for when the backend records trips.
+  - "Forgot password?" now says the transport manager resets it (WebAdmin already can). The
+    emailed-code flow silently failed for manager-created drivers, who have no identity email;
+    its two screens, three hooks and API calls are removed. Login asks for a "Driver ID"
+    (email still works for older accounts) and the tagline is "Drive. Go live. Keep riders in
+    the loop." instead of the earnings-era "Get paid".
+  - The app is called PinGo wherever a driver sees a name: the Android app name, the camera,
+    location and background-location permission texts, the "PinGo is sharing your location"
+    notification, the enrollment-key share message, the scanner's camera notes, the login
+    wordmark and the browser tab title. Package ids, the slug and code identifiers are
+    unchanged.
+- **Why:** owner requests while preparing the driver video tutorial.
+- **Contract impact:** none (reads `qrEnabled`, which `GET /api/routes/:routeId` already returns).
+- **Tests:** `TripProgressCard.test.js` and `tripProgress.test.js` removed with the code;
+  `DriverDashboard.test.js` covers QR on, off, still loading, and no vehicle;
+  `VehicleRegistrationScreen.test.js` and `bus-registration-dashboard.int.test.tsx` removed with
+  the form, register cases dropped from the vehicle hook and contract tests, VehicleCard /
+  DriverProfileScreen / navigator tests updated; the navigator test now expects Home, Riders and
+  Profile only; ForgotPasswordScreen and LoginScreen tests rewritten for the new copy, reset
+  screen and hook tests removed.
+- **Docs updated:** CLAUDE.md map, DASHBOARD.md and BOARDING.md notes, BUS_REGISTRATION.md
+  (now a short REMOVED note), TRIP_HISTORY.md and AUTH.md notes, TESTING_GUIDE.md rows.
+- **Follow-ups / known issues:** none.
 
 ## 2026-09-12 — Okay on absence requests and cancellations; the pill opens the absence list
 - **Branch:** feature/absence-request-ack

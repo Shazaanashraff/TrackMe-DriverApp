@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useAuth } from '../context/AuthContext';
 import { useMyVehicleQuery } from '../hooks/vehicle';
+import { useRouteDetailsQuery } from '../hooks/route';
 import { useTrackingSession } from '../hooks/useTrackingSession';
 import { useLocationBroadcast } from '../hooks/useLocationBroadcast';
 import { useBackgroundTracking } from '../hooks/useBackgroundTracking';
@@ -18,7 +19,6 @@ import ConfirmSheet from '../components/ui/ConfirmSheet';
 import DutyHero from '../features/dashboard/DutyHero';
 import VehicleCard from '../features/dashboard/VehicleCard';
 import OnBoardCard from '../features/dashboard/OnBoardCard';
-import TripProgressCard from '../features/dashboard/TripProgressCard';
 import { useSocketConnection } from '../features/dashboard/useSocketConnection';
 import BroadcastPanel from '../features/communications/BroadcastPanel';
 
@@ -54,6 +54,12 @@ const DriverDashboard = ({ navigation }: Props) => {
   const vehicleId = vehicle?.vehicleId || vehicle?._id || '';
   const routeId = vehicle?.routeId || vehicle?.assignedRoute || '';
   const hasVehicle = !!vehicle;
+
+  // QR boarding is the manager's per-route switch (Route.qrEnabled). Off, or no
+  // route yet, means this shuttle doesn't scan passes, so the On board card and
+  // the scanner stay out of the way.
+  const routeQuery = useRouteDetailsQuery(routeId || undefined);
+  const qrBoarding = hasVehicle && routeQuery.data?.qrEnabled === true;
 
   const [hadVehicleBefore, setHadVehicleBefore] = useState(false);
   useEffect(() => {
@@ -166,43 +172,30 @@ const DriverDashboard = ({ navigation }: Props) => {
           />
 
           <AppText variant="overline" color={theme.color.text.muted} style={styles.sectionTitle}>YOUR VEHICLE</AppText>
-          <VehicleCard
-            vehicle={vehicle}
-            onRegisterPress={() => navigation.navigate('VehicleRegistration')}
-          />
+          <VehicleCard vehicle={vehicle} />
 
-          <TripProgressCard
-            routeId={routeId}
-            fix={onDuty ? broadcast.lastFix : null}
-            isTracking={onDuty}
-          />
-
-          {vehicle ? (
+          {qrBoarding ? (
             <OnBoardCard vehicleId={vehicleId} onPress={() => navigation.navigate('BoardingRoster', { vehicleId })} />
           ) : null}
 
           <AppText variant="overline" color={theme.color.text.muted} style={styles.sectionTitleSpaced}>QUICK ACTIONS</AppText>
-          
-          <Pressable 
-            testID="scan-rider-qr-row"
-            style={({ pressed }) => [
-              styles.quickActionBlock,
-              pressed && styles.quickActionBlockPressed,
-              !vehicle && styles.quickActionDisabled
-            ]}
-            onPress={vehicle ? () => navigation.navigate('QRScanner', { vehicleId }) : undefined}
-          >
-            <View style={styles.quickActionIcon}>
-              <Ionicons name="qr-code" size={20} color={theme.color.primary[600]} />
-            </View>
-            <View style={styles.quickActionText}>
-              <AppText variant="body" weight="medium" color={theme.color.primary[900]}>Scan rider QR</AppText>
-              <AppText variant="label" color={theme.color.text.secondary}>
-                {vehicle ? 'Record boarding or alighting' : 'Register a vehicle first'}
-              </AppText>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.color.primary[300]} />
-          </Pressable>
+
+          {qrBoarding ? (
+            <Pressable
+              testID="scan-rider-qr-row"
+              style={({ pressed }) => [styles.quickActionBlock, pressed && styles.quickActionBlockPressed]}
+              onPress={() => navigation.navigate('QRScanner', { vehicleId })}
+            >
+              <View style={styles.quickActionIcon}>
+                <Ionicons name="qr-code" size={20} color={theme.color.primary[600]} />
+              </View>
+              <View style={styles.quickActionText}>
+                <AppText variant="body" weight="medium" color={theme.color.primary[900]}>Scan rider QR</AppText>
+                <AppText variant="label" color={theme.color.text.secondary}>Record boarding or alighting</AppText>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={theme.color.primary[300]} />
+            </Pressable>
+          ) : null}
 
           <BroadcastPanel navigation={navigation} />
         </ScrollView>
@@ -265,9 +258,6 @@ const styles = StyleSheet.create({
   },
   quickActionBlockPressed: {
     backgroundColor: theme.color.primary[100],
-  },
-  quickActionDisabled: {
-    opacity: 0.5,
   },
   quickActionIcon: {
     width: 40,

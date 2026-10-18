@@ -8,14 +8,6 @@ export async function getMyVehicle(token: string) {
   });
 }
 
-export async function registerVehicle(vehicleData: Record<string, unknown>, token: string) {
-  return requestJson(`${API_URL}/api/vehicle/register`, {
-    method: 'POST',
-    headers: authHeaders(token),
-    body: JSON.stringify(vehicleData),
-  });
-}
-
 export async function updateVehicle(
   token: string,
   vehicleId: string,

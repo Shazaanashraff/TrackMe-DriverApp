@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../theme';
 import AppText from '../../components/ui/AppText';
@@ -14,24 +14,24 @@ type Vehicle = {
 
 type Props = {
   vehicle: Vehicle | null;
-  onRegisterPress: () => void;
 };
 
-export default function VehicleCard({ vehicle, onRegisterPress }: Props) {
+export default function VehicleCard({ vehicle }: Props) {
+  // Vehicles are created and assigned by the manager in WebAdmin; a driver cannot
+  // add one from the app, so the empty state only says who to ask.
   if (!vehicle) {
     return (
-      <Pressable style={styles.emptyContainer} onPress={onRegisterPress}>
+      <View style={styles.emptyContainer} testID="vehicle-card-empty">
         <View style={styles.emptyIconBadge}>
           <Ionicons name="bus-outline" size={20} color={theme.color.primary[500]} />
         </View>
         <View style={styles.emptyTextBlock}>
           <AppText variant="h2" color={theme.color.text.primary}>No vehicle yet</AppText>
           <AppText variant="label" color={theme.color.text.muted}>
-            Add your vehicle so riders can find it
+            Ask your manager to assign one
           </AppText>
         </View>
-        <Ionicons name="chevron-forward" size={20} color={theme.color.text.muted} />
-      </Pressable>
+      </View>
     );
   }
 

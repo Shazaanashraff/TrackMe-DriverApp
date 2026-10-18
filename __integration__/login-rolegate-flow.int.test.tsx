@@ -132,10 +132,10 @@ describe('login role-gate, end to end through the real LoginScreen', () => {
 
     // AuthProvider resolves its stored-session check asynchronously; wait for the
     // real LoginScreen to actually mount before interacting with it.
-    await findByLabelText('Driver ID or email');
+    await findByLabelText('Driver ID');
 
     // 1) A passenger account tries to sign in through the real form.
-    fireEvent.changeText(getByLabelText('Driver ID or email'), 'passenger@trackme.test');
+    fireEvent.changeText(getByLabelText('Driver ID'), 'passenger@trackme.test');
     fireEvent.changeText(getByLabelText('Password'), 'Passw0rd!');
     fireEvent.press(getByText('Sign in'));
 
@@ -146,7 +146,7 @@ describe('login role-gate, end to end through the real LoginScreen', () => {
     expect(await AsyncStorage.getItem('token')).toBeNull();
 
     // 2) The same screen, now with real driver credentials, in the same flow.
-    fireEvent.changeText(getByLabelText('Driver ID or email'), 'nadia@trackme.test');
+    fireEvent.changeText(getByLabelText('Driver ID'), 'nadia@trackme.test');
     fireEvent.changeText(getByLabelText('Password'), 'Passw0rd!');
     fireEvent.press(getByText('Sign in'));
 

@@ -1,13 +1,12 @@
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
-import { useMyVehicleQuery, useRegisterVehicle, useUpdateVehicle } from '../index';
+import { useMyVehicleQuery, useUpdateVehicle } from '../index';
 
 jest.mock('../../../services/api', () => ({
   __esModule: true,
   default: {
     getMyVehicle: jest.fn(),
-    registerVehicle: jest.fn(),
     updateVehicle: jest.fn(),
   },
 }));
@@ -70,23 +69,6 @@ describe('useMyVehicleQuery', () => {
     await waitFor(() =>
       expect((result.current.data as { data: { driverId: { isPrivate: boolean } } }).data.driverId.isPrivate).toBe(false)
     );
-  });
-});
-
-describe('useRegisterVehicle', () => {
-  it('calls api.registerVehicle and invalidates myVehicle on success', async () => {
-    (mockApi.registerVehicle as jest.Mock).mockResolvedValueOnce({ _id: 'b1' });
-
-    const { wrapper, invalidateSpy } = makeWrapper();
-    const { result } = renderHook(() => useRegisterVehicle(), { wrapper });
-
-    act(() => {
-      result.current.mutate({ plateNumber: 'ABC-123' });
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(mockApi.registerVehicle).toHaveBeenCalledWith({ plateNumber: 'ABC-123' }, 'tok');
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['vehicle', 'mine'] });
   });
 });
 
