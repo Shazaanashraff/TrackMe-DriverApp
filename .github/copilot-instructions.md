@@ -1,4 +1,4 @@
-# Copilot Instructions — driver-app (TrackMe Driver App)
+# Copilot Instructions — driver-app (Pingo Driver App)
 
 ## Before you start
 

@@ -1,22 +1,22 @@
 {
   "expo": {
-    "name": "TrackMe",
+    "name": "Pingo",
     "slug": "driver-app",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#2563eb"
+      "backgroundColor": "#172033"
     },
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app needs location access to track the bus position",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs location access to track the bus position",
-        "NSCameraUsageDescription": "TrackMe uses the camera to scan a passenger's QR pass when they board or alight.",
+        "NSCameraUsageDescription": "Pingo uses the camera to scan a passenger's QR pass when they board or alight.",
         "UIBackgroundModes": [
           "location"
         ]
@@ -25,7 +25,8 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#2563eb"
+        "backgroundColor": "#172033",
+        "monochromeImage": "./assets/adaptive-icon-monochrome.png"
       },
       "permissions": [
         "ACCESS_FINE_LOCATION",
@@ -39,11 +40,11 @@
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_LOCATION"
       ],
-      "package": "com.TrackMe.driverapp"
+      "package": "com.pingo.driverapp"
     },
     "web": {
-      "name": "TrackMe",
-      "shortName": "TrackMe",
+      "name": "Pingo",
+      "shortName": "Pingo",
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
@@ -51,7 +52,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "TrackMe shares this vehicle's location with your passengers and manager while you are on duty, including when the app is in the background.",
+          "locationAlwaysAndWhenInUsePermission": "Pingo shares this vehicle's location with your passengers and manager while you are on duty, including when the app is in the background.",
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }
@@ -60,7 +61,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "TrackMe uses the camera to scan a passenger's QR pass when they board or alight."
+          "cameraPermission": "Pingo uses the camera to scan a passenger's QR pass when they board or alight."
         }
       ],
       "expo-notifications"

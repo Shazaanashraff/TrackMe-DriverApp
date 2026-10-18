@@ -133,7 +133,7 @@ describe('QRScannerScreen', () => {
 
     // text.secondary is the old value here and is near-invisible on ink.base.
     const subtitleColor = StyleSheet.flatten(
-      getByText('TrackMe uses the camera to read rider QR passes. Nothing is recorded.').props.style
+      getByText('Pingo uses the camera to read rider QR passes. Nothing is recorded.').props.style
     ).color;
     expect(subtitleColor).toBe(theme.color.primary[300]);
     expect(subtitleColor).not.toBe(theme.color.text.secondary);

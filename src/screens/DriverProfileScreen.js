@@ -14,6 +14,7 @@ import ListRow from '../components/ui/ListRow';
 import ConfirmSheet from '../components/ui/ConfirmSheet';
 import Skeleton from '../components/ui/Skeleton';
 import VehicleCard from '../features/dashboard/VehicleCard';
+import { getAppVersionLabel } from '../helpers/appVersion';
 
 const DetailItem = ({ icon, label, value, last }) => (
   <View style={[styles.detailRow, !last && styles.detailRowBorder]}>
@@ -118,6 +119,10 @@ const DriverProfileScreen = ({ navigation }) => {
             Log out
           </AppText>
         </Pressable>
+
+        <AppText variant="caption" color={theme.color.text.muted} style={styles.versionText} testID="app-version">
+          Pingo Driver {getAppVersionLabel()}
+        </AppText>
       </ScrollView>
 
       <ConfirmSheet
@@ -242,7 +247,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.color.surface.card,
     borderRadius: theme.radius.card,
     padding: theme.space[3],
-    marginBottom: theme.space[6],
+    marginBottom: theme.space[3],
     borderWidth: 1,
     borderColor: theme.color.danger.bg,
     ...theme.elevation.card,
@@ -262,6 +267,9 @@ const styles = StyleSheet.create({
   logoutText: {
     flex: 1,
     fontSize: 16,
+  },
+  versionText: {
+    textAlign: 'center',
   },
 });
 export default DriverProfileScreen;

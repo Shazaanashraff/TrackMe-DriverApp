@@ -55,8 +55,8 @@ function CameraPermissionDeniedState({
         <AppText variant="h2" onInk style={styles.permissionTitle}>Camera access needed</AppText>
         <AppText variant="label" color={theme.color.primary[300]} style={styles.permissionSubtitle}>
           {canAskAgain
-            ? 'TrackMe uses the camera to read rider QR passes. Nothing is recorded.'
-            : 'Camera access is turned off for TrackMe. Turn it on in settings to scan rider passes.'}
+            ? 'Pingo uses the camera to read rider QR passes. Nothing is recorded.'
+            : 'Camera access is turned off for Pingo. Turn it on in settings to scan rider passes.'}
         </AppText>
 
         {canAskAgain ? null : (

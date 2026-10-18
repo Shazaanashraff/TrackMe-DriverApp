@@ -11,6 +11,7 @@ import { CommunicationProvider } from './src/features/communications/provider';
 const navigationRef = createNavigationContainerRef();
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import UpdateAvailableBanner from './src/components/ui/UpdateAvailableBanner';
 import { NetworkStatusProvider } from './src/context/NetworkStatusContext';
 import { queryClient, persistOptions } from './src/app/queryClient';
 // Registers the background location task. Must be imported at app entry, not from
@@ -42,12 +43,14 @@ function AppContent() {
         <NavigationContainer
           ref={navigationRef}
           documentTitle={{
-            formatter: () => 'TrackMe'
+            formatter: () => 'Pingo'
           }}
         >
           <StatusBar style="dark" />
           <CommunicationProvider><AppNavigator /></CommunicationProvider>
         </NavigationContainer>
+        {/* Direct-APK builds only (EXPO_PUBLIC_APK_UPDATER=1); the hook no-ops on Play builds. */}
+        {process.env.EXPO_PUBLIC_APK_UPDATER === '1' ? <UpdateAvailableBanner /> : null}
       </ErrorBoundary>
     </View>
   );

@@ -1,4 +1,4 @@
-// TrackMe driver app — central design tokens ("Signal Ink").
+// Pingo driver app — central design tokens ("Signal Ink").
 // Single source of truth for colour, type, spacing, shape, and motion.
 // Ported verbatim from user-app/src/theme/tokens.js (the ShuttleGo signal-blue
 // system), English-only (no Sinhala/Tamil), plus the driver-specific `ink` and

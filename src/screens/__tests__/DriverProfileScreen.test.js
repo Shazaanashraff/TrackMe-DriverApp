@@ -41,6 +41,12 @@ jest.mock('../../hooks/vehicle', () => ({
   useMyVehicleQuery: () => mockVehicleQuery(),
 }));
 
+const mockApp = { nativeApplicationVersion: '1.0.2', nativeBuildVersion: '5' };
+jest.mock('expo-application', () => ({
+  get nativeApplicationVersion() { return mockApp.nativeApplicationVersion; },
+  get nativeBuildVersion() { return mockApp.nativeBuildVersion; },
+}));
+
 const navigation = { navigate: jest.fn(), reset: jest.fn() };
 
 beforeEach(() => {
@@ -199,6 +205,25 @@ describe('DriverProfileScreen', () => {
       const { getByText, queryByText } = render(<DriverProfileScreen navigation={navigation} />);
       expect(getByText('Shuttle 1')).toBeTruthy();
       expect(queryByText('No vehicle yet')).toBeNull();
+    });
+  });
+
+  describe('app version line', () => {
+    afterEach(() => {
+      mockApp.nativeApplicationVersion = '1.0.2';
+      mockApp.nativeBuildVersion = '5';
+    });
+
+    it('shows the installed version and build under Log out', () => {
+      const { getByTestId } = render(<DriverProfileScreen navigation={navigation} />);
+      expect(getByTestId('app-version').props.children.join('')).toBe('Pingo Driver v1.0.2 (build 5)');
+    });
+
+    it('degrades instead of printing null when the native version is unavailable', () => {
+      mockApp.nativeApplicationVersion = null;
+      mockApp.nativeBuildVersion = null;
+      const { getByTestId } = render(<DriverProfileScreen navigation={navigation} />);
+      expect(getByTestId('app-version').props.children.join('')).toBe('Pingo Driver Version unavailable');
     });
   });
 });

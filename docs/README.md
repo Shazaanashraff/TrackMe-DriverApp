@@ -20,7 +20,7 @@ change touching it:
 [AUTH](modules/AUTH.md) · [DASHBOARD](modules/DASHBOARD.md) · [BOARDING](modules/BOARDING.md) ·
 [BUS_REGISTRATION](modules/BUS_REGISTRATION.md) · [ROUTE_MANAGEMENT](modules/ROUTE_MANAGEMENT.md) ·
 [EARNINGS](modules/EARNINGS.md) · [TRIP_HISTORY](modules/TRIP_HISTORY.md) ·
-[PROFILE](modules/PROFILE.md) · [OFFLINE_STATUS](modules/OFFLINE_STATUS.md)
+[PROFILE](modules/PROFILE.md) · [OFFLINE_STATUS](modules/OFFLINE_STATUS.md) · [APP_UPDATES](modules/APP_UPDATES.md)
 
 ## Guides
 - **[guides/ADDING_A_FEATURE.md](guides/ADDING_A_FEATURE.md)** — the ship-a-feature loop.

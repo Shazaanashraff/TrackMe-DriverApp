@@ -3,6 +3,7 @@ import * as vehicle from './vehicle';
 import * as routes from './routes';
 import * as trips from './trips';
 import * as boarding from './boarding';
+import * as appReleases from './appReleases';
 
 const api = {
   // auth
@@ -31,6 +32,9 @@ const api = {
   // boarding
   submitBoardingScan: boarding.submitBoardingScan,
   getBoardingRoster: boarding.getBoardingRoster,
+
+  // app releases (public)
+  getLatestAppRelease: appReleases.getLatestAppRelease,
 };
 
 export default api;
