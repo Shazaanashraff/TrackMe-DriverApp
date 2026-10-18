@@ -7,6 +7,26 @@ export interface LocationFix {
   // Horizontal accuracy in meters, when the platform reports one. UI-only (e.g. the
   // Signal Ink GPS stat chip) — never sent over the wire, never used by shouldEmit().
   accuracy?: number | null;
+  // Direction of travel in degrees clockwise from north, or null when unknown.
+  // Sent with the fix so rider and manager maps can turn the vehicle icon.
+  heading?: number | null;
+}
+
+// Below this speed (m/s, about 3.6 km/h) the GPS course is noise: a parked or
+// crawling shuttle reports a heading that swings at random.
+export const MIN_HEADING_SPEED_MPS = 1;
+
+/**
+ * The GPS heading worth sending, or null. Platforms report -1 (iOS) or a stale
+ * 0 (Android) when they have no course, and any course is unreliable while
+ * stopped, so the heading only counts when the vehicle is actually moving.
+ * Map clients keep the last direction they saw when this is null.
+ */
+export function usableHeading(coords: { heading?: number | null; speed?: number | null }): number | null {
+  const { heading, speed } = coords || {};
+  if (typeof heading !== 'number' || !Number.isFinite(heading) || heading < 0) return null;
+  if (typeof speed !== 'number' || !Number.isFinite(speed) || speed < MIN_HEADING_SPEED_MPS) return null;
+  return heading % 360;
 }
 
 /** Haversine distance in metres between two coordinates. */

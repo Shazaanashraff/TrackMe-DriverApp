@@ -8,11 +8,18 @@ import {
   startReplayOnReconnect,
   getTrackingTarget,
 } from './locationDispatch';
+import { usableHeading } from '../helpers/locationUtils';
 
 export const LOCATION_TASK_NAME = 'trackme-driver-location';
 
 type TaskLocation = {
-  coords: { latitude: number; longitude: number; accuracy?: number | null };
+  coords: {
+    latitude: number;
+    longitude: number;
+    accuracy?: number | null;
+    heading?: number | null;
+    speed?: number | null;
+  };
   timestamp?: number;
 };
 
@@ -44,6 +51,7 @@ export async function handleBackgroundLocations(locations: TaskLocation[]): Prom
       lng: location.coords.longitude,
       timestamp: location.timestamp ?? Date.now(),
       accuracy: location.coords.accuracy,
+      heading: usableHeading(location.coords),
     });
   });
 }

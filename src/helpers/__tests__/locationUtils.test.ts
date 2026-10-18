@@ -1,4 +1,4 @@
-import { distanceMeters, isValidCoord, shouldEmit } from '../locationUtils';
+import { distanceMeters, isValidCoord, shouldEmit, usableHeading } from '../locationUtils';
 
 describe('distanceMeters', () => {
   it('returns ~0 for identical coordinates', () => {
@@ -69,5 +69,34 @@ describe('shouldEmit', () => {
   it('still respects minMs when maxMs is given', () => {
     const next = { lat: base.lat, lng: base.lng, timestamp: 1500 };
     expect(shouldEmit(base, next, 10, 3000, 30000)).toBe(false);
+  });
+});
+
+describe('usableHeading', () => {
+  it('returns the GPS heading while the vehicle is moving', () => {
+    expect(usableHeading({ heading: 92.5, speed: 8 })).toBe(92.5);
+  });
+
+  it('accepts exactly the minimum speed', () => {
+    expect(usableHeading({ heading: 10, speed: 1 })).toBe(10);
+  });
+
+  it('drops the heading below walking pace, where the course is noise', () => {
+    expect(usableHeading({ heading: 180, speed: 0.4 })).toBeNull();
+    expect(usableHeading({ heading: 0, speed: 0 })).toBeNull();
+  });
+
+  it('drops the -1 platforms report when they have no course', () => {
+    expect(usableHeading({ heading: -1, speed: 12 })).toBeNull();
+  });
+
+  it('returns null when heading or speed is missing', () => {
+    expect(usableHeading({ heading: 45 })).toBeNull();
+    expect(usableHeading({ speed: 5 })).toBeNull();
+    expect(usableHeading({ heading: null, speed: null })).toBeNull();
+  });
+
+  it('wraps 360 back to 0', () => {
+    expect(usableHeading({ heading: 360, speed: 5 })).toBe(0);
   });
 });

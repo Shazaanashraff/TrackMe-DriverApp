@@ -47,6 +47,29 @@ describe('emitLocation', () => {
     expect(callback).toHaveBeenCalledWith({ success: true });
   });
 
+  it('sends the heading when one is given', () => {
+    const { connectSocket, emitLocation } = getModule();
+    connectSocket('tok');
+
+    emitLocation('vehicle-1', 'route-1', 6.9, 79.8, jest.fn(), 135);
+
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      'driver:location',
+      { vehicleId: 'vehicle-1', routeId: 'route-1', lat: 6.9, lng: 79.8, heading: 135 },
+      expect.any(Function)
+    );
+  });
+
+  it('leaves heading out of the payload when it is null', () => {
+    const { connectSocket, emitLocation } = getModule();
+    connectSocket('tok');
+
+    emitLocation('vehicle-1', 'route-1', 6.9, 79.8, jest.fn(), null);
+
+    const payload = mockSocket.emit.mock.calls[0][1];
+    expect(payload).not.toHaveProperty('heading');
+  });
+
   it('no-ops when the socket is not connected', () => {
     const { connectSocket, emitLocation } = getModule();
     connectSocket('tok');

@@ -67,6 +67,18 @@ The dashboard composes: `useMyBusQuery` (which bus) → `useTrackingSession` →
   the latest and drop intermediate). Document which the backend supports.
 - Stop the watcher immediately on `stop()` — a running GPS watcher is the #1 battery drain.
 
+## Heading (vehicle direction on rider and manager maps)
+- Every fix carries `heading` (degrees clockwise from north) from `usableHeading(coords)` in
+  `helpers/locationUtils.ts`. It is the GPS course only while the vehicle moves at
+  `MIN_HEADING_SPEED_MPS` (1 m/s) or faster. Otherwise it is null: platforms report -1 or a
+  stale 0 with no course, and a parked vehicle's course swings at random.
+- `emitLocation(..., heading)` adds `heading` to the `driver:location` payload only when it
+  is a number. The backend already stores and relays it on `vehicle:update`
+  (`backend/docs/modules/REALTIME.md`). Map clients keep the last direction they saw while it
+  is null.
+- Both producers set it: the foreground watcher (`useLocationBroadcast`) and the background
+  task (`backgroundLocation.ts`). Buffered fixes keep it, since the fix object is persisted.
+
 ## Background tracking (Phase 7: 072) — IMPLEMENTED
 
 A shift must keep broadcasting with the driver's screen locked, so tracking is **not**
