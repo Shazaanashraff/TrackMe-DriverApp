@@ -17,6 +17,19 @@
   `{ success: false, offline: true }` when the socket is down; `useTrackingSession` parks the
   shift in a `'pending'` state (on duty locally, GPS buffering) and announces it for real on the
   next reconnect — see §"Offline go-on-duty" below.
+- **A reconnect refused over an expired token refreshes it and tries again.** Access tokens last
+  15 minutes and the server checks the token only when a connection opens. After a drop (screen
+  lock, network switch) the reconnect used to offer the same expired token; the server refused
+  it, socket.io stops retrying after an auth refusal, and the shift sat on "Offline, will sync
+  later" while riders never saw the vehicle. Now `connect_error` with `jwt expired` or
+  `Invalid token` calls the refresher `AuthContext` registers via `setSocketTokenRefresher`, puts
+  the fresh token on `socket.auth` and reconnects. `AuthContext.refreshAccessToken` shares one
+  in-flight refresh between the socket and 401 retries, because the backend rotates the refresh
+  token on every use and a second parallel refresh would sign the driver out. A refresh that fails
+  for lack of network (`offline` / `timeout`) no longer signs the driver out. A refreshed token
+  refused for a reason other than expiry is tried once per connection, not in a loop.
+  **Not covered:** a headless background launch has no `AuthProvider`, so no refresher; it still
+  reconnects with the stored token only.
 - Backend contract for all of the above: `backend/docs/modules/REALTIME.md`.
 
 ## Target architecture (three pieces)
@@ -157,6 +170,10 @@ Now:
   or when tracking stops. Priority: reconnecting > lost-connection warning > permission denied.
 
 ## Testing
+- `socket` token refresh: an expired-token refusal refreshes and reconnects, network errors are
+  left to socket.io, back-to-back refusals share one refresh, a non-expiry refusal is retried once
+  per connection; `AuthContext` shares one refresh between socket and 401 retry, stays signed in
+  on a network failure, signs out on a server rejection.
 - `locationDispatch`: throttle, buffer cap/replay ordering, NACK re-buffer vs. accepted-stale,
   headless restore from AsyncStorage, reset at end of shift.
 - `backgroundLocation`: OS batch → dispatch, headless reconnect from the stored token,

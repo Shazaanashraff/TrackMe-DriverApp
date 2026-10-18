@@ -14,11 +14,13 @@ import api from '../src/services/api';
 import { useLogin } from '../src/hooks/auth';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 
-// AuthContext disconnects the socket on logout; the socket module itself has its
-// own contract test (tracking.int.test.tsx) so it is stubbed out here.
+// AuthContext disconnects the socket on logout and hands it a token refresher;
+// the socket module itself has its own contract test (tracking.int.test.tsx) so
+// it is stubbed out here.
 jest.mock('../src/services/socket', () => ({
   __esModule: true,
   disconnectSocket: jest.fn(),
+  setSocketTokenRefresher: jest.fn(),
 }));
 
 function jsonResponse(status: number, body: unknown) {

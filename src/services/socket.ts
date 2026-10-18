@@ -35,6 +35,48 @@ let connectionState: ConnectionState = {
 
 let connectionStateListeners: ConnectionStateListener[] = [];
 
+type TokenRefresher = () => Promise<string | null>;
+
+// Access tokens expire after 15 minutes and the server checks the token only
+// when a connection opens. After a drop (screen lock, network switch) the
+// reconnect used to offer the same expired token, the server refused it, and a
+// shift sat on "Offline, will sync later" for good. AuthContext registers its
+// refresh here so a refused handshake fetches a fresh token and tries again.
+let tokenRefresher: TokenRefresher | null = null;
+let refreshInFlight: Promise<void> | null = null;
+// Set once a refresh has been tried and cleared on the next successful connect.
+// A fresh token refused for anything other than expiry (deactivated account,
+// bad signature) is not fixed by refreshing again, so it is tried only once.
+let refreshedSinceConnect = false;
+
+export const setSocketTokenRefresher = (refresher: TokenRefresher | null): void => {
+  tokenRefresher = refresher;
+};
+
+const isTokenRejection = (message: string): boolean =>
+  message.includes('jwt expired') || message.startsWith('Invalid token');
+
+const retryWithFreshToken = (message: string): void => {
+  if (!tokenRefresher || refreshInFlight) return;
+  if (refreshedSinceConnect && !message.includes('jwt expired')) return;
+  refreshedSinceConnect = true;
+  const refresher = tokenRefresher;
+  refreshInFlight = (async () => {
+    try {
+      const fresh = await refresher();
+      if (!fresh || !socket || !socket.auth || typeof socket.auth === 'function') return;
+      socket.auth.token = fresh;
+      // A refusal from the server's auth middleware stops socket.io's own
+      // reconnect loop, so the retry has to be started here.
+      if (!socket.connected) socket.connect();
+    } catch (err) {
+      if (__DEV__) console.error('Socket token refresh failed:', err);
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+};
+
 const updateConnectionState = (status: ConnectionStatus, error: string | null = null) => {
   const previousState = connectionState.status;
   connectionState = {
@@ -80,6 +122,7 @@ export const connectSocket = (token: string): Socket => {
 
     socket.on('connect', () => {
       if (__DEV__) console.log('Socket connected:', socket?.id);
+      refreshedSinceConnect = false;
       updateConnectionState('connected');
 
       // Setup notification listeners on connection
@@ -110,6 +153,7 @@ export const connectSocket = (token: string): Socket => {
     socket.on('connect_error', (error: Error) => {
       if (__DEV__) console.error('Socket connection error:', error.message);
       updateConnectionState('error', error.message);
+      if (isTokenRejection(error?.message || '')) retryWithFreshToken(error.message);
     });
   }
   return socket;
@@ -134,6 +178,7 @@ export const disconnectSocket = (): void => {
     socket.disconnect();
     socket = null;
   }
+  refreshedSinceConnect = false;
 };
 
 const LOCATION_ACK_TIMEOUT_MS = 5000;
