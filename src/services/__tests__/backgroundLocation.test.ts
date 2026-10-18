@@ -67,7 +67,22 @@ describe('handleBackgroundLocations', () => {
       lng: 79.8612,
       timestamp: 1000,
       accuracy: 8,
+      heading: null,
     });
+  });
+
+  it('passes the GPS heading through when the vehicle is moving', async () => {
+    await handleBackgroundLocations([
+      { coords: { latitude: 6.9271, longitude: 79.8612, accuracy: 8, heading: 270, speed: 9 }, timestamp: 1000 },
+    ]);
+    expect(mockDispatchFix).toHaveBeenCalledWith(expect.objectContaining({ heading: 270 }));
+  });
+
+  it('sends no heading while the vehicle is parked', async () => {
+    await handleBackgroundLocations([
+      { coords: { latitude: 6.9271, longitude: 79.8612, accuracy: 8, heading: 270, speed: 0 }, timestamp: 1000 },
+    ]);
+    expect(mockDispatchFix).toHaveBeenCalledWith(expect.objectContaining({ heading: null }));
   });
 
   it('restores persisted state first, since the OS can launch it headless', async () => {

@@ -143,7 +143,8 @@ export const emitLocation = (
   routeId: string,
   lat: number,
   lng: number,
-  callback?: (response: unknown) => void
+  callback?: (response: unknown) => void,
+  heading?: number | null
 ): void => {
   if (socket && socket.connected) {
     // A dropped ack (common on a spotty connection) used to leave the fix
@@ -158,7 +159,12 @@ export const emitLocation = (
       callback?.({ success: false, error: 'Ack timeout' });
     }, LOCATION_ACK_TIMEOUT_MS);
 
-    socket.emit('driver:location', { vehicleId, routeId, lat, lng }, (response: unknown) => {
+    // heading is optional in the backend contract; leave it off rather than send null.
+    const payload =
+      typeof heading === 'number' && Number.isFinite(heading)
+        ? { vehicleId, routeId, lat, lng, heading }
+        : { vehicleId, routeId, lat, lng };
+    socket.emit('driver:location', payload, (response: unknown) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);

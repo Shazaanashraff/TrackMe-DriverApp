@@ -50,7 +50,15 @@ function fireAppStateChange(state: string) {
 }
 
 let watchCallback:
-  | ((location: { coords: { latitude: number; longitude: number; accuracy?: number | null } }) => void)
+  | ((location: {
+      coords: {
+        latitude: number;
+        longitude: number;
+        accuracy?: number | null;
+        heading?: number | null;
+        speed?: number | null;
+      };
+    }) => void)
   | null;
 
 beforeEach(async () => {
@@ -103,7 +111,7 @@ describe('throttle', () => {
     await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
 
     act(() => fireFix(6.9271, 79.8612));
-    expect(mockEmitLocation).toHaveBeenCalledWith('b1', 'r1', 6.9271, 79.8612, expect.any(Function));
+    expect(mockEmitLocation).toHaveBeenCalledWith('b1', 'r1', 6.9271, 79.8612, expect.any(Function), null);
   });
 
   it('skips a fix that arrives too soon and too close', async () => {
@@ -136,7 +144,7 @@ describe('throttle', () => {
     jest.setSystemTime(5000);
     act(() => fireFix(6.93, 79.87)); // several km away — comfortably over the min distance
 
-    expect(mockEmitLocation).toHaveBeenCalledWith('b1', 'r1', 6.93, 79.87, expect.any(Function));
+    expect(mockEmitLocation).toHaveBeenCalledWith('b1', 'r1', 6.93, 79.87, expect.any(Function), null);
     jest.useRealTimers();
   });
 });
@@ -160,6 +168,27 @@ describe('accuracy', () => {
 
     act(() => fireFix(6.9271, 79.8612));
     expect(result.current.lastFix?.accuracy).toBeUndefined();
+  });
+});
+
+describe('heading', () => {
+  it('emits the GPS heading with the fix while moving', async () => {
+    const { result } = renderHook(() =>
+      useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' })
+    );
+    await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
+
+    act(() => watchCallback?.({ coords: { latitude: 6.9271, longitude: 79.8612, heading: 45, speed: 6 } }));
+    expect(result.current.lastFix?.heading).toBe(45);
+    expect(mockEmitLocation).toHaveBeenCalledWith('b1', 'r1', 6.9271, 79.8612, expect.any(Function), 45);
+  });
+
+  it('emits no heading while stopped', async () => {
+    renderHook(() => useLocationBroadcast({ active: true, vehicleId: 'b1', routeId: 'r1' }));
+    await waitFor(() => expect(mockWatchPositionAsync).toHaveBeenCalled());
+
+    act(() => watchCallback?.({ coords: { latitude: 6.9271, longitude: 79.8612, heading: 45, speed: 0.2 } }));
+    expect(mockEmitLocation).toHaveBeenCalledWith('b1', 'r1', 6.9271, 79.8612, expect.any(Function), null);
   });
 });
 
@@ -197,7 +226,7 @@ describe('offline buffer', () => {
       stateListener({ status: 'connected' });
     });
 
-    expect(mockEmitLocation).toHaveBeenCalledWith('b1', 'r1', 6.9271, 79.8612, expect.any(Function));
+    expect(mockEmitLocation).toHaveBeenCalledWith('b1', 'r1', 6.9271, 79.8612, expect.any(Function), null);
     expect(result.current.bufferedCount).toBe(0);
   });
 

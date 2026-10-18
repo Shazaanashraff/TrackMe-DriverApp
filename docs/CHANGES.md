@@ -22,6 +22,22 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-10-18 — Send the GPS heading so maps can turn the vehicle icon
+- **Branch:** feature/live-map-markers
+- **Modules touched:** [LOCATION_TRACKING](LOCATION_TRACKING.md)
+- **What changed:** each GPS fix now carries `heading` from `usableHeading()` (the GPS course
+  while moving at 1 m/s or faster, null otherwise), from both the foreground watcher and the
+  background task. `emitLocation` sends it on `driver:location` when it is a number.
+- **Why:** rider and manager maps now draw a top-down vehicle that faces its direction of
+  travel instead of a dot.
+- **Contract impact:** none new. `driver:location` already accepted an optional `heading` and
+  the backend relays it (`backend/docs/modules/REALTIME.md`); this app simply starts sending it.
+- **Tests:** `locationUtils.test.ts` (usableHeading), `socket.test.ts` (heading in / out of the
+  payload), `useLocationBroadcast.test.ts` and `backgroundLocation.test.ts` (heading on the fix);
+  existing emit expectations updated for the new trailing argument.
+- **Docs updated:** LOCATION_TRACKING.md "Heading", TESTING_GUIDE row.
+- **Follow-ups / known issues:** real rotation can only be confirmed with a moving device.
+
 ## 2026-09-14 — Build-time guard against a placeholder production API URL
 
 - **Branch:** main

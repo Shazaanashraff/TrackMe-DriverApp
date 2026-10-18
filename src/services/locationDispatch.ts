@@ -130,11 +130,18 @@ function pushToBuffer(fix: LocationFix) {
 
 function emitFix(fix: LocationFix) {
   if (!target) return;
-  emitLocation(target.vehicleId, target.routeId, fix.lat, fix.lng, (response: unknown) => {
-    const nacked = isNackResponse(response);
-    if (nacked) pushToBuffer(fix);
-    noteAckOutcome(nacked);
-  });
+  emitLocation(
+    target.vehicleId,
+    target.routeId,
+    fix.lat,
+    fix.lng,
+    (response: unknown) => {
+      const nacked = isNackResponse(response);
+      if (nacked) pushToBuffer(fix);
+      noteAckOutcome(nacked);
+    },
+    fix.heading
+  );
 }
 
 /**

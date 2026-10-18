@@ -13,7 +13,7 @@ import {
   subscribeToFixes,
   subscribeToLostConnection,
 } from '../services/locationDispatch';
-import { LocationFix } from '../helpers/locationUtils';
+import { LocationFix, usableHeading } from '../helpers/locationUtils';
 
 export type LocationPermissionStatus = 'granted' | 'denied' | 'undetermined';
 
@@ -96,12 +96,21 @@ export function useLocationBroadcast({
         timeInterval: 3000,
         distanceInterval: 3,
       },
-      (location: { coords: { latitude: number; longitude: number; accuracy?: number | null } }) => {
+      (location: {
+        coords: {
+          latitude: number;
+          longitude: number;
+          accuracy?: number | null;
+          heading?: number | null;
+          speed?: number | null;
+        };
+      }) => {
         handleFix({
           lat: location.coords.latitude,
           lng: location.coords.longitude,
           timestamp: Date.now(),
           accuracy: location.coords.accuracy,
+          heading: usableHeading(location.coords),
         });
       }
     );

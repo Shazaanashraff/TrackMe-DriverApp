@@ -50,7 +50,8 @@ describe('throttle', () => {
       'R-1',
       6.9271,
       79.8612,
-      expect.any(Function)
+      expect.any(Function),
+      undefined
     );
   });
 
