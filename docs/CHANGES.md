@@ -37,7 +37,7 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 - **What changed:** Profile now ends with a muted "Pingo Driver v1.0.2 (build 5)" line under Log out (version + Android versionCode from `expo-application`); shows "Version unavailable" if native values are missing.
 - **Why:** A driver (or support) needs to know which build is installed, and the update check compares the same build number.
 - **Contract impact:** none. **Tests:** two cases in `DriverProfileScreen.test.js`.
-- **Follow-ups:** takes effect in the next build (1.0.2 / build 5 on EAS was built before this change, so it does not contain it).
+- **Follow-ups:** shipped in 1.0.2 / build 6 (GitHub release `apps-v1.0.2` on TrackMe-WebAdmin). Build 5 predates this line and was never released.
 
 ---
 

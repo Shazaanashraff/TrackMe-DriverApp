@@ -1,6 +1,6 @@
 # APP_UPDATES — Pingo Driver App
 
-**Status:** `SHIPPED` (first build containing it: 1.0.2, versionCode 5)
+**Status:** `SHIPPED` (first build containing it: 1.0.2, versionCode 6; build 5 was superseded and never released)
 
 ---
 
