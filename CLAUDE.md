@@ -1,4 +1,4 @@
-# driver-app — TrackMe Driver App
+# driver-app — Pingo Driver App
 
 Expo React Native app (SDK ~54) for bus drivers: go on duty, broadcast real-time GPS, scan
 passenger QR passes, record custom routes, and track earnings. Standalone project — shares
@@ -45,6 +45,7 @@ git config core.hooksPath .githooks
 | Earnings, payouts, daily breakdown | [`docs/modules/EARNINGS.md`](docs/modules/EARNINGS.md) |
 | Trip history | [`docs/modules/TRIP_HISTORY.md`](docs/modules/TRIP_HISTORY.md) |
 | Driver profile | [`docs/modules/PROFILE.md`](docs/modules/PROFILE.md) |
+| Native-APK update check / install banner (direct-APK builds only) | [`docs/modules/APP_UPDATES.md`](docs/modules/APP_UPDATES.md) |
 | Offline / backend-status handling | [`docs/modules/OFFLINE_STATUS.md`](docs/modules/OFFLINE_STATUS.md) |
 | Data fetching / caching | [`docs/DATA_LAYER.md`](docs/DATA_LAYER.md) |
 | Error taxonomy + UI states | [`docs/ERROR_HANDLING.md`](docs/ERROR_HANDLING.md) |

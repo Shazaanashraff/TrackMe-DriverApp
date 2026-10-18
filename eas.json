@@ -14,7 +14,16 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://bus-tracking-backend.onrender.com"
+        "EXPO_PUBLIC_API_URL": "https://trackme-backend-jton.onrender.com"
+      }
+    },
+    "apk": {
+      "extends": "production",
+      "env": {
+        "EXPO_PUBLIC_APK_UPDATER": "1"
+      },
+      "android": {
+        "buildType": "apk"
       }
     }
   },

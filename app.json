@@ -2,14 +2,14 @@
   "expo": {
     "name": "Pingo",
     "slug": "driver-app",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#2563eb"
+      "backgroundColor": "#172033"
     },
     "ios": {
       "supportsTablet": true,
@@ -25,7 +25,8 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#2563eb"
+        "backgroundColor": "#172033",
+        "monochromeImage": "./assets/adaptive-icon-monochrome.png"
       },
       "permissions": [
         "ACCESS_FINE_LOCATION",
@@ -39,7 +40,7 @@
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_LOCATION"
       ],
-      "package": "com.TrackMe.driverapp"
+      "package": "com.pingo.driverapp"
     },
     "web": {
       "name": "Pingo",

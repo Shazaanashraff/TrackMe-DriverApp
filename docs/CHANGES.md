@@ -37,6 +37,60 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
   existing emit expectations updated for the new trailing argument.
 - **Docs updated:** LOCATION_TRACKING.md "Heading", TESTING_GUIDE row.
 - **Follow-ups / known issues:** real rotation can only be confirmed with a moving device.
+## 2026-10-18 — Pingo Driver 1.0.1 direct APK (versionCode 3), config only
+- **Branch:** main
+- **Modules touched:** release config (`app.json`, `eas.json`)
+- **What changed:** `expo.version` 1.0.0 → 1.0.1; added an `apk` EAS profile (extends `production`, `buildType: apk`). Built it (build `31c1556f…`, versionCode 3, package `com.pingo.driverapp`, label Pingo) and published `pingo-driver-1.0.1.apk` on GitHub release `apps-v1.0.1`; registered it on web-admin `/releases` (1.0.1, code 3), replacing the old TrackMe-named 1.0.0 record.
+- **Why:** The 1.0.0 APK on the landing page was still the old TrackMe build (`com.TrackMe.driverapp`).
+- **Contract impact:** none
+- **Tests:** none — release config only
+- **Docs updated:** `guides/RELEASING.md` checklist
+- **Follow-ups / known issues:** Play Console already shows a draft Internal-testing release `2 (1.0.0)` with a build uploaded (not rolled out); screenshots, background-location declaration + demo video still pending. The new APK installs alongside the old TrackMe app (different package).
+
+## 2026-10-18 — App version on the Profile screen
+- **Modules touched:** [`PROFILE`](modules/PROFILE.md), `src/helpers/appVersion.ts` (new)
+- **What changed:** Profile now ends with a muted "Pingo Driver v1.0.2 (build 5)" line under Log out (version + Android versionCode from `expo-application`); shows "Version unavailable" if native values are missing.
+- **Why:** A driver (or support) needs to know which build is installed, and the update check compares the same build number.
+- **Contract impact:** none. **Tests:** two cases in `DriverProfileScreen.test.js`.
+- **Follow-ups:** shipped in 1.0.2 / build 6 (GitHub release `apps-v1.0.2` on TrackMe-WebAdmin). Build 5 predates this line and was never released.
+
+---
+
+## 2026-10-18 — Arm-only APK + in-app update check (direct-APK builds)
+- **Branch:** main (uncommitted)
+- **Modules touched:** [`APP_UPDATES`](modules/APP_UPDATES.md) (new), release config (`app.config.js`, `eas.json`)
+- **What changed:** (1) `app.config.js` restricts the Android native build to `armeabi-v7a,arm64-v8a` — the APK drops from 107 MB to ~62 MB; x86/x86_64 only served emulators. (2) New `useAppUpdateCheck` + `UpdateAvailableBanner` + `getLatestAppRelease` (ported from user-app): a phone running a direct-APK build sees "Update available" when web-admin's `/releases` registry has a higher `versionCode`, and can download + install it in-app. (3) The `apk` EAS profile sets `EXPO_PUBLIC_APK_UPDATER=1`; `REQUEST_INSTALL_PACKAGES` is only added in that case, never in the Play `.aab`. (4) Added `expo-application`, `expo-file-system`, `expo-intent-launcher` to `package.json` (previously only transitive). `app.json` version -> 1.0.2.
+- **Why:** The 107 MB APK stalled at 100% in Chrome's download scan on a client phone; and the user needs shipped builds to discover new releases on their own.
+- **Contract impact:** none new — reads the existing public `GET /api/app-releases/latest?app=driver`.
+- **Tests:** `useAppUpdateCheck.test.ts`, `appReleases.test.ts`, `UpdateAvailableBanner.test.tsx`, `appConfig.test.js` (all green, run in-band).
+- **Docs updated:** `docs/modules/APP_UPDATES.md`, `TESTING_GUIDE.md` rows, `CLAUDE.md` map.
+- **Follow-ups / known issues:** phones on <= 1.0.1 have no check and need one manual update. Not yet verified on a physical device. The Play `.aab` build is unaffected (updater off).
+
+---
+
+## 2026-10-15 — Play Console setup for Pingo Driver (partial), docs only
+- **Branch:** n/a (Play Console work, no source change)
+- **Modules touched:** none — release checklist only ([`guides/RELEASING.md`](guides/RELEASING.md))
+- **What changed:** Created the app in Play Console; saved privacy policy, ads, App access, content rating (shares precise location = yes), target audience 18+, Data safety, Advertising ID, government/financial/health declarations and the store listing text/graphics as drafts. Nothing submitted for review.
+- **Why:** First store submission.
+- **Contract impact:** none
+- **Tests:** none — docs only
+- **Docs updated:** `guides/RELEASING.md` checklist
+- **Follow-ups / known issues:** store-settings category/email, tester list, sensitive-permissions (background location) declaration + demo video, screenshots, manual `.aab` upload
+
+
+## 2026-10-14 — Rebrand TrackMe → Pingo, real app icons, fix dead production API URL
+- **Branch:** main
+- **Modules touched:** app config, branding, release config
+- **What changed:**
+  - Display name, permission strings, in-app brand text, background-location notification title → "Pingo". Android package → `com.pingo.driverapp` (not yet uploaded, so still changeable).
+  - `eas.json` production `EXPO_PUBLIC_API_URL` now `https://trackme-backend-jton.onrender.com` (was `bus-tracking-backend.onrender.com`, which Render reports as suspended).
+  - New navy brand assets via `scripts/generate-brand-assets.py driver` (+ monochrome adaptive icon, splash colour → navy, Play 512 icon + feature graphic).
+  - `docs/guides/RELEASING.md` checklist refreshed.
+- **Why:** Play Store submission prep.
+- **Tests:** `QRScannerScreen.test.tsx` copy updated.
+- **Docs updated:** RELEASING.md, CLAUDE.md/DESIGN.md titles.
+- **Follow-ups / known issues:** no signing keystore yet; background-location declaration + demo video; privacy policy site still says TrackMe; no screenshots.
 
 ## 2026-09-14 — Build-time guard against a placeholder production API URL
 

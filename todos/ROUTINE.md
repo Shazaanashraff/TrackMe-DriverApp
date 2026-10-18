@@ -1,6 +1,6 @@
 # Driver App TODO Routine
 
-You are the daily TODO routine for the **driver-app** (TrackMe driver app). Follow this file
+You are the daily TODO routine for the **driver-app** (Pingo driver app). Follow this file
 and `todos/CLAUDE.md` exactly. Do **ONE** todo this run, then stop. All commands run from
 `driver-app/`.
 
