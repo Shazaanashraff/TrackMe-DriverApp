@@ -1,4 +1,6 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { AccessibilityInfo } from 'react-native';
 import { render, fireEvent } from '@testing-library/react-native';
 import ConfirmSheet from '../ConfirmSheet';
@@ -83,5 +85,37 @@ describe('ConfirmSheet', () => {
     expect(spy).toHaveBeenCalled();
     expect(getByText('End this journey?')).toBeTruthy();
     spy.mockRestore();
+  });
+});
+
+describe('ConfirmSheet on an edge-to-edge Android screen', () => {
+  // The suite above ends by restoring jest-expo's automock, which returns no
+  // promise, so this block brings its own.
+  let spy: jest.SpyInstance;
+  beforeEach(() => {
+    spy = jest.spyOn(AccessibilityInfo, 'isReduceMotionEnabled').mockResolvedValue(true);
+  });
+  afterEach(() => spy.mockRestore());
+
+  const sheet = (bottom: number) =>
+    render(
+      <SafeAreaInsetsContext.Provider value={{ top: 0, right: 0, bottom, left: 0 }}>
+        <ConfirmSheet
+          visible
+          title="End this journey?"
+          message="Riders will stop seeing your vehicle."
+          confirmLabel="End journey"
+          onConfirm={() => {}}
+          onCancel={() => {}}
+        />
+      </SafeAreaInsetsContext.Provider>
+    ).getByTestId('confirm-sheet');
+
+  it('lifts its buttons above the back/home bar', () => {
+    expect(StyleSheet.flatten(sheet(48).props.style).paddingBottom).toBe(20 + 48);
+  });
+
+  it('keeps its usual bottom spacing when there is no bar', () => {
+    expect(StyleSheet.flatten(sheet(0).props.style).paddingBottom).toBe(32);
   });
 });

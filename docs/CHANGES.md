@@ -22,6 +22,20 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-10-18: Lift the confirm and background-location sheets above the back/home bar
+- **Branch:** feature/socket-token-refresh
+- **Modules touched:** [DASHBOARD](modules/DASHBOARD.md), [PROFILE](modules/PROFILE.md) (both use `ConfirmSheet`)
+- **What changed:** `ConfirmSheet` (End journey, Log out) and `BackgroundLocationDisclosure` add
+  the bottom safe-area inset to their padding (`max(32, 20 + inset)`), read from
+  `SafeAreaInsetsContext` so tests without a provider still render.
+- **Why:** the build draws Android edge-to-edge, and both sheets kept a fixed 32 px under a ~48 px
+  back/home bar, so their bottom button sat partly under it on the testers' phones.
+- **Contract impact:** none.
+- **Tests:** ConfirmSheet.test.tsx (2 new), BackgroundLocationDisclosure.test.tsx (1 new).
+- **Docs updated:** TESTING_GUIDE row.
+- **Follow-ups / known issues:** the same inset logic was checked on an Android 15 emulator in the
+  passenger app; these two sheets need a signed-in driver, so they were not opened there.
+
 ## 2026-10-18: Refresh the socket token so GO reaches the server after a drop
 - **Branch:** feature/socket-token-refresh
 - **Modules touched:** [LOCATION_TRACKING](LOCATION_TRACKING.md), [AUTH](modules/AUTH.md)
