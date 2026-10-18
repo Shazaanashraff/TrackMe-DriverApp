@@ -42,13 +42,24 @@ export function CommunicationProvider({ children }) {
   useEffect(() => {
     if (Platform.OS === 'web') return undefined;
     let notifications; let received; let rotation; let foreground; let stopped = false;
+    // register() runs on mount, every minute and on every return to the foreground. On
+    // Android, asking for a permission (even one already granted) opens the system's
+    // permission screen, which backgrounds the app; coming back asked again, so the app
+    // looped behind an invisible screen that swallowed taps, and every return reloaded the
+    // dashboard lists until the backend rate limit refused all requests. Check first, and
+    // show the prompt at most once per session (the passenger app's fix, e2d3690).
+    let asked = false;
     const register = async () => {
       if (!accountId || stopped) return;
       try {
         const projectId = Constants.expoConfig?.extra?.eas?.projectId || Constants.easConfig?.projectId;
         if (!projectId) return;
         if (Platform.OS === 'android') await notifications.setNotificationChannelAsync('communications', { name: 'Messages and absence changes', importance: notifications.AndroidImportance.HIGH });
-        const permission = await notifications.requestPermissionsAsync();
+        let permission = await notifications.getPermissionsAsync();
+        if (permission.status !== 'granted' && permission.canAskAgain !== false && !asked) {
+          asked = true;
+          permission = await notifications.requestPermissionsAsync();
+        }
         if (permission.status !== 'granted' || stopped) return;
         const result = await notifications.getExpoPushTokenAsync({ projectId });
         if (stopped) return;

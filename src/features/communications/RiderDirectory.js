@@ -3,12 +3,14 @@
 // same search, same empty/offline copy — the row became a name with a line
 // beneath, and the action became the rider rather than a message to them.
 import React, { useState } from "react";
-import { FlatList, View, Text, TextInput } from "react-native";
+import { FlatList, View } from "react-native";
 import { useCommunication } from "./provider";
 import { useCommunicationQuery } from "./hooks";
 import { RiderRow, styles } from "./components";
 import { emptyListMessage } from "./screens";
 import { resourceId, gradeLine } from "./state";
+import FormInput from "../../components/ui/FormInput";
+import EmptyState from "../../components/ui/EmptyState";
 import { theme } from "../../theme";
 
 // Beneath the name: what this rider is to the driver today. Grade first when
@@ -29,12 +31,18 @@ export function RiderDirectory({ navigation }) {
   return (
     <>
       <View style={{ paddingHorizontal: theme.space[4] }}>
-        <TextInput
+        {/* The plain TextInput left Android's default hint color, near-white on
+            the pale field, so the box read as empty space. */}
+        <FormInput
+          icon="search-outline"
           accessibilityLabel="Search riders"
-          style={styles.field}
           value={search}
           onChangeText={setSearch}
           placeholder="Search name or rider code"
+          placeholderTextColor={theme.color.text.secondary}
+          autoCapitalize="none"
+          autoCorrect={false}
+          style={{ marginBottom: 0 }}
         />
       </View>
       <FlatList
@@ -44,8 +52,9 @@ export function RiderDirectory({ navigation }) {
         contentContainerStyle={styles.content}
         contentInsetAdjustmentBehavior="automatic"
         ListEmptyComponent={
-          <Text style={styles.text}>
-            {emptyListMessage(
+          <EmptyState
+            icon={search ? "search-outline" : "people-outline"}
+            title={emptyListMessage(
               query,
               online,
               "Loading enrolled riders…",
@@ -54,7 +63,7 @@ export function RiderDirectory({ navigation }) {
                 ? "No riders match this search."
                 : "No active rider enrollments yet."
             )}
-          </Text>
+          />
         }
         renderItem={({ item }) => (
           <RiderRow

@@ -1,9 +1,13 @@
 import React, { useState } from "react";
-import { ScrollView, Text, TextInput } from "react-native";
+import { ScrollView, Text } from "react-native";
 import { useCommunication } from "./provider";
 import { useCommunicationQuery } from "./hooks";
 import { Page, RiderRow, styles } from "./components";
 import { colomboToday, resourceId, toDisplayDate } from "./state";
+import FormInput from "../../components/ui/FormInput";
+import EmptyState from "../../components/ui/EmptyState";
+import StatusPill from "../../components/ui/StatusPill";
+import { theme } from "../../theme";
 
 export function emptyListMessage(query, online, loading, error, empty) {
   if (!online && !query.data)
@@ -46,16 +50,21 @@ export function AbsencesScreen({ navigation, embedded = false }) {
       keyboardShouldPersistTaps="handled"
     >
       <Text style={styles.small}>Today · {toDisplayDate(date)}</Text>
-      <TextInput
+      <FormInput
+        icon="search-outline"
         accessibilityLabel="Search absences"
         placeholder="Search rider, code or organization"
+        placeholderTextColor={theme.color.text.secondary}
         value={search}
         onChangeText={setSearch}
-        style={styles.field}
+        autoCapitalize="none"
+        autoCorrect={false}
+        style={{ marginBottom: 0 }}
       />
       {!query.data || absent.length === 0 ? (
-        <Text style={styles.feedback}>
-          {emptyListMessage(
+        <EmptyState
+          icon={search ? "search-outline" : "calendar-outline"}
+          title={emptyListMessage(
             query,
             online,
             "Loading absences…",
@@ -64,7 +73,7 @@ export function AbsencesScreen({ navigation, embedded = false }) {
               ? "No riders match this search."
               : "No riders absent today."
           )}
-        </Text>
+        />
       ) : null}
       {absent.map((a) => (
         <RiderRow
@@ -72,6 +81,7 @@ export function AbsencesScreen({ navigation, embedded = false }) {
           testID={`absent-row-${resourceId(a.riderId)}`}
           name={a.riderId?.fullName}
           subtitle={subtitle(a)}
+          trailing={<StatusPill label="Absent today" variant="warn" />}
           onPress={() =>
             navigation.navigate("RiderProfile", {
               riderId: resourceId(a.riderId),

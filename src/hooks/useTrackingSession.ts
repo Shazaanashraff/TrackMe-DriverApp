@@ -1,6 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { onConnectionStateChange, startTracking, stopTracking } from '../services/socket';
+import { onConnectionStateChange, startTracking, stopTracking, TrackingAck } from '../services/socket';
 import { AppError } from '../lib/errors';
+
+// Backoff for re-announcing a live shift whose re-announce after a reconnect failed.
+export const REANNOUNCE_BASE_MS = 2000;
+export const REANNOUNCE_MAX_MS = 30_000;
+
+// A refusal a retry can fix: the server was busy, rate-limited the emit, or the
+// ack never came back. Anything else (the vehicle was un-assigned, the account
+// is not a driver) would only be refused again.
+const isRetryableRefusal = (ack: TrackingAck) =>
+  !ack.code || ack.code === 'RATE_LIMITED' || ack.code === 'SERVER_ERROR';
+
+type TimerRef = { current: ReturnType<typeof setTimeout> | null };
+const clearTimer = (ref: TimerRef) => {
+  if (ref.current) clearTimeout(ref.current);
+  ref.current = null;
+};
 
 // 'pending' — the driver pressed GO with no connection. The shift is treated as
 // on-duty locally (GPS buffers, screen stays awake) but the server does not know
@@ -28,17 +44,57 @@ export function useTrackingSession(): UseTrackingSessionResult {
   // Epoch ms of the GO press for a shift started while offline — sent as the
   // real `startedAt` when the pending shift is announced on reconnect.
   const pendingSinceRef = useRef<number | null>(null);
+  const reannounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reannounceDelayRef = useRef(REANNOUNCE_BASE_MS);
 
   useEffect(() => {
     statusRef.current = status;
   }, [status]);
 
   useEffect(() => {
+    // Re-announce a live shift after a reconnect. The backend may have restarted
+    // while this screen stayed mounted; its in-memory live registry is then empty
+    // even though the driver still sees an active trip, and waiting for the next
+    // GPS movement can leave riders on "WAITING" forever.
+    const reannounce = (vehicleId: string) => {
+      reassertingRef.current = true;
+      void startTracking(vehicleId).then((ack) => {
+        reassertingRef.current = false;
+        if (statusRef.current !== 'tracking' || activeVehicleIdRef.current !== vehicleId) return;
+        if (ack.success) {
+          reannounceDelayRef.current = REANNOUNCE_BASE_MS;
+          setIsReconnecting(false);
+          setError(undefined);
+          return;
+        }
+        setIsReconnecting(true);
+        setError(new AppError('tracking', ack.error || 'Failed to restore live tracking'));
+        // One failed re-announce used to leave "Reconnecting…" up until the
+        // socket dropped again, though the connection itself was back. Retry on
+        // a backoff while it stays connected; a fresh reconnect starts over.
+        if (ack.offline || !isRetryableRefusal(ack)) return;
+        const delay = reannounceDelayRef.current;
+        reannounceDelayRef.current = Math.min(delay * 2, REANNOUNCE_MAX_MS);
+        clearTimer(reannounceTimerRef);
+        reannounceTimerRef.current = setTimeout(() => {
+          reannounceTimerRef.current = null;
+          if (
+            statusRef.current === 'tracking' &&
+            activeVehicleIdRef.current === vehicleId &&
+            !reassertingRef.current
+          ) {
+            reannounce(vehicleId);
+          }
+        }, delay);
+      });
+    };
+
     const unsubscribe = onConnectionStateChange((state) => {
       const current = statusRef.current;
       if (current !== 'tracking' && current !== 'pending') return;
 
       if (state.status !== 'connected') {
+        clearTimer(reannounceTimerRef);
         // A pending shift is already showing "no signal" — only a live shift
         // needs to flip into the reconnecting sub-state.
         if (current === 'tracking') setIsReconnecting(true);
@@ -80,22 +136,10 @@ export function useTrackingSession(): UseTrackingSessionResult {
         return;
       }
 
-      // current === 'tracking' — re-announce a live shift after a drop. The
-      // backend may have restarted while this screen stayed mounted. Its
-      // in-memory live registry is then empty even though the driver still sees
-      // an active trip. Re-announce the session as soon as the socket returns;
-      // waiting for the next GPS movement can leave riders on "WAITING" forever.
-      void startTracking(vehicleId).then((ack) => {
-        reassertingRef.current = false;
-        if (statusRef.current !== 'tracking' || activeVehicleIdRef.current !== vehicleId) return;
-        if (ack.success) {
-          setIsReconnecting(false);
-          setError(undefined);
-        } else {
-          setIsReconnecting(true);
-          setError(new AppError('tracking', ack.error || 'Failed to restore live tracking'));
-        }
-      });
+      // current === 'tracking' — re-announce a live shift after a drop.
+      clearTimer(reannounceTimerRef);
+      reannounceDelayRef.current = REANNOUNCE_BASE_MS;
+      reannounce(vehicleId);
     });
     return unsubscribe;
   }, []);
@@ -105,6 +149,7 @@ export function useTrackingSession(): UseTrackingSessionResult {
   // update the ack result into.
   useEffect(() => {
     return () => {
+      clearTimer(reannounceTimerRef);
       if (activeVehicleIdRef.current) {
         void stopTracking(activeVehicleIdRef.current);
       }
@@ -142,6 +187,7 @@ export function useTrackingSession(): UseTrackingSessionResult {
 
   const stop = useCallback(async (vehicleId: string) => {
     setError(undefined);
+    clearTimer(reannounceTimerRef);
 
     // A pending shift never reached the server — there is nothing to stop there.
     // Go straight to idle; DriverDashboard then drops `active` and
