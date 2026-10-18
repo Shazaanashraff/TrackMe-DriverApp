@@ -1,7 +1,7 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../services/api';
-import { disconnectSocket } from '../services/socket';
+import { disconnectSocket, setSocketTokenRefresher } from '../services/socket';
 import { queryClient } from '../app/queryClient';
 import { requestJson } from '../services/api/transport';
 import { authHeaders } from '../services/api/authHeaders';
@@ -98,19 +98,6 @@ export const AuthProvider = ({ children }) => {
     await saveAuth(userData, authToken, newRefreshToken);
   };
 
-  const refreshAccessToken = async () => {
-    if (!refreshToken) return null;
-    try {
-      const response = await api.refreshToken(refreshToken);
-      await saveAuth(response.user, response.accessToken, response.refreshToken);
-      return response.accessToken;
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      logout();
-      return null;
-    }
-  };
-
   const logout = async () => {
     const currentToken = token;
     const pushToken = await AsyncStorage.getItem('communication-push-token');
@@ -145,6 +132,41 @@ export const AuthProvider = ({ children }) => {
       queryClient.clear();
     }
   };
+
+  // One refresh at a time. The backend rotates the refresh token on every use,
+  // so a second refresh started alongside the first (a socket reconnect and a
+  // 401 retry often fire together) would present a spent token and sign the
+  // driver out. Concurrent callers share the request already in flight.
+  const refreshInFlightRef = useRef(null);
+
+  const refreshAccessToken = () => {
+    if (!refreshToken) return Promise.resolve(null);
+    if (refreshInFlightRef.current) return refreshInFlightRef.current;
+    const pending = (async () => {
+      try {
+        const response = await api.refreshToken(refreshToken);
+        await saveAuth(response.user, response.accessToken, response.refreshToken);
+        return response.accessToken;
+      } catch (error) {
+        console.error('Token refresh failed:', error);
+        // No network is not a rejected session: keep the driver signed in so
+        // the next reconnect or request can try again.
+        if (error?.kind !== 'offline' && error?.kind !== 'timeout') logout();
+        return null;
+      } finally {
+        refreshInFlightRef.current = null;
+      }
+    })();
+    refreshInFlightRef.current = pending;
+    return pending;
+  };
+
+  // The socket layer lives outside React. Hand it the current refresh so a
+  // reconnect refused over an expired token can fetch a new one.
+  useEffect(() => {
+    setSocketTokenRefresher(refreshAccessToken);
+    return () => setSocketTokenRefresher(null);
+  });
 
   const authenticatedRequest = async (apiMethod, ...args) => {
     try {

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Animated, AccessibilityInfo, Modal, View, StyleSheet } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { theme } from '../../theme';
 import AppText from './AppText';
 import PrimaryButton from './PrimaryButton';
@@ -30,6 +31,10 @@ export default function ConfirmSheet({
   onCancel,
 }: Props) {
   const [translateY] = useState(() => new Animated.Value(SHEET_TRAVEL));
+  // The build is edge-to-edge, so the sheet draws behind Android's back/home bar
+  // and its Cancel button sat partly under it. The inset is read from context
+  // directly because tests render the sheet without a SafeAreaProvider.
+  const bottomInset = useContext(SafeAreaInsetsContext)?.bottom ?? 0;
 
   useEffect(() => {
     if (!visible) return undefined;
@@ -60,7 +65,14 @@ export default function ConfirmSheet({
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.overlay}>
-        <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
+        <Animated.View
+          testID="confirm-sheet"
+          style={[
+            styles.sheet,
+            { paddingBottom: Math.max(theme.space[8], theme.space[5] + bottomInset) },
+            { transform: [{ translateY }] },
+          ]}
+        >
           <AppText variant="h2">{title}</AppText>
           <AppText variant="label" color={theme.color.text.secondary} style={styles.message}>
             {message}
@@ -95,7 +107,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: theme.radius.sheet,
     borderTopRightRadius: theme.radius.sheet,
     padding: theme.space[5],
-    paddingBottom: theme.space[8],
     ...theme.elevation.sheet,
   },
   message: {

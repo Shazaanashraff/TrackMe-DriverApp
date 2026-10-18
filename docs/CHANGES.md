@@ -22,6 +22,37 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-10-18: Lift the confirm and background-location sheets above the back/home bar
+- **Branch:** feature/socket-token-refresh
+- **Modules touched:** [DASHBOARD](modules/DASHBOARD.md), [PROFILE](modules/PROFILE.md) (both use `ConfirmSheet`)
+- **What changed:** `ConfirmSheet` (End journey, Log out) and `BackgroundLocationDisclosure` add
+  the bottom safe-area inset to their padding (`max(32, 20 + inset)`), read from
+  `SafeAreaInsetsContext` so tests without a provider still render.
+- **Why:** the build draws Android edge-to-edge, and both sheets kept a fixed 32 px under a ~48 px
+  back/home bar, so their bottom button sat partly under it on the testers' phones.
+- **Contract impact:** none.
+- **Tests:** ConfirmSheet.test.tsx (2 new), BackgroundLocationDisclosure.test.tsx (1 new).
+- **Docs updated:** TESTING_GUIDE row.
+- **Follow-ups / known issues:** the same inset logic was checked on an Android 15 emulator in the
+  passenger app; these two sheets need a signed-in driver, so they were not opened there.
+
+## 2026-10-18: Refresh the socket token so GO reaches the server after a drop
+- **Branch:** feature/socket-token-refresh
+- **Modules touched:** [LOCATION_TRACKING](LOCATION_TRACKING.md), [AUTH](modules/AUTH.md)
+- **What changed:** a socket reconnect refused with `jwt expired` / `Invalid token` now asks
+  `AuthContext` for a fresh token (`setSocketTokenRefresher`) and reconnects. `refreshAccessToken`
+  shares one in-flight refresh between callers and no longer signs the driver out when the refresh
+  fails for lack of network.
+- **Why:** on a real phone GO sat on "Offline, will sync later" and riders never saw the vehicle.
+  Access tokens last 15 minutes; once the socket dropped, every reconnect offered the expired
+  token and socket.io gave up after the server's auth refusal.
+- **Contract impact:** none (uses the existing `POST /api/auth/refresh-token` and socket auth).
+- **Tests:** services/__tests__/socket.test.ts (6 new), context/__tests__/AuthContext.test.js
+  (new, 4), __integration__/auth.int.test.tsx (socket mock gains `setSocketTokenRefresher`).
+- **Docs updated:** LOCATION_TRACKING.md, TESTING_GUIDE row.
+- **Follow-ups / known issues:** a headless background launch has no `AuthProvider`, so it still
+  reconnects with the stored token only.
+
 ## 2026-10-18 — Send the GPS heading so maps can turn the vehicle icon
 - **Branch:** feature/live-map-markers
 - **Modules touched:** [LOCATION_TRACKING](LOCATION_TRACKING.md)

@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Modal, View, StyleSheet } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { theme } from '../../theme';
 import AppText from '../../components/ui/AppText';
 import PrimaryButton from '../../components/ui/PrimaryButton';
@@ -20,10 +21,17 @@ export default function BackgroundLocationDisclosure({
   onDismiss,
   loading = false,
 }: Props) {
+  // The build is edge-to-edge, so the sheet draws behind Android's back/home bar
+  // and its "Not now" button sat partly under it. The inset is read from context
+  // directly because tests render the sheet without a SafeAreaProvider.
+  const bottomInset = useContext(SafeAreaInsetsContext)?.bottom ?? 0;
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
       <View style={styles.overlay}>
-        <View style={styles.sheet}>
+        <View
+          testID="background-disclosure-sheet"
+          style={[styles.sheet, { paddingBottom: Math.max(theme.space[8], theme.space[5] + bottomInset) }]}
+        >
           <AppText variant="h2">Keep sharing when your screen is off</AppText>
           <AppText variant="label" color={theme.color.text.secondary} style={styles.body}>
             Pingo collects this vehicle&apos;s location, including while the app is closed or
@@ -65,7 +73,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: theme.radius.sheet,
     borderTopRightRadius: theme.radius.sheet,
     padding: theme.space[5],
-    paddingBottom: theme.space[8],
     ...theme.elevation.sheet,
   },
   body: {

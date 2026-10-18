@@ -1,12 +1,17 @@
 // Mock socket.io-client before importing the module
 const mockSocket = {
   connected: true,
+  auth: undefined as { token?: string } | undefined,
   on: jest.fn(),
   emit: jest.fn(),
+  connect: jest.fn(),
   disconnect: jest.fn(),
 };
 
-const mockIo = jest.fn((_url: string, _opts: unknown) => mockSocket);
+const mockIo = jest.fn((_url: string, opts: unknown) => {
+  mockSocket.auth = (opts as { auth?: { token?: string } })?.auth;
+  return mockSocket;
+});
 
 jest.mock('socket.io-client', () => ({
   __esModule: true,
@@ -22,6 +27,7 @@ beforeEach(() => {
   jest.resetModules();
   jest.clearAllMocks();
   mockSocket.connected = true;
+  mockSocket.auth = undefined;
 });
 
 function getModule() {
@@ -317,5 +323,103 @@ describe('disconnectSocket', () => {
     disconnectSocket();
     expect(mockSocket.disconnect).toHaveBeenCalled();
     expect(getSocket()).toBeNull();
+  });
+});
+
+describe('token refresh on a refused handshake', () => {
+  const handler = (event: string) =>
+    mockSocket.on.mock.calls.find((call: unknown[]) => call[0] === event)?.[1] as (
+      ...args: unknown[]
+    ) => void;
+  const flush = async () => {
+    for (let i = 0; i < 5; i += 1) await Promise.resolve();
+  };
+
+  function connectStale(refresher?: jest.Mock) {
+    const { connectSocket, setSocketTokenRefresher } = getModule();
+    if (refresher) setSocketTokenRefresher(refresher);
+    connectSocket('stale');
+    mockSocket.connected = false;
+  }
+
+  it('fetches a fresh token and reconnects when the server refuses an expired one', async () => {
+    const refresher = jest.fn().mockResolvedValue('fresh');
+    connectStale(refresher);
+
+    handler('connect_error')(new Error('Invalid token: jwt expired'));
+    await flush();
+
+    expect(refresher).toHaveBeenCalledTimes(1);
+    expect(mockSocket.auth).toEqual({ token: 'fresh' });
+    expect(mockSocket.connect).toHaveBeenCalledTimes(1);
+  });
+
+  it("leaves network errors to socket.io's own reconnect", async () => {
+    const refresher = jest.fn().mockResolvedValue('fresh');
+    connectStale(refresher);
+
+    handler('connect_error')(new Error('websocket error'));
+    await flush();
+
+    expect(refresher).not.toHaveBeenCalled();
+    expect(mockSocket.connect).not.toHaveBeenCalled();
+  });
+
+  it('shares one refresh between back-to-back refusals', async () => {
+    const refresher = jest.fn().mockResolvedValue('fresh');
+    connectStale(refresher);
+
+    handler('connect_error')(new Error('Invalid token: jwt expired'));
+    handler('connect_error')(new Error('Invalid token: jwt expired'));
+    await flush();
+
+    expect(refresher).toHaveBeenCalledTimes(1);
+  });
+
+  it('tries a fresh token only once when it is refused for a reason other than expiry', async () => {
+    const refresher = jest.fn().mockResolvedValue('fresh');
+    connectStale(refresher);
+
+    handler('connect_error')(new Error('Invalid token: account is deactivated'));
+    await flush();
+    handler('connect_error')(new Error('Invalid token: account is deactivated'));
+    await flush();
+    expect(refresher).toHaveBeenCalledTimes(1);
+
+    // Expiry is always worth a refresh: the refreshed token can itself run out
+    // while the phone stays offline.
+    handler('connect_error')(new Error('Invalid token: jwt expired'));
+    await flush();
+    expect(refresher).toHaveBeenCalledTimes(2);
+  });
+
+  it('allows another refresh after a successful connect', async () => {
+    const refresher = jest.fn().mockResolvedValue('fresh');
+    connectStale(refresher);
+
+    handler('connect_error')(new Error('Invalid token: invalid signature'));
+    await flush();
+    handler('connect')();
+    handler('connect_error')(new Error('Invalid token: invalid signature'));
+    await flush();
+
+    expect(refresher).toHaveBeenCalledTimes(2);
+  });
+
+  it('stays put when the refresh comes back empty or none is registered', async () => {
+    const refresher = jest.fn().mockResolvedValue(null);
+    connectStale(refresher);
+
+    handler('connect_error')(new Error('Invalid token: jwt expired'));
+    await flush();
+    expect(mockSocket.auth).toEqual({ token: 'stale' });
+    expect(mockSocket.connect).not.toHaveBeenCalled();
+
+    jest.resetModules();
+    mockSocket.on.mockClear();
+    connectStale();
+    expect(() => handler('connect_error')(new Error('Invalid token: jwt expired'))).not.toThrow();
+    await flush();
+    expect(mockSocket.connect).not.toHaveBeenCalled();
   });
 });

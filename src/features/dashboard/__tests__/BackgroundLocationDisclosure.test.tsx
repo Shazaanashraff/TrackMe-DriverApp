@@ -1,4 +1,6 @@
 import React from 'react';
+import { StyleSheet } from 'react-native';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 import { render, fireEvent } from '@testing-library/react-native';
 import BackgroundLocationDisclosure from '../BackgroundLocationDisclosure';
 
@@ -51,5 +53,16 @@ describe('BackgroundLocationDisclosure', () => {
     const { queryByTestId } = setup({ visible: false });
 
     expect(queryByTestId('background-disclosure-allow')).toBeNull();
+  });
+});
+
+describe('BackgroundLocationDisclosure on an edge-to-edge Android screen', () => {
+  it('lifts its buttons above the back/home bar', () => {
+    const { getByTestId } = render(
+      <SafeAreaInsetsContext.Provider value={{ top: 0, right: 0, bottom: 48, left: 0 }}>
+        <BackgroundLocationDisclosure visible onAllow={jest.fn()} onDismiss={jest.fn()} />
+      </SafeAreaInsetsContext.Provider>
+    );
+    expect(StyleSheet.flatten(getByTestId('background-disclosure-sheet').props.style).paddingBottom).toBe(20 + 48);
   });
 });
