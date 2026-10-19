@@ -22,6 +22,30 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-10-19: Popups that say what happened, "Sent" at once, one reload per burst
+- **Branch:** feature/snappy-messages (stacked on feature/fix-permission-loop)
+- **Modules touched:** [COMMUNICATIONS](modules/COMMUNICATIONS.md) "Popups and reloads", [LOCATION_TRACKING](LOCATION_TRACKING.md)
+- **What changed:**
+  - The popup names the change ("Absence reported", "Absence cancelled", ...) with the server's
+    text, sits below the status bar, and opens Riders, Absences on a tap. None for the driver's own
+    broadcast copies, own acknowledgments or read receipts (it used to pop "New message or absence
+    change" for all of them).
+  - Events inside 400 ms share one list reload, so a 20-rider broadcast reloads once, not 20 times.
+  - "Sent" shows as soon as the server accepts; list reloads run in the background. An acknowledged
+    absence leaves the Home strip at once.
+  - A refreshed token no longer forces a socket reconnect every 15 minutes.
+- **Why:** users reported slow messages and popups that did not work. The driver waited seconds on
+  "Sending…" for list reloads, every rider's copy of a broadcast reloaded everything again (more
+  load on a slow server and on the rate limit), and the popup carried no information.
+- **Contract impact:** none. Reads the existing `communication:event` fields (`sender`,
+  `absenceStatus`, `text`).
+- **Tests:** new `provider.events.test.js` (5), `hooks.send.test.js` (1), `socket.test.ts`
+  `a refreshed token` (3); all 9 fail on the previous code. Full run 656 passed (baseline 647);
+  lint 0 errors, 75 warnings (unchanged).
+- **Docs updated:** `docs/modules/COMMUNICATIONS.md`, `docs/LOCATION_TRACKING.md`, `docs/TESTING_GUIDE.md`
+- **Follow-ups / known issues:** popups on a locked phone still need Firebase in the build and an
+  FCM V1 key on the Expo project.
+
 ## 2026-10-19: Stop the permission loop, self-heal the socket, readable Riders tab
 - **Branch:** feature/fix-permission-loop
 - **Modules touched:** [COMMUNICATIONS](modules/COMMUNICATIONS.md), [LOCATION_TRACKING](LOCATION_TRACKING.md)

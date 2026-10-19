@@ -127,9 +127,13 @@ const updateConnectionState = (status: ConnectionStatus, error: string | null = 
 };
 
 export const connectSocket = (token: string): Socket => {
+  // A refreshed token (every 15 minutes) is kept for the next handshake. The
+  // server checks the token only when a connection opens, and forcing a
+  // reconnect here dropped every event sent during the gap. Signing out closes
+  // the socket (disconnectSocket), so a new token here is the same account.
   if (socket && socket.auth && typeof socket.auth !== 'function' && socket.auth.token !== token) {
     socket.auth.token = token;
-    socket.disconnect().connect();
+    if (!socket.connected && !socket.active) socket.connect();
   }
   if (!socket) {
     updateConnectionState('connecting');

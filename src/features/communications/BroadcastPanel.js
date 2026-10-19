@@ -2,7 +2,11 @@ import React, { useEffect, useRef, useState } from "react";
 import { View, Text } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCommunication } from "./provider";
-import { useCommunicationQuery, useExplicitSend } from "./hooks";
+import {
+  useCommunicationQuery,
+  useExplicitSend,
+  useSetCommunicationData,
+} from "./hooks";
 import {
   Action,
   SendPreview,
@@ -106,10 +110,24 @@ function useBroadcast() {
 }
 export default function BroadcastPanel({ navigation }) {
   const b = useBroadcast();
-  const changes = useCommunicationQuery(
-    `/driver/absences?date=${colomboToday()}`
-  );
+  const changesPath = `/driver/absences?date=${colomboToday()}`;
+  const changes = useCommunicationQuery(changesPath);
   const ack = useExplicitSend("home-acknowledgment");
+  const setData = useSetCommunicationData();
+  const acknowledge = async (a) => {
+    const result = await ack.submit({
+      path: `/absences/${a._id}/acknowledge`,
+      body: { requestId: newRequestId(), expectedRevision: a.revision },
+    });
+    // The notice leaves the strip as soon as the server confirms it; the list
+    // reload that follows agrees.
+    if (result)
+      setData(changesPath, (data) =>
+        data
+          ? { ...data, changes: (data.changes || []).filter((c) => c._id !== a._id) }
+          : data
+      );
+  };
   // A section of the dashboard, not a fixed panel pinned under it. It used to
   // claim up to 58% of the screen height with its own nested scroll, which left
   // the vehicle and quick actions squeezed into a strip above it.
@@ -119,12 +137,7 @@ export default function BroadcastPanel({ navigation }) {
         <CancellationStrip
           changes={changes.data?.changes}
           busy={ack.busy}
-          onAcknowledge={(a) =>
-            ack.submit({
-              path: `/absences/${a._id}/acknowledge`,
-              body: { requestId: newRequestId(), expectedRevision: a.revision },
-            })
-          }
+          onAcknowledge={acknowledge}
         />
         {ack.feedback ? (
           <Text accessibilityLiveRegion="polite" style={styles.feedback}>

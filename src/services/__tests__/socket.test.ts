@@ -573,3 +573,49 @@ describe('backoff reconnect after a refused handshake', () => {
     expect(mockSocket.connect).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('a refreshed token', () => {
+  // AuthContext refreshes the access token every 15 minutes and the provider
+  // hands the new one to connectSocket. Forcing a reconnect there dropped every
+  // event sent while the socket was down; the server checks the token only when
+  // a connection opens, so the new one is kept for the next handshake.
+  beforeEach(() => {
+    mockSocket.disconnect.mockReturnValue(mockSocket);
+  });
+
+  it('keeps an open connection and saves the token for the next handshake', () => {
+    const { connectSocket } = getModule();
+    connectSocket('first');
+
+    connectSocket('second');
+
+    expect(mockSocket.disconnect).not.toHaveBeenCalled();
+    expect(mockSocket.connect).not.toHaveBeenCalled();
+    expect(mockSocket.auth?.token).toBe('second');
+    expect(mockIo).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens a refused connection with the new token', () => {
+    const { connectSocket } = getModule();
+    connectSocket('refused');
+    mockSocket.connected = false;
+    mockSocket.active = false;
+
+    connectSocket('fresh');
+
+    expect(mockSocket.auth?.token).toBe('fresh');
+    expect(mockSocket.connect).toHaveBeenCalledTimes(1);
+    expect(mockSocket.disconnect).not.toHaveBeenCalled();
+  });
+
+  it('leaves a connection socket.io is already retrying to its own loop', () => {
+    const { connectSocket } = getModule();
+    connectSocket('dropped');
+    mockSocket.connected = false;
+
+    connectSocket('fresh');
+
+    expect(mockSocket.auth?.token).toBe('fresh');
+    expect(mockSocket.connect).not.toHaveBeenCalled();
+  });
+});

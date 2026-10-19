@@ -30,6 +30,12 @@
   refused for a reason other than expiry is tried once per connection, not in a loop.
   **Not covered:** a headless background launch has no `AuthProvider`, so no refresher; it still
   reconnects with the stored token only.
+- **A refreshed token no longer drops the connection (2026-10-19).** `connectSocket(token)` with a
+  new token used to call `socket.disconnect().connect()`, so every 15-minute refresh opened a gap in
+  which the server's events (absence notices, location acks) were lost. The new token is now kept on
+  `socket.auth` for the next handshake; a connected socket stays up, a refused one (`active` false)
+  connects at once, and one socket.io is already retrying picks the token up on its next attempt.
+  Signing out closes the socket (`disconnectSocket`), so a new token here is always the same account.
 - **A refused reconnect retries on its own (2026-10-19).** socket.io stops retrying once the
   server's auth middleware refuses a handshake (`socket.active` goes false), so a refusal the
   refresh could not fix, or a refresh that came back empty, left the driver on "Reconnecting…"
@@ -198,6 +204,8 @@ Now:
   left to socket.io, back-to-back refusals share one refresh, a non-expiry refusal is retried once
   per connection; `AuthContext` shares one refresh between socket and 401 retry, stays signed in
   on a network failure, signs out on a server rejection.
+- `socket` refreshed token: a connected socket keeps its connection and saves the new token, a
+  refused one connects with it, one socket.io is retrying is left to its own loop.
 - `socket` backoff reconnect (fake timers): a refusal with `active` false retries at 2, 4, 8, 16,
   30, 30 s; a transport failure schedules nothing; back-to-back refusals keep one retry; `connect`
   resets the backoff; a socket that came back on its own is not reconnected; `disconnectSocket`
