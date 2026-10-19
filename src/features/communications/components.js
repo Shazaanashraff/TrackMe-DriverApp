@@ -13,6 +13,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { theme } from "../../theme";
 import { colomboToday } from "./state";
 export const styles = StyleSheet.create({
@@ -246,28 +247,34 @@ export function QuickActionGrid({ actions, onSelect, disabled }) {
   );
 }
 // One rider as a whole-row tap target, shared by the Riders list and the
-// absent list so the two read the same.
-export function RiderRow({ name, subtitle, onPress, testID }) {
+// absent list so the two read the same. A white card like the Home vehicle
+// card: an icon tile, the name, what this rider is to the driver beneath, and
+// a chevron. A person icon, never a picture or initials (riders.test.js).
+// `trailing` sits before the chevron, e.g. the Absences list's status pill.
+export function RiderRow({ name, subtitle, onPress, testID, trailing = null }) {
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
-      accessibilityLabel={`${name}. ${subtitle}`}
+      accessibilityLabel={subtitle ? `${name}. ${subtitle}` : name}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.riderRow,
-        { backgroundColor: theme.color.ink.base, borderWidth: 0, paddingVertical: theme.space[3] },
-        pressed && { opacity: 0.8, backgroundColor: theme.color.ink.raised },
-      ]}
+      style={({ pressed }) => [styles.riderRow, pressed && localStyles.riderRowPressed]}
     >
+      <View style={localStyles.riderIcon}>
+        <Ionicons name="person-outline" size={20} color={theme.color.primary[500]} />
+      </View>
       <View style={{ flex: 1, minWidth: 0, justifyContent: "center" }}>
-        <Text numberOfLines={1} style={[styles.text, { color: theme.color.white, fontFamily: theme.fontFamily("medium") }]}>
+        <Text numberOfLines={1} style={[styles.text, { fontFamily: theme.fontFamily("medium") }]}>
           {name}
         </Text>
-        <Text numberOfLines={1} style={[styles.small, { color: theme.color.primary[300], marginTop: 2 }]}>
-          {subtitle}
-        </Text>
+        {subtitle ? (
+          <Text numberOfLines={2} style={[styles.small, { marginTop: 2 }]}>
+            {subtitle}
+          </Text>
+        ) : null}
       </View>
+      {trailing}
+      <Ionicons name="chevron-forward" size={18} color={theme.color.text.muted} />
     </Pressable>
   );
 }
@@ -317,12 +324,25 @@ const localStyles = StyleSheet.create({
     backgroundColor: theme.color.surface.card,
     ...theme.elevation.card,
   },
+  // text.muted read at about 2:1 on the field and the unselected segment all
+  // but vanished on a phone; secondary clears 4.5:1.
   segmentText: {
     ...theme.textStyle("label"),
-    color: theme.color.text.muted,
+    color: theme.color.text.secondary,
   },
   segmentTextSelected: {
-    color: theme.color.primary[500],
+    color: theme.color.primary[600],
+  },
+  riderIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: theme.radius.control,
+    backgroundColor: theme.color.primary[50],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  riderRowPressed: {
+    backgroundColor: theme.color.surface.field,
   },
 });
 

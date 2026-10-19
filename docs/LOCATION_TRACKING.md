@@ -30,6 +30,27 @@
   refused for a reason other than expiry is tried once per connection, not in a loop.
   **Not covered:** a headless background launch has no `AuthProvider`, so no refresher; it still
   reconnects with the stored token only.
+- **A refreshed token no longer drops the connection (2026-10-19).** `connectSocket(token)` with a
+  new token used to call `socket.disconnect().connect()`, so every 15-minute refresh opened a gap in
+  which the server's events (absence notices, location acks) were lost. The new token is now kept on
+  `socket.auth` for the next handshake; a connected socket stays up, a refused one (`active` false)
+  connects at once, and one socket.io is already retrying picks the token up on its next attempt.
+  Signing out closes the socket (`disconnectSocket`), so a new token here is always the same account.
+- **A refused reconnect retries on its own (2026-10-19).** socket.io stops retrying once the
+  server's auth middleware refuses a handshake (`socket.active` goes false), so a refusal the
+  refresh could not fix, or a refresh that came back empty, left the driver on "Reconnecting…"
+  for good. `connect_error` with `socket.active === false` now schedules `socket.connect()` on a
+  backoff: `RECONNECT_BASE_MS` 2 s, doubling, capped at `RECONNECT_MAX_MS` 30 s. One retry is
+  pending at a time; it is skipped if socket.io came back by itself, reset on `connect`, and
+  cancelled by `disconnectSocket()`. A transport failure (`active` still true) is left to
+  socket.io.
+- **A failed re-announce retries while the socket stays up.** After a reconnect,
+  `useTrackingSession` re-announces a live shift. One failed re-announce used to keep
+  "Reconnecting…" up until the next connection change. Now a refusal a retry can fix (no `code`,
+  `RATE_LIMITED` or `SERVER_ERROR`) retries on the same 2 s to 30 s backoff
+  (`REANNOUNCE_BASE_MS` / `REANNOUNCE_MAX_MS`). An `offline` ack waits for the next reconnect,
+  and any other refusal (for example `VEHICLE_NOT_FOUND`) is not retried. A drop, END, unmount or
+  a fresh reconnect cancels the pending retry, and a fresh reconnect starts back at 2 s.
 - Backend contract for all of the above: `backend/docs/modules/REALTIME.md`.
 
 ## Target architecture (three pieces)
@@ -91,6 +112,15 @@ The dashboard composes: `useMyBusQuery` (which bus) → `useTrackingSession` →
   is null.
 - Both producers set it: the foreground watcher (`useLocationBroadcast`) and the background
   task (`backgroundLocation.ts`). Buffered fixes keep it, since the fix object is persisted.
+
+## Fix timestamp (2026-10-19)
+- `emitLocation(..., heading, timestamp)` adds `timestamp` (epoch ms, when the fix was taken) to
+  the `driver:location` payload when it is a finite number, and `emitFix` passes
+  `fix.timestamp`. The contract already had the field (`backend/docs/modules/REALTIME.md`); the
+  backend keeps a fix only if it is not older than the stored one, clamping a phone clock that is
+  too far off to server time.
+- Before this, a fix re-sent after a slow ack counted as new and went out to riders, so their van
+  jumped back to an old spot.
 
 ## Background tracking (Phase 7: 072) — IMPLEMENTED
 
@@ -174,6 +204,16 @@ Now:
   left to socket.io, back-to-back refusals share one refresh, a non-expiry refusal is retried once
   per connection; `AuthContext` shares one refresh between socket and 401 retry, stays signed in
   on a network failure, signs out on a server rejection.
+- `socket` refreshed token: a connected socket keeps its connection and saves the new token, a
+  refused one connects with it, one socket.io is retrying is left to its own loop.
+- `socket` backoff reconnect (fake timers): a refusal with `active` false retries at 2, 4, 8, 16,
+  30, 30 s; a transport failure schedules nothing; back-to-back refusals keep one retry; `connect`
+  resets the backoff; a socket that came back on its own is not reconnected; `disconnectSocket`
+  cancels; an empty refresh still retries. `emitLocation` sends `timestamp` and leaves it out
+  when null or NaN.
+- `useTrackingSession` re-announce retry (fake timers): 2 s then 4 s until the server takes it,
+  then reconnecting clears; no retry for `VEHICLE_NOT_FOUND` or an `offline` ack; a drop cancels
+  and the next reconnect starts at 2 s; END and unmount cancel.
 - `locationDispatch`: throttle, buffer cap/replay ordering, NACK re-buffer vs. accepted-stale,
   headless restore from AsyncStorage, reset at end of shift.
 - `backgroundLocation`: OS batch → dispatch, headless reconnect from the stored token,

@@ -51,7 +51,8 @@ describe('throttle', () => {
       6.9271,
       79.8612,
       expect.any(Function),
-      undefined
+      undefined,
+      1000
     );
   });
 

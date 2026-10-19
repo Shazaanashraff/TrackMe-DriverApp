@@ -138,7 +138,7 @@ describe('start/stop tracking — message shapes + ack contract', () => {
 });
 
 describe('driver:location — message shape + ack contract', () => {
-  it('emits {vehicleId, routeId, lat, lng} and forwards a success ack', async () => {
+  it('emits {vehicleId, routeId, lat, lng, timestamp} and forwards a success ack', async () => {
     const { socket, dispatch } = loadModules();
     socket.connectSocket('tok');
     simulateConnect();
@@ -153,7 +153,7 @@ describe('driver:location — message shape + ack contract', () => {
     expect(emitted).toBe(true);
     expect(mockSocket.emit).toHaveBeenCalledWith(
       'driver:location',
-      { vehicleId: 'vehicle-1', routeId: 'route-1', lat: 6.9, lng: 79.8 },
+      { vehicleId: 'vehicle-1', routeId: 'route-1', lat: 6.9, lng: 79.8, timestamp: 1000 },
       expect.any(Function)
     );
     expect(dispatch.getBufferedCount()).toBe(0);
@@ -201,12 +201,14 @@ describe('post-reconnect replay', () => {
       routeId: 'route-1',
       lat: 1,
       lng: 1,
+      timestamp: 1000,
     });
     expect(mockSocket.emit.mock.calls[1][1]).toEqual({
       vehicleId: 'vehicle-1',
       routeId: 'route-1',
       lat: 2,
       lng: 2,
+      timestamp: 5000,
     });
   });
 

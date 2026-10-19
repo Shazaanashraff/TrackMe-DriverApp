@@ -140,7 +140,8 @@ function emitFix(fix: LocationFix) {
       if (nacked) pushToBuffer(fix);
       noteAckOutcome(nacked);
     },
-    fix.heading
+    fix.heading,
+    fix.timestamp
   );
 }
 

@@ -14,6 +14,8 @@ export interface ConnectionState {
 export interface TrackingAck {
   success: boolean;
   error?: string;
+  // The backend's ack error code (REALTIME.md "Ack error codes"), when it sent one.
+  code?: string;
   // Set only when the emit never left the device because the socket was down.
   // Lets useTrackingSession tell "can't reach the server right now" (park the
   // shift as pending, retry on reconnect) apart from a real server refusal.
@@ -51,6 +53,31 @@ let refreshedSinceConnect = false;
 
 export const setSocketTokenRefresher = (refresher: TokenRefresher | null): void => {
   tokenRefresher = refresher;
+};
+
+// socket.io stops retrying once the server's auth middleware refuses a
+// handshake (`socket.active` goes false), and nothing else retried while the
+// app stayed open: a refused reconnect, or a token refresh that came back
+// empty, left the driver on "Reconnecting…" for good. Retry on a backoff until
+// the socket connects or is closed.
+export const RECONNECT_BASE_MS = 2000;
+export const RECONNECT_MAX_MS = 30_000;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let reconnectDelayMs = RECONNECT_BASE_MS;
+
+const cancelReconnect = (): void => {
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  reconnectTimer = null;
+};
+
+const scheduleReconnect = (): void => {
+  if (reconnectTimer || !socket || socket.connected) return;
+  const delay = reconnectDelayMs;
+  reconnectDelayMs = Math.min(reconnectDelayMs * 2, RECONNECT_MAX_MS);
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    if (socket && !socket.connected && !socket.active) socket.connect();
+  }, delay);
 };
 
 const isTokenRejection = (message: string): boolean =>
@@ -100,9 +127,13 @@ const updateConnectionState = (status: ConnectionStatus, error: string | null = 
 };
 
 export const connectSocket = (token: string): Socket => {
+  // A refreshed token (every 15 minutes) is kept for the next handshake. The
+  // server checks the token only when a connection opens, and forcing a
+  // reconnect here dropped every event sent during the gap. Signing out closes
+  // the socket (disconnectSocket), so a new token here is the same account.
   if (socket && socket.auth && typeof socket.auth !== 'function' && socket.auth.token !== token) {
     socket.auth.token = token;
-    socket.disconnect().connect();
+    if (!socket.connected && !socket.active) socket.connect();
   }
   if (!socket) {
     updateConnectionState('connecting');
@@ -123,6 +154,8 @@ export const connectSocket = (token: string): Socket => {
     socket.on('connect', () => {
       if (__DEV__) console.log('Socket connected:', socket?.id);
       refreshedSinceConnect = false;
+      cancelReconnect();
+      reconnectDelayMs = RECONNECT_BASE_MS;
       updateConnectionState('connected');
 
       // Setup notification listeners on connection
@@ -154,6 +187,9 @@ export const connectSocket = (token: string): Socket => {
       if (__DEV__) console.error('Socket connection error:', error.message);
       updateConnectionState('error', error.message);
       if (isTokenRejection(error?.message || '')) retryWithFreshToken(error.message);
+      // A transport failure leaves socket.io retrying on its own (active stays
+      // true); only a middleware refusal needs the backoff.
+      if (socket && !socket.active) scheduleReconnect();
     });
   }
   return socket;
@@ -179,6 +215,8 @@ export const disconnectSocket = (): void => {
     socket = null;
   }
   refreshedSinceConnect = false;
+  cancelReconnect();
+  reconnectDelayMs = RECONNECT_BASE_MS;
 };
 
 const LOCATION_ACK_TIMEOUT_MS = 5000;
@@ -189,7 +227,8 @@ export const emitLocation = (
   lat: number,
   lng: number,
   callback?: (response: unknown) => void,
-  heading?: number | null
+  heading?: number | null,
+  timestamp?: number | null
 ): void => {
   if (socket && socket.connected) {
     // A dropped ack (common on a spotty connection) used to leave the fix
@@ -204,11 +243,14 @@ export const emitLocation = (
       callback?.({ success: false, error: 'Ack timeout' });
     }, LOCATION_ACK_TIMEOUT_MS);
 
-    // heading is optional in the backend contract; leave it off rather than send null.
-    const payload =
-      typeof heading === 'number' && Number.isFinite(heading)
-        ? { vehicleId, routeId, lat, lng, heading }
-        : { vehicleId, routeId, lat, lng };
+    // heading and timestamp are optional in the backend contract; leave them
+    // off rather than send null. The timestamp (epoch ms, when the fix was
+    // taken) is what lets the backend drop a re-sent older fix instead of
+    // broadcasting it as new, which walked riders' vans backwards
+    // (REALTIME.md §6).
+    const payload: Record<string, unknown> = { vehicleId, routeId, lat, lng };
+    if (typeof heading === 'number' && Number.isFinite(heading)) payload.heading = heading;
+    if (typeof timestamp === 'number' && Number.isFinite(timestamp)) payload.timestamp = timestamp;
     socket.emit('driver:location', payload, (response: unknown) => {
       if (settled) return;
       settled = true;

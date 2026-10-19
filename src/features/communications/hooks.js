@@ -14,6 +14,13 @@ export function useCommunicationQuery(path, enabled = true) {
   useEffect(() => { if (focused && online && enabled && path) void refetch(); }, [focused, online, enabled, path, refetch]);
   return query;
 }
+// Writes one list's cached copy after a change the server has confirmed, so the
+// screen shows it before the background reload lands.
+export function useSetCommunicationData() {
+  const { accountId } = useCommunication();
+  const queryClient = useQueryClient();
+  return useCallback((path, update) => queryClient.setQueryData(['communications', accountId, path], update), [accountId, queryClient]);
+}
 // Only an explicit user action calls submit. Reconnect never sends a saved draft.
 // Store the request ID before the network call so uncertain responses are retryable.
 export function useExplicitSend(name) {
@@ -46,7 +53,9 @@ export function useExplicitSend(name) {
       if (result?.results?.some(r => !r.success)) {
         setFeedback(result.results.map(r => r.success ? 'Reported' : r.message).join(' · '));
       } else { await clear(); setFeedback('Sent'); }
-      await queryClient.invalidateQueries({ queryKey: ['communications', accountId] });
+      // "Sent" means the server accepted it. The lists reload in the background:
+      // waiting for all of them first kept the driver on "Sending…" for seconds.
+      void queryClient.invalidateQueries({ queryKey: ['communications', accountId] });
       return result;
     } catch (error) {
       setFeedback(error.kind === 'offline' || !online ? 'Not sent, offline' : `${error.message || 'Not confirmed'} · Review and retry`);
