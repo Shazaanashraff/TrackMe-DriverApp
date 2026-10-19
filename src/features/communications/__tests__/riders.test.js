@@ -1,11 +1,14 @@
 import React from "react";
-import { Image } from "react-native";
-import { render, fireEvent, waitFor } from "@testing-library/react-native";
+import { Image, StyleSheet, Text } from "react-native";
+import { render, fireEvent, waitFor, within } from "@testing-library/react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Ionicons } from "@expo/vector-icons";
 import RidersScreen from "../RidersScreen";
 import RiderProfileScreen from "../RiderProfileScreen";
+import EmptyState from "../../../components/ui/EmptyState";
 import { useCommunication } from "../provider";
 import { gradeLine, toDisplayDate, colomboToday } from "../state";
+import { theme } from "../../../theme";
 
 jest.mock("../provider", () => ({ useCommunication: jest.fn() }));
 jest.mock("@react-navigation/native", () => ({ useIsFocused: () => true }));
@@ -285,6 +288,73 @@ describe("the Absences segment", () => {
     expect(await ui.findByText("No riders match this search.")).toBeTruthy();
     fireEvent.changeText(ui.getByLabelText("Search absences"), "rdr-amal");
     expect(await ui.findByText("Amal")).toBeTruthy();
+  });
+});
+
+// On a phone the search hint came out near-white on the pale field, the
+// unselected segment read at about 2:1, and rows were dark blocks unlike the
+// rest of the app.
+describe("the Riders tab is readable", () => {
+  const iconNames = (element) =>
+    within(element).UNSAFE_queryAllByType(Ionicons).map((icon) => icon.props.name);
+  const segmentColor = (ui, value) =>
+    StyleSheet.flatten(within(ui.getByTestId(`segment-${value}`)).UNSAFE_getByType(Text).props.style)
+      .color;
+
+  test("both search boxes set a readable placeholder color", async () => {
+    const ui = mount(RidersScreen);
+    await ui.findByText("Amal");
+    expect(ui.getByLabelText("Search riders").props.placeholderTextColor).toBe(
+      theme.color.text.secondary
+    );
+    fireEvent.press(ui.getByTestId("segment-absences"));
+    await ui.findByText("Amal");
+    expect(ui.getByLabelText("Search absences").props.placeholderTextColor).toBe(
+      theme.color.text.secondary
+    );
+  });
+
+  test("the unselected segment uses secondary text and the selected one primary 600", async () => {
+    const ui = mount(RidersScreen);
+    await ui.findByText("Amal");
+    expect(segmentColor(ui, "riders")).toBe(theme.color.primary[600]);
+    expect(segmentColor(ui, "absences")).toBe(theme.color.text.secondary);
+  });
+
+  test("a rider row is a person icon, the name, the line beneath and a chevron", async () => {
+    const ui = mount(RidersScreen);
+    const row = await ui.findByTestId("rider-row-rider-a");
+    expect(iconNames(row)).toEqual(["person-outline", "chevron-forward"]);
+    expect(within(row).getByText("Amal")).toBeTruthy();
+    expect(within(row).getByText("Grade 7 · Royal College · Home gate")).toBeTruthy();
+    expect(within(row).queryByText("Absent today")).toBeNull();
+  });
+
+  test("an absent rider's row carries an Absent today pill", async () => {
+    const ui = mount(RidersScreen, { tab: "absences" });
+    const row = await ui.findByTestId("absent-row-rider-a");
+    expect(within(row).getByText("Absent today")).toBeTruthy();
+    expect(iconNames(row)).toEqual(["person-outline", "chevron-forward"]);
+  });
+
+  test("empty riders and empty absences show their message inside an EmptyState", async () => {
+    const ui = mount(RidersScreen);
+    await ui.findByText("Amal");
+    fireEvent.changeText(ui.getByLabelText("Search riders"), "zzz");
+    await ui.findByText("No riders match this search.");
+    expect(ui.UNSAFE_getByType(EmptyState).props).toEqual(
+      expect.objectContaining({ icon: "search-outline", title: "No riders match this search." })
+    );
+
+    request.mockImplementation(async (path) => {
+      if (path.startsWith("/driver/absences")) return { ...absences, rows: [], absentCount: 0 };
+      return {};
+    });
+    const empty = mount(RidersScreen, { tab: "absences" });
+    await empty.findByText("No riders absent today.");
+    expect(empty.UNSAFE_getByType(EmptyState).props).toEqual(
+      expect.objectContaining({ icon: "calendar-outline", title: "No riders absent today." })
+    );
   });
 });
 

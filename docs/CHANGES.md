@@ -22,6 +22,33 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-10-19: Stop the permission loop, self-heal the socket, readable Riders tab
+- **Branch:** feature/fix-permission-loop
+- **Modules touched:** [COMMUNICATIONS](modules/COMMUNICATIONS.md), [LOCATION_TRACKING](LOCATION_TRACKING.md)
+- **What changed:**
+  - `CommunicationProvider` reads the notification permission first and asks at most once per
+    session, instead of on launch, every minute and every return to the foreground.
+  - `socket.ts` retries a middleware-refused handshake on a 2 s to 30 s backoff, and
+    `driver:location` now carries each fix's `timestamp`.
+  - `useTrackingSession` retries a failed re-announce on the same backoff while the socket stays
+    connected, so "Reconnecting…" clears by itself.
+  - Riders tab: `FormInput` search with a readable placeholder, readable segment labels, white
+    rider cards with a person icon and chevron, an "Absent today" pill, and `EmptyState` for empty
+    lists.
+- **Why:** on the testers' phones the permission request looped behind Android's permission
+  screen, swallowed taps (GO), reloaded the dashboard lists and used up the backend's 600 per
+  15 minutes per address limit (429 on "On my way" and on absences). A refused reconnect then
+  never retried, and re-sent fixes without a timestamp walked riders' vans backwards.
+- **Contract impact:** none new. `timestamp` on `driver:location` was already in
+  `backend/docs/modules/REALTIME.md`; the backend already used it.
+- **Tests:** provider.permission.test.js (new, 3), socket.test.ts (+9), useTrackingSession.test.ts
+  (+6), riders.test.js (+5); updated `emitLocation` expectations in locationDispatch.test.ts,
+  useLocationBroadcast.test.ts and tracking.int.test.tsx. Full run 647/647.
+- **Docs updated:** LOCATION_TRACKING.md, modules/COMMUNICATIONS.md, TESTING_GUIDE rows.
+- **Follow-ups / known issues:** background push while the app is closed still needs Firebase
+  (FCM) set up by the Expo project owner. Not yet checked on a phone: the APK rebuild and the
+  on-device checks in the plan come after the passenger app and backend changes.
+
 ## 2026-10-18: Lift the confirm and background-location sheets above the back/home bar
 - **Branch:** feature/socket-token-refresh
 - **Modules touched:** [DASHBOARD](modules/DASHBOARD.md), [PROFILE](modules/PROFILE.md) (both use `ConfirmSheet`)

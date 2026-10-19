@@ -1,6 +1,8 @@
 // Mock socket.io-client before importing the module
 const mockSocket = {
   connected: true,
+  // socket.io's own retry loop is running; a middleware refusal turns it off.
+  active: true,
   auth: undefined as { token?: string } | undefined,
   on: jest.fn(),
   emit: jest.fn(),
@@ -27,6 +29,7 @@ beforeEach(() => {
   jest.resetModules();
   jest.clearAllMocks();
   mockSocket.connected = true;
+  mockSocket.active = true;
   mockSocket.auth = undefined;
 });
 
@@ -74,6 +77,37 @@ describe('emitLocation', () => {
 
     const payload = mockSocket.emit.mock.calls[0][1];
     expect(payload).not.toHaveProperty('heading');
+  });
+
+  it("sends the fix's timestamp so the backend can drop a re-sent older fix", () => {
+    const { connectSocket, emitLocation } = getModule();
+    connectSocket('tok');
+
+    emitLocation('vehicle-1', 'route-1', 6.9, 79.8, jest.fn(), 135, 1_700_000_000_000);
+
+    expect(mockSocket.emit).toHaveBeenCalledWith(
+      'driver:location',
+      {
+        vehicleId: 'vehicle-1',
+        routeId: 'route-1',
+        lat: 6.9,
+        lng: 79.8,
+        heading: 135,
+        timestamp: 1_700_000_000_000,
+      },
+      expect.any(Function)
+    );
+  });
+
+  it('leaves timestamp out of the payload when it is missing or not a number', () => {
+    const { connectSocket, emitLocation } = getModule();
+    connectSocket('tok');
+
+    emitLocation('vehicle-1', 'route-1', 6.9, 79.8, jest.fn(), null, null);
+    emitLocation('vehicle-1', 'route-1', 6.9, 79.8, jest.fn(), null, Number.NaN);
+
+    expect(mockSocket.emit.mock.calls[0][1]).not.toHaveProperty('timestamp');
+    expect(mockSocket.emit.mock.calls[1][1]).not.toHaveProperty('timestamp');
   });
 
   it('no-ops when the socket is not connected', () => {
@@ -421,5 +455,121 @@ describe('token refresh on a refused handshake', () => {
     expect(() => handler('connect_error')(new Error('Invalid token: jwt expired'))).not.toThrow();
     await flush();
     expect(mockSocket.connect).not.toHaveBeenCalled();
+  });
+});
+
+describe('backoff reconnect after a refused handshake', () => {
+  const handler = (event: string) =>
+    mockSocket.on.mock.calls.find((call: unknown[]) => call[0] === event)?.[1] as (
+      ...args: unknown[]
+    ) => void;
+  const flush = async () => {
+    for (let i = 0; i < 5; i += 1) await Promise.resolve();
+  };
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  // The server's auth middleware refused the handshake, so socket.io gave up.
+  function refuse(message = 'Server unavailable') {
+    mockSocket.connected = false;
+    mockSocket.active = false;
+    handler('connect_error')(new Error(message));
+  }
+
+  it('retries a refusal socket.io will not retry, doubling from 2 s up to 30 s', () => {
+    const { connectSocket, RECONNECT_BASE_MS, RECONNECT_MAX_MS } = getModule();
+    connectSocket('tok');
+    expect(RECONNECT_BASE_MS).toBe(2000);
+    expect(RECONNECT_MAX_MS).toBe(30_000);
+
+    const delays = [2000, 4000, 8000, 16_000, 30_000, 30_000];
+    delays.forEach((delay, i) => {
+      refuse();
+      jest.advanceTimersByTime(delay - 1);
+      expect(mockSocket.connect).toHaveBeenCalledTimes(i);
+      jest.advanceTimersByTime(1);
+      expect(mockSocket.connect).toHaveBeenCalledTimes(i + 1);
+    });
+  });
+
+  it("leaves a transport failure to socket.io's own reconnect", () => {
+    const { connectSocket } = getModule();
+    connectSocket('tok');
+    mockSocket.connected = false;
+
+    handler('connect_error')(new Error('websocket error'));
+    jest.advanceTimersByTime(60_000);
+
+    expect(mockSocket.connect).not.toHaveBeenCalled();
+  });
+
+  it('keeps one retry pending for back-to-back refusals', () => {
+    const { connectSocket } = getModule();
+    connectSocket('tok');
+
+    refuse();
+    refuse();
+    jest.advanceTimersByTime(2000);
+
+    expect(mockSocket.connect).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts the backoff over after a successful connect', () => {
+    const { connectSocket } = getModule();
+    connectSocket('tok');
+
+    refuse();
+    jest.advanceTimersByTime(2000);
+    refuse();
+    jest.advanceTimersByTime(4000);
+    expect(mockSocket.connect).toHaveBeenCalledTimes(2);
+
+    mockSocket.connected = true;
+    handler('connect')();
+    refuse();
+    jest.advanceTimersByTime(2000);
+    expect(mockSocket.connect).toHaveBeenCalledTimes(3);
+  });
+
+  it('skips the retry when the socket came back on its own meanwhile', () => {
+    const { connectSocket } = getModule();
+    connectSocket('tok');
+
+    refuse();
+    mockSocket.active = true;
+    jest.advanceTimersByTime(2000);
+
+    expect(mockSocket.connect).not.toHaveBeenCalled();
+  });
+
+  it('cancels a pending retry on disconnectSocket', () => {
+    const { connectSocket, disconnectSocket } = getModule();
+    connectSocket('tok');
+
+    refuse();
+    disconnectSocket();
+    jest.advanceTimersByTime(60_000);
+
+    expect(mockSocket.connect).not.toHaveBeenCalled();
+  });
+
+  it('still retries when the token refresh comes back empty', async () => {
+    const { connectSocket, setSocketTokenRefresher } = getModule();
+    const refresher = jest.fn().mockResolvedValue(null);
+    setSocketTokenRefresher(refresher);
+    connectSocket('stale');
+
+    refuse('Invalid token: jwt expired');
+    await flush();
+    expect(refresher).toHaveBeenCalledTimes(1);
+    expect(mockSocket.connect).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(2000);
+    expect(mockSocket.connect).toHaveBeenCalledTimes(1);
   });
 });

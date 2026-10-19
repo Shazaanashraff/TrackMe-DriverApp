@@ -288,3 +288,147 @@ describe('useTrackingSession', () => {
     expect(result.current.status).toBe('tracking');
   });
 });
+
+// One failed re-announce used to leave "Reconnecting…" up until the socket
+// dropped again, though the connection itself was back.
+describe('re-announce retry after a reconnect', () => {
+  const flush = () =>
+    act(async () => {
+      for (let i = 0; i < 5; i += 1) await Promise.resolve();
+    });
+  const advance = async (ms: number) => {
+    act(() => {
+      jest.advanceTimersByTime(ms);
+    });
+    await flush();
+  };
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  async function liveShift() {
+    let stateListener: (state: { status: string }) => void = () => {};
+    mockOnConnectionStateChange.mockImplementation((cb) => {
+      stateListener = cb;
+      return () => {};
+    });
+    const hook = renderHook(() => useTrackingSession());
+    await act(async () => {
+      await hook.result.current.start('vehicle-1');
+    });
+    expect(hook.result.current.status).toBe('tracking');
+    const connection = async (status: string) => {
+      act(() => stateListener({ status }));
+      await flush();
+    };
+    return { ...hook, connection };
+  }
+
+  it('retries on a 2 s then 4 s backoff until the server takes it, then clears reconnecting', async () => {
+    mockStartTracking
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({ success: false, error: 'No response from server' })
+      .mockResolvedValueOnce({ success: false, error: 'Slow down', code: 'RATE_LIMITED' })
+      .mockResolvedValueOnce({ success: true });
+    const { result, connection } = await liveShift();
+
+    await connection('disconnected');
+    await connection('connected');
+    expect(mockStartTracking).toHaveBeenCalledTimes(2);
+    expect(result.current.isReconnecting).toBe(true);
+
+    await advance(1999);
+    expect(mockStartTracking).toHaveBeenCalledTimes(2);
+    await advance(1);
+    expect(mockStartTracking).toHaveBeenCalledTimes(3);
+
+    await advance(3999);
+    expect(mockStartTracking).toHaveBeenCalledTimes(3);
+    await advance(1);
+    expect(mockStartTracking).toHaveBeenCalledTimes(4);
+    expect(mockStartTracking).toHaveBeenLastCalledWith('vehicle-1');
+    expect(result.current.isReconnecting).toBe(false);
+    expect(result.current.error).toBeUndefined();
+  });
+
+  it('does not retry a refusal a retry cannot fix', async () => {
+    mockStartTracking
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({ success: false, error: 'Vehicle not found', code: 'VEHICLE_NOT_FOUND' });
+    const { result, connection } = await liveShift();
+
+    await connection('connected');
+    await advance(60_000);
+
+    expect(mockStartTracking).toHaveBeenCalledTimes(2);
+    expect(result.current.isReconnecting).toBe(true);
+    expect(result.current.error?.message).toBe('Vehicle not found');
+  });
+
+  it('leaves an offline ack to the next reconnect', async () => {
+    mockStartTracking
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({ success: false, error: 'Socket not connected', offline: true });
+    const { connection } = await liveShift();
+
+    await connection('connected');
+    await advance(60_000);
+
+    expect(mockStartTracking).toHaveBeenCalledTimes(2);
+  });
+
+  it('cancels the retry when the socket drops, and a fresh reconnect starts back at 2 s', async () => {
+    mockStartTracking
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({ success: false, error: 'No response from server' })
+      .mockResolvedValueOnce({ success: false, error: 'No response from server' })
+      .mockResolvedValueOnce({ success: true });
+    const { result, connection } = await liveShift();
+
+    await connection('connected');
+    await connection('disconnected');
+    await advance(60_000);
+    expect(mockStartTracking).toHaveBeenCalledTimes(2);
+
+    await connection('connected');
+    expect(mockStartTracking).toHaveBeenCalledTimes(3);
+    await advance(2000);
+    expect(mockStartTracking).toHaveBeenCalledTimes(4);
+    expect(result.current.isReconnecting).toBe(false);
+  });
+
+  it('cancels the retry when the driver ends the shift', async () => {
+    mockStartTracking
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({ success: false, error: 'No response from server' });
+    mockStopTracking.mockResolvedValueOnce({ success: true });
+    const { result, connection } = await liveShift();
+
+    await connection('connected');
+    await act(async () => {
+      await result.current.stop('vehicle-1');
+    });
+    await advance(60_000);
+
+    expect(result.current.status).toBe('idle');
+    expect(mockStartTracking).toHaveBeenCalledTimes(2);
+  });
+
+  it('cancels the retry on unmount', async () => {
+    mockStartTracking
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({ success: false, error: 'No response from server' });
+    mockStopTracking.mockResolvedValue({ success: true });
+    const { connection, unmount } = await liveShift();
+
+    await connection('connected');
+    unmount();
+    await advance(60_000);
+
+    expect(mockStartTracking).toHaveBeenCalledTimes(2);
+  });
+});
