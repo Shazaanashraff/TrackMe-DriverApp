@@ -359,10 +359,14 @@ export function CancellationStrip({ changes = [], onAcknowledge, busy }) {
     a.status === "ABSENT"
       ? `${name} will be absent ${when}.`
       : `${name} is coming ${when} · absence cancelled.`;
+  // Yellow for a rider who will be away, green for one who is coming after all,
+  // so the two read apart at a glance.
+  const background =
+    a.status === "ABSENT" ? theme.color.warning.bg : theme.color.success.bg;
   return (
     <View
       testID="cancellation-strip"
-      style={[styles.card, { backgroundColor: theme.color.warning.bg }]}
+      style={[styles.card, { backgroundColor: background }]}
     >
       <Text style={styles.text}>{copy}</Text>
       <View style={styles.row}>

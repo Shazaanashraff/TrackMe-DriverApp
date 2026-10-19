@@ -22,6 +22,20 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-10-19: Absence strip in two colours
+- **Branch:** feature/absence-strip-colours
+- **Modules touched:** [COMMUNICATIONS](modules/COMMUNICATIONS.md)
+- **What changed:** the Home strip that asks the driver to acknowledge an absence change is yellow
+  (`warning.bg`) for "will be absent" and now green (`success.bg`) for "is coming · absence
+  cancelled". It used to be yellow for both.
+- **Why:** the user asked to tell the two apart at a glance.
+- **Contract impact:** none.
+- **Tests:** `broadcast.test.js` `absence strip`: the strip's colour per status (fails on the
+  previous code). Full run 657 passed; lint 0 errors, 75 warnings (unchanged). The flaky
+  `offline-scan-roster.int.test.tsx` failed once in the baseline run under load and passed alone.
+- **Docs updated:** `docs/modules/COMMUNICATIONS.md`, `docs/TESTING_GUIDE.md`
+- **Follow-ups / known issues:** none.
+
 ## 2026-10-19: Popups that say what happened, "Sent" at once, one reload per burst
 - **Branch:** feature/snappy-messages (stacked on feature/fix-permission-loop)
 - **Modules touched:** [COMMUNICATIONS](modules/COMMUNICATIONS.md) "Popups and reloads", [LOCATION_TRACKING](LOCATION_TRACKING.md)

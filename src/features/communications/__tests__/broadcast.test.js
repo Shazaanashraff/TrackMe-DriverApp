@@ -1,5 +1,7 @@
 import React from "react";
+import { StyleSheet } from "react-native";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
+import { theme } from "../../../theme";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import BroadcastPanel from "../BroadcastPanel";
@@ -95,6 +97,24 @@ describe("absence strip", () => {
     const ui = mount();
     await waitFor(() => expect(ui.getByTestId("cancellation-strip")).toBeTruthy());
     expect(ui.getByText("Amal Perera is coming today · absence cancelled.")).toBeTruthy();
+  });
+
+  // Yellow for "will be absent", green for "is coming", so the driver tells
+  // them apart before reading the line.
+  test("an absence is yellow and a cancellation is green", async () => {
+    const background = (ui) =>
+      StyleSheet.flatten(ui.getByTestId("cancellation-strip").props.style).backgroundColor;
+
+    absences = { rows: [change("ABSENT")], changes: [change("ABSENT")], absentCount: 1 };
+    const absent = mount();
+    await waitFor(() => expect(absent.getByTestId("cancellation-strip")).toBeTruthy());
+    expect(background(absent)).toBe(theme.color.warning.bg);
+    absent.unmount();
+
+    absences = { rows: [], changes: [change("CANCELLED")], absentCount: 0 };
+    const coming = mount();
+    await waitFor(() => expect(coming.getByTestId("cancellation-strip")).toBeTruthy());
+    expect(background(coming)).toBe(theme.color.success.bg);
   });
 
   test("Okay acknowledges that exact revision", async () => {
