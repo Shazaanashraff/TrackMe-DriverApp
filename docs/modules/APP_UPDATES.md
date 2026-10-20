@@ -44,6 +44,20 @@ App.js → UpdateAvailableBanner → useAppUpdateCheck
 | Native | `nativeBuildVersion` | The Android `versionCode`. EAS owns it (`eas.json` `appVersionSource: remote`, `autoIncrement`), so the number registered in web-admin **must equal the versionCode EAS printed for that build**. |
 | Config | `EXPO_PUBLIC_APK_UPDATER` | `1` = direct-APK build. Unset/`0` = Play build: updater off, permission stripped. |
 
+## Two delivery modes (added 2026-10-20)
+
+| Build | Flag | What the banner does | Compares |
+|---|---|---|---|
+| Direct APK (`apk` EAS profile, site download) | `EXPO_PUBLIC_APK_UPDATER=1` | Downloads the APK and launches Android's installer | `versionCode` |
+| Google Play (`production` .aab) | unset | **Links to the Play listing** ("Update on Google Play", `market://details?id=<applicationId>`, https fallback). Never installs anything. | semver `version` string vs `Application.nativeApplicationVersion` |
+
+The Play mode compares the *version string*, not `versionCode`, because the APK and the .aab of one
+release get different versionCodes from EAS — comparing codes would show a permanent "update" to
+Play users. **Release order: upload the .aab to Play first, then register the release on web-admin
+`/releases`** (the registry drives the banner; registering before Play has the build sends testers
+to a listing with nothing new). Bump `expo.version` for every release or Play users won't see a prompt.
+Play also auto-updates testers' installs on its own; the banner is the nudge.
+
 ## 5. Not visible in the frontend
 
 - **Play builds never self-update.** Google Play forbids apps installing APKs and restricts

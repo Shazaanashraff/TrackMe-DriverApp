@@ -1,5 +1,5 @@
 import { renderHook, waitFor, act } from '@testing-library/react-native';
-import { Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
 
 const mockGetLatestAppRelease = jest.fn();
 jest.mock('../../services/api', () => ({
@@ -11,10 +11,15 @@ jest.mock('../../services/api', () => ({
 
 
 const mockNativeBuildVersion: { value: string | null } = { value: '10' };
+const mockNativeVersion: { value: string | null } = { value: '1.0.2' };
 jest.mock('expo-application', () => ({
   get nativeBuildVersion() {
     return mockNativeBuildVersion.value;
   },
+  get nativeApplicationVersion() {
+    return mockNativeVersion.value;
+  },
+  applicationId: 'com.pingo.test',
 }));
 
 const mockCreateDownloadResumable = jest.fn();
@@ -34,7 +39,7 @@ jest.mock('expo-intent-launcher', () => ({
   startActivityAsync: (...args: unknown[]) => mockStartActivityAsync(...args),
 }));
 
-import { useAppUpdateCheck } from '../useAppUpdateCheck';
+import { useAppUpdateCheck, isNewerVersion } from '../useAppUpdateCheck';
 
 process.env.EXPO_PUBLIC_APK_UPDATER = '1';
 
@@ -245,15 +250,73 @@ describe('useAppUpdateCheck', () => {
   });
 });
 
-describe('useAppUpdateCheck — Play build gate', () => {
-  it('does not check for APK updates when EXPO_PUBLIC_APK_UPDATER is not 1', async () => {
-    const prev = process.env.EXPO_PUBLIC_APK_UPDATER;
+describe('isNewerVersion', () => {
+  it('compares dotted versions numerically', () => {
+    expect(isNewerVersion('2.0.1', '2.0.0')).toBe(true);
+    expect(isNewerVersion('2.1.0', '2.0.9')).toBe(true);
+    expect(isNewerVersion('10.0.0', '9.9.9')).toBe(true);
+    expect(isNewerVersion('2.0.0', '2.0.0')).toBe(false);
+    expect(isNewerVersion('1.9.9', '2.0.0')).toBe(false);
+    expect(isNewerVersion('2.0', '2.0.0')).toBe(false);
+  });
+});
+
+describe('useAppUpdateCheck — Play build (EXPO_PUBLIC_APK_UPDATER not 1)', () => {
+  const prev = process.env.EXPO_PUBLIC_APK_UPDATER;
+  beforeEach(() => {
     process.env.EXPO_PUBLIC_APK_UPDATER = '0';
-    mockGetLatestAppRelease.mockClear();
-    const { result } = renderHook(() => useAppUpdateCheck());
-    await new Promise<void>((r) => setTimeout(() => r(), 20));
-    expect(mockGetLatestAppRelease).not.toHaveBeenCalled();
-    expect(result.current.updateAvailable).toBe(false);
+    mockNativeVersion.value = '2.0.0';
+  });
+  afterEach(() => {
     process.env.EXPO_PUBLIC_APK_UPDATER = prev;
+  });
+
+  it('runs in play mode and shows nothing when the registry version equals the installed version', async () => {
+    // The APK and the .aab of one release have different versionCodes, so versionCode must NOT drive this.
+    mockGetLatestAppRelease.mockResolvedValue({ ...baseRelease, version: '2.0.0', versionCode: 999 });
+    const { result } = renderHook(() => useAppUpdateCheck());
+    await waitFor(() => expect(mockGetLatestAppRelease).toHaveBeenCalled());
+    expect(result.current.mode).toBe('play');
+    expect(result.current.updateAvailable).toBe(false);
+  });
+
+  it('reports an update when the registry version is newer than the installed version', async () => {
+    mockGetLatestAppRelease.mockResolvedValue({ ...baseRelease, version: '2.0.1', versionCode: 21 });
+    const { result } = renderHook(() => useAppUpdateCheck());
+    await waitFor(() => expect(result.current.updateAvailable).toBe(true));
+    expect(result.current.release?.version).toBe('2.0.1');
+  });
+
+  it('openStore opens the Play listing for this app', async () => {
+    const open = jest.spyOn(Linking, 'openURL').mockResolvedValue(true as never);
+    const { result } = renderHook(() => useAppUpdateCheck());
+    await act(async () => {
+      await result.current.openStore();
+    });
+    expect(open).toHaveBeenCalledWith('market://details?id=com.pingo.test');
+    open.mockRestore();
+  });
+
+  it('openStore falls back to the https listing when market:// is not handled', async () => {
+    const open = jest
+      .spyOn(Linking, 'openURL')
+      .mockRejectedValueOnce(new Error('no handler'))
+      .mockResolvedValueOnce(true as never);
+    const { result } = renderHook(() => useAppUpdateCheck());
+    await act(async () => {
+      await result.current.openStore();
+    });
+    expect(open).toHaveBeenLastCalledWith('https://play.google.com/store/apps/details?id=com.pingo.test');
+    open.mockRestore();
+  });
+
+  it('openStore surfaces an error instead of throwing when nothing can open the store', async () => {
+    const open = jest.spyOn(Linking, 'openURL').mockRejectedValue(new Error('nope'));
+    const { result } = renderHook(() => useAppUpdateCheck());
+    await act(async () => {
+      await result.current.openStore();
+    });
+    expect(result.current.error).toMatch(/Play Store/);
+    open.mockRestore();
   });
 });

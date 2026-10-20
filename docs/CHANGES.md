@@ -22,6 +22,15 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-10-20 — Update prompt for Google Play installs
+- **Branch:** release/2.0.0
+- **Modules touched:** app-updates (`useAppUpdateCheck`, `UpdateAvailableBanner`) — [`docs/modules/APP_UPDATES.md`](modules/APP_UPDATES.md)
+- **What changed:** The update check now also runs in Play (.aab) builds. In that mode it compares the semver `version` against the web-admin registry and the banner links to the Play listing (`market://` with https fallback) instead of downloading an APK. The `apk` profile behaviour is unchanged. New exported `isNewerVersion`, hook returns `mode` + `openStore`.
+- **Why:** So a new release can be announced to Play testers in-app without asking them to reinstall; Play forbids self-installing APKs, so it only ever points at Play.
+- **Tests:** `useAppUpdateCheck` (+ `isNewerVersion`, Play-mode cases) and the banner test updated; TESTING_GUIDE row updated.
+- **Docs updated:** `modules/APP_UPDATES.md` (two delivery modes + release order), TESTING_GUIDE.
+- **Follow-ups / known issues:** register each release on web-admin `/releases` only after the .aab is on Play; bump `expo.version` every release.
+
 ## 2026-10-20 — driver-app 2.0.0 Play release build (version bump only)
 - **Branch:** release/2.0.0
 - **Modules touched:** release config (`app.json`)

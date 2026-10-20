@@ -3,6 +3,7 @@ import { render, fireEvent } from '@testing-library/react-native';
 import UpdateAvailableBanner from '../UpdateAvailableBanner';
 
 const mockDownloadAndInstall = jest.fn();
+const mockOpenStore = jest.fn();
 let mockState: Record<string, unknown>;
 
 jest.mock('../../../hooks/useAppUpdateCheck', () => ({
@@ -27,7 +28,10 @@ const release = {
 
 beforeEach(() => {
   mockDownloadAndInstall.mockClear();
+  mockOpenStore.mockClear();
   mockState = {
+    mode: 'apk',
+    openStore: mockOpenStore,
     updateAvailable: true,
     release,
     isDownloading: false,
@@ -76,5 +80,14 @@ describe('UpdateAvailableBanner', () => {
     mockState = { ...mockState, error: 'disk full' };
     const { getByText } = render(<UpdateAvailableBanner />);
     expect(getByText('disk full')).toBeTruthy();
+  });
+
+  it('in play mode shows Update on Google Play, opens the store, and never offers an install', () => {
+    mockState = { ...mockState, mode: 'play' };
+    const { getByLabelText, queryByLabelText } = render(<UpdateAvailableBanner />);
+    expect(queryByLabelText('Download and install update')).toBeNull();
+    fireEvent.press(getByLabelText('Update on Google Play'));
+    expect(mockOpenStore).toHaveBeenCalled();
+    expect(mockDownloadAndInstall).not.toHaveBeenCalled();
   });
 });
