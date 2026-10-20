@@ -9,8 +9,16 @@ import { useAppUpdateCheck } from '../../hooks/useAppUpdateCheck';
 // app-releases registry has a higher versionCode than the installed build. A mandatory
 // release cannot be dismissed. See `src/hooks/useAppUpdateCheck.ts`.
 export default function UpdateAvailableBanner() {
-  const { updateAvailable, release, isDownloading, downloadProgress, error, downloadAndInstall } =
-    useAppUpdateCheck();
+  const {
+    mode,
+    openStore,
+    updateAvailable,
+    release,
+    isDownloading,
+    downloadProgress,
+    error,
+    downloadAndInstall,
+  } = useAppUpdateCheck();
   const insets = useSafeAreaInsets();
   const [dismissed, setDismissed] = useState(false);
 
@@ -49,18 +57,18 @@ export default function UpdateAvailableBanner() {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        {isDownloading ? (
+        {mode === 'apk' && isDownloading ? (
           <View style={styles.progressTrack} accessibilityRole="progressbar" testID="update-download-progress">
             <View style={[styles.progressFill, { width: `${progressPct}%` }]} />
           </View>
         ) : (
           <TouchableOpacity
             style={styles.button}
-            onPress={downloadAndInstall}
+            onPress={mode === 'apk' ? downloadAndInstall : openStore}
             accessibilityRole="button"
-            accessibilityLabel="Download and install update"
+            accessibilityLabel={mode === 'apk' ? 'Download and install update' : 'Update on Google Play'}
           >
-            <Text style={styles.buttonText}>Download & install</Text>
+            <Text style={styles.buttonText}>{mode === 'apk' ? 'Download & install' : 'Update on Google Play'}</Text>
           </TouchableOpacity>
         )}
       </View>

@@ -22,6 +22,24 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-10-20 — Update prompt for Google Play installs
+- **Branch:** release/2.0.0
+- **Modules touched:** app-updates (`useAppUpdateCheck`, `UpdateAvailableBanner`) — [`docs/modules/APP_UPDATES.md`](modules/APP_UPDATES.md)
+- **What changed:** The update check now also runs in Play (.aab) builds. In that mode it compares the semver `version` against the web-admin registry and the banner links to the Play listing (`market://` with https fallback) instead of downloading an APK. The `apk` profile behaviour is unchanged. New exported `isNewerVersion`, hook returns `mode` + `openStore`.
+- **Why:** So a new release can be announced to Play testers in-app without asking them to reinstall; Play forbids self-installing APKs, so it only ever points at Play.
+- **Tests:** `useAppUpdateCheck` (+ `isNewerVersion`, Play-mode cases) and the banner test updated; TESTING_GUIDE row updated.
+- **Docs updated:** `modules/APP_UPDATES.md` (two delivery modes + release order), TESTING_GUIDE.
+- **Follow-ups / known issues:** register each release on web-admin `/releases` only after the .aab is on Play; bump `expo.version` every release.
+
+## 2026-10-20 — driver-app 2.0.0 Play release build (version bump only)
+- **Branch:** release/2.0.0
+- **Modules touched:** release config (`app.json`)
+- **What changed:** `expo.version` 1.0.2 -> 2.0.0 so the Play internal/closed-testing build and the site APK share one version. Built as a production `.aab` from the latest main (EAS remote versionCode auto-increments).
+- **Why:** Play internal testing was still on 1.0.0; the site on 1.0.1.
+- **Tests:** none — version string only
+- **Docs updated:** n/a
+- **Follow-ups / known issues:** upload the `.aab` to Play internal + closed testing by hand (over the 10 MB browser-tool cap); register a matching APK on web-admin `/releases` if wanted.
+
 ## 2026-10-19: Absence strip in two colours
 - **Branch:** feature/absence-strip-colours
 - **Modules touched:** [COMMUNICATIONS](modules/COMMUNICATIONS.md)
