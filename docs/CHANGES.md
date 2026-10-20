@@ -22,6 +22,15 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-10-20 — driver-app 2.0.0 Play release build (version bump only)
+- **Branch:** release/2.0.0
+- **Modules touched:** release config (`app.json`)
+- **What changed:** `expo.version` 1.0.2 -> 2.0.0 so the Play internal/closed-testing build and the site APK share one version. Built as a production `.aab` from the latest main (EAS remote versionCode auto-increments).
+- **Why:** Play internal testing was still on 1.0.0; the site on 1.0.1.
+- **Tests:** none — version string only
+- **Docs updated:** n/a
+- **Follow-ups / known issues:** upload the `.aab` to Play internal + closed testing by hand (over the 10 MB browser-tool cap); register a matching APK on web-admin `/releases` if wanted.
+
 ## 2026-10-19: Absence strip in two colours
 - **Branch:** feature/absence-strip-colours
 - **Modules touched:** [COMMUNICATIONS](modules/COMMUNICATIONS.md)
