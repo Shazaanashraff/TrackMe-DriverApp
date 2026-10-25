@@ -23,8 +23,13 @@ const ABSENCE_TITLES = { ABSENT: 'Absence reported', CANCELLED: 'Absence cancell
 // acknowledgment. `absence` makes a tap open the Absences list.
 export function popupFor(event) {
   if (String(event?.eventId).startsWith('read:') || event?.sender === 'driver' || event?.absenceStatus === 'ACKNOWLEDGED') return null;
-  return { title: ABSENCE_TITLES[event.absenceStatus] || 'New message', body: event.text || '', absence: Boolean(event.absenceStatus) };
+  // A rider leaving or coming back because of an account deletion (backend
+  // services/accountDeletion.js, eventIds `account-deleted:` / `account-restored:`)
+  // is news about the roster, not a message to answer.
+  const title = isRiderAccountUpdate(event) ? 'Rider update' : ABSENCE_TITLES[event.absenceStatus] || 'New message';
+  return { title, body: event.text || '', absence: Boolean(event.absenceStatus) };
 }
+const isRiderAccountUpdate = (event) => /^account-(deleted|restored):/.test(String(event?.eventId));
 export function CommunicationProvider({ children }) {
   const { user, token } = useAuth();
   const { isOffline } = useNetworkStatus();
