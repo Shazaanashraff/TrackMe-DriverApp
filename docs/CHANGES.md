@@ -22,6 +22,15 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-10-25: "Rider update" popup for account-deletion notices
+- **Branch:** feature/account-deletion-password
+- **Modules touched:** communications — [`docs/modules/COMMUNICATIONS.md`](modules/COMMUNICATIONS.md)
+- **What changed:** `popupFor` titles the backend's driver-only system message about a rider leaving or coming back because of an account deletion "Rider update" instead of "New message". No new screen; the driver sees it as the live popup and as a push.
+- **Why:** passenger issues #58/#59. The backend now tells the driver when a rider deletes their account or keeps it.
+- **Tests:** `provider.events.test.js` (+1).
+- **Docs updated:** COMMUNICATIONS.md, TESTING_GUIDE.md.
+- **Follow-ups / known issues:** Android push depends on passenger issue #57 (Firebase). With the app closed and no push, the driver misses the notice; the manager's bell and email still record it.
+
 ## 2026-10-20 — Update prompt for Google Play installs
 - **Branch:** release/2.0.0
 - **Modules touched:** app-updates (`useAppUpdateCheck`, `UpdateAvailableBanner`) — [`docs/modules/APP_UPDATES.md`](modules/APP_UPDATES.md)

@@ -122,4 +122,13 @@ describe('popupFor', () => {
     expect(popupFor({ eventId: 'e2', absenceStatus: 'RETIRED', text: 'Retired.' }).title).toBe('Absence notice retired');
     expect(popupFor({ eventId: 'e3', sender: 'user', text: 'Hello' })).toEqual({ title: 'New message', body: 'Hello', absence: false });
   });
+
+  // A rider leaving or coming back because of an account deletion is roster
+  // news (backend services/accountDeletion.js), not a message to answer.
+  test('titles a rider account update as "Rider update"', () => {
+    expect(popupFor({ eventId: 'account-deleted:6720aa:1730000000000', sender: 'system', text: 'Amal Perera left your shuttle because they are deleting their account.' }))
+      .toEqual({ title: 'Rider update', body: 'Amal Perera left your shuttle because they are deleting their account.', absence: false });
+    expect(popupFor({ eventId: 'account-restored:6720aa:1730000000001', sender: 'system', text: 'Amal Perera is back on your shuttle. They kept their account.' }).title)
+      .toBe('Rider update');
+  });
 });
