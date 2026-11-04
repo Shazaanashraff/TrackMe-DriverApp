@@ -9,7 +9,7 @@ here — that is the change protocol, not optional extra work.
 
 ## Source of truth until this doc exists
 
-`src/screens/DriverDashboard.tsx`, `src/features/dashboard/` (incl. `dutyHeroState.ts`, `useSocketConnection`, `useCustomRouteJourney`)
+`src/screens/DriverDashboard.tsx`, `src/features/dashboard/` (incl. `dutyHeroState.ts`, `useSocketConnection`, `CustomRouteCard`, `customRouteMessages`)
 
 > **Note for whoever writes this doc:** the duty state machine now has a `pending` status —
 > pressing GO with no connection puts the shift on duty locally (GPS buffering, amber hero, GO
@@ -34,3 +34,10 @@ Pay particular attention to:
   rather than inferring them, and link the matching `backend/docs/modules/*.md`;
 - `dutyHeroState.ts` is a **pure state machine** for headline/subline/dot — test it directly;
 - its relationship to [`../LOCATION_TRACKING.md`](../LOCATION_TRACKING.md), which owns the GPS path.
+
+## Custom-route card (2026-11-04)
+
+For a vehicle on a custom route that is still collecting rides, Home shows `CustomRouteCard` between the duty
+hero and the vehicle card ("Ride 3 of 5", live distance and stops, Add stop, Discard this ride). End journey now
+also sends the ride being recorded before going off duty. Off a custom route nothing changes. Full detail:
+[`ROUTE_MANAGEMENT.md`](ROUTE_MANAGEMENT.md).

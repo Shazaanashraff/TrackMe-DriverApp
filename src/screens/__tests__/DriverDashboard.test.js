@@ -75,6 +75,37 @@ jest.mock('../../hooks/route', () => ({
   useRouteDetailsQuery: () => ({ data: mockRoute }),
 }));
 
+// A custom-route vehicle records its first rides. The recorder and its progress query are
+// stubbed so this screen test needs no QueryClient or GPS; their own behaviour is covered in
+// hooks/customRoute and services/routeRecorder.
+let mockCustomRoute = null;
+const mockRecorder = {
+  isRecording: false,
+  pointCount: 0,
+  stopCount: 0,
+  distanceMeters: 0,
+  lastStopName: '',
+  addStop: jest.fn(),
+  nameStop: jest.fn(),
+  finish: jest.fn(),
+  discard: jest.fn(),
+};
+const mockUseRouteRecorder = jest.fn(() => mockRecorder);
+jest.mock('../../hooks/customRoute', () => ({
+  useCustomRouteQuery: () => ({ data: mockCustomRoute }),
+  useRouteRecorder: (...args) => mockUseRouteRecorder(...args),
+}));
+
+const mockPeekInterrupted = jest.fn();
+const mockDiscardRecording = jest.fn();
+const mockRestoreRecording = jest.fn();
+jest.mock('../../services/routeRecorder', () => ({
+  MAX_STOP_NAME_LENGTH: 80,
+  peekInterruptedRecording: (...args) => mockPeekInterrupted(...args),
+  discardRecording: (...args) => mockDiscardRecording(...args),
+  restoreRecording: (...args) => mockRestoreRecording(...args),
+}));
+
 jest.mock('../../features/dashboard/OnBoardCard', () => {
   const { View } = jest.requireActual('react-native');
   return function MockOnBoardCard() {
@@ -117,6 +148,15 @@ beforeEach(async () => {
   jest.clearAllMocks();
   mockBufferedCount = 0;
   mockRoute = undefined;
+  mockCustomRoute = null;
+  Object.assign(mockRecorder, { isRecording: false, pointCount: 0, stopCount: 0, distanceMeters: 0 });
+  mockRecorder.addStop.mockReset();
+  mockRecorder.finish.mockReset().mockResolvedValue({ kind: 'nothing' });
+  mockRecorder.discard.mockReset().mockResolvedValue(undefined);
+  mockUseRouteRecorder.mockClear();
+  mockPeekInterrupted.mockReset().mockResolvedValue(null);
+  mockDiscardRecording.mockReset().mockResolvedValue(undefined);
+  mockRestoreRecording.mockReset().mockResolvedValue(undefined);
   await AsyncStorage.clear();
   mockUseTrackingSession.mockReturnValue({
     status: 'idle',
@@ -355,5 +395,205 @@ describe('DriverDashboard — unassigned-vehicle messaging (issue #21)', () => {
     await waitFor(async () => {
       expect(await AsyncStorage.getItem('driver_had_vehicle_before')).toBe('true');
     });
+  });
+});
+
+
+describe('DriverDashboard — custom route recording', () => {
+  const nav = { navigate: jest.fn() };
+  const recordingRoute = { routeId: 'CUST-1', status: 'RECORDING', requiredRuns: 5, acceptedRuns: 2 };
+  let mockStop;
+  const tracking = () => mockUseTrackingSession.mockReturnValue({
+    status: 'tracking', error: undefined, isReconnecting: false, start: jest.fn(), stop: mockStop,
+  });
+  beforeEach(() => { mockStop = jest.fn(); });
+
+  const endJourney = ({ getByLabelText, getByText }) => {
+    fireEvent.press(getByLabelText('End journey'));
+    fireEvent.press(getByText('End journey'));
+  };
+
+  it('shows no recording card to a driver whose route is not a custom one', async () => {
+    const { findByText, queryByTestId } = render(<DriverDashboard navigation={nav} />);
+    await findByText('YOUR VEHICLE');
+    expect(queryByTestId('custom-route-card')).toBeNull();
+  });
+
+  it('shows which ride a custom-route driver is on', async () => {
+    mockCustomRoute = recordingRoute;
+    const { findByTestId } = render(<DriverDashboard navigation={nav} />);
+    const progress = await findByTestId('custom-route-progress');
+    expect(progress.props.children.join('')).toBe('Ride 3 of 5');
+  });
+
+  it('hides the card once the route is live', async () => {
+    mockCustomRoute = { ...recordingRoute, status: 'ACTIVE', acceptedRuns: 5 };
+    const { findByText, queryByTestId } = render(<DriverDashboard navigation={nav} />);
+    await findByText('YOUR VEHICLE');
+    expect(queryByTestId('custom-route-card')).toBeNull();
+  });
+
+  it('records only while the route is collecting rides, and tells the recorder the shift state', () => {
+    mockCustomRoute = recordingRoute;
+    tracking();
+    render(<DriverDashboard navigation={nav} />);
+    expect(mockUseRouteRecorder).toHaveBeenLastCalledWith({ enabled: true, onDuty: true, vehicleId: 'VEHICLE-1' });
+  });
+
+  it('does not enable the recorder for a route that is waiting on the manager', () => {
+    mockCustomRoute = { ...recordingRoute, status: 'PENDING_REVIEW', acceptedRuns: 5 };
+    render(<DriverDashboard navigation={nav} />);
+    expect(mockUseRouteRecorder).toHaveBeenLastCalledWith(expect.objectContaining({ enabled: false }));
+  });
+
+  it('adds a stop and tells the driver what happened', async () => {
+    mockCustomRoute = recordingRoute;
+    tracking();
+    mockRecorder.addStop.mockReturnValue({ ok: false, reason: 'NO_FIX' });
+    const { findByTestId } = render(<DriverDashboard navigation={nav} />);
+    fireEvent.press(await findByTestId('add-stop-button'));
+    expect(mockRecorder.addStop).toHaveBeenCalledTimes(1);
+    expect((await findByTestId('custom-route-notice')).props.children).toMatch(/waiting for gps/i);
+  });
+
+  it('asks for a name right after a stop is marked and saves it on that stop', async () => {
+    mockCustomRoute = recordingRoute;
+    tracking();
+    mockRecorder.addStop.mockReturnValue({ ok: true, stop: { lat: 6.9, lng: 79.85, t: 1234, name: '' } });
+    mockRecorder.nameStop.mockReturnValue(true);
+    const { findByTestId, getByTestId, queryByTestId } = render(<DriverDashboard navigation={nav} />);
+    expect(queryByTestId('stop-name-sheet')).toBeNull();
+
+    fireEvent.press(await findByTestId('add-stop-button'));
+    fireEvent.changeText(await findByTestId('stop-name-input'), "Nimal's house");
+    fireEvent.press(getByTestId('stop-name-save'));
+
+    expect(mockRecorder.nameStop).toHaveBeenCalledWith(1234, "Nimal's house");
+    await waitFor(() => expect(queryByTestId('stop-name-sheet')).toBeNull());
+    expect((await findByTestId('custom-route-notice')).props.children).toMatch(/Nimal's house/);
+  });
+
+  it('lets the driver skip naming; the stop stays marked without a name', async () => {
+    mockCustomRoute = recordingRoute;
+    tracking();
+    mockRecorder.addStop.mockReturnValue({ ok: true, stop: { lat: 6.9, lng: 79.85, t: 99, name: '' } });
+    const { findByTestId, getByTestId, queryByTestId } = render(<DriverDashboard navigation={nav} />);
+
+    fireEvent.press(await findByTestId('add-stop-button'));
+    fireEvent.press(await findByTestId('stop-name-skip'));
+
+    expect(mockRecorder.nameStop).not.toHaveBeenCalled();
+    await waitFor(() => expect(queryByTestId('stop-name-sheet')).toBeNull());
+    expect(getByTestId('custom-route-notice').props.children).toBe('Stop added');
+  });
+
+  it('does not ask for a name when the stop was refused', async () => {
+    mockCustomRoute = recordingRoute;
+    tracking();
+    mockRecorder.addStop.mockReturnValue({ ok: false, reason: 'TOO_CLOSE' });
+    const { findByTestId, queryByTestId } = render(<DriverDashboard navigation={nav} />);
+    fireEvent.press(await findByTestId('add-stop-button'));
+    expect(queryByTestId('stop-name-sheet')).toBeNull();
+  });
+
+  it('has no Add stop button once the route is live (no more stops after it is confirmed)', async () => {
+    mockCustomRoute = { ...recordingRoute, status: 'ACTIVE', acceptedRuns: 5 };
+    tracking();
+    const { findByText, queryByTestId } = render(<DriverDashboard navigation={nav} />);
+    await findByText('YOUR VEHICLE');
+    expect(queryByTestId('add-stop-button')).toBeNull();
+  });
+
+  it('ending the journey sends the ride first, then goes off duty, then reports the result', async () => {
+    mockCustomRoute = recordingRoute;
+    tracking();
+    mockRecorder.isRecording = true;
+    const order = [];
+    mockRecorder.finish.mockImplementation(async () => {
+      order.push('finish');
+      return { kind: 'sent', runStatus: 'ACCEPTED', acceptedRuns: 3, requiredRuns: 5, routeStatus: 'RECORDING' };
+    });
+    mockStop.mockImplementation(() => order.push('stop'));
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    endJourney(render(<DriverDashboard navigation={nav} />));
+
+    await waitFor(() => expect(mockStop).toHaveBeenCalledWith('VEHICLE-1'));
+    expect(order).toEqual(['finish', 'stop']);
+    await waitFor(() => expect(alertSpy).toHaveBeenCalledWith('Ride 3 of 5 saved', expect.stringMatching(/2 more rides/)));
+  });
+
+  it('still goes off duty when the ride could not be sent', async () => {
+    mockCustomRoute = recordingRoute;
+    tracking();
+    mockRecorder.isRecording = true;
+    mockRecorder.finish.mockResolvedValue({ kind: 'queued' });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    endJourney(render(<DriverDashboard navigation={nav} />));
+
+    await waitFor(() => expect(mockStop).toHaveBeenCalledWith('VEHICLE-1'));
+    await waitFor(() => expect(alertSpy).toHaveBeenCalledWith('Ride saved on your phone', expect.any(String)));
+  });
+
+  it('ending a journey off a custom route is exactly what it always was', async () => {
+    tracking();
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    endJourney(render(<DriverDashboard navigation={nav} />));
+    await waitFor(() => expect(mockStop).toHaveBeenCalledWith('VEHICLE-1'));
+    expect(mockRecorder.finish).not.toHaveBeenCalled();
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it('asks before discarding a ride, and only discards when confirmed', async () => {
+    mockCustomRoute = recordingRoute;
+    tracking();
+    mockRecorder.isRecording = true;
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    const { findByTestId } = render(<DriverDashboard navigation={nav} />);
+    fireEvent.press(await findByTestId('discard-ride-button'));
+    expect(mockRecorder.discard).not.toHaveBeenCalled();
+
+    const call = alertSpy.mock.calls.find((c) => c[0] === 'Discard this ride?');
+    call[2].find((b) => b.text === 'Discard').onPress();
+    expect(mockRecorder.discard).toHaveBeenCalledTimes(1);
+  });
+
+  it('offers an unfinished ride back once, and sends it if the driver agrees', async () => {
+    mockCustomRoute = recordingRoute;
+    mockPeekInterrupted.mockResolvedValue({ clientRunId: 'run-x', points: [{}] });
+    mockRecorder.finish.mockResolvedValue({ kind: 'sent', runStatus: 'ACCEPTED', acceptedRuns: 3, requiredRuns: 5 });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    render(<DriverDashboard navigation={nav} />);
+
+    await waitFor(() => expect(alertSpy).toHaveBeenCalledWith('Unfinished ride', expect.any(String), expect.any(Array)));
+    const buttons = alertSpy.mock.calls.find((c) => c[0] === 'Unfinished ride')[2];
+    buttons.find((b) => b.text === 'Send it').onPress();
+    await waitFor(() => expect(mockRecorder.finish).toHaveBeenCalledTimes(1));
+    expect(mockRestoreRecording).toHaveBeenCalled();
+  });
+
+  it('throws the unfinished ride away when the driver says so', async () => {
+    mockCustomRoute = recordingRoute;
+    mockPeekInterrupted.mockResolvedValue({ clientRunId: 'run-x', points: [{}] });
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    render(<DriverDashboard navigation={nav} />);
+    await waitFor(() => expect(alertSpy).toHaveBeenCalledWith('Unfinished ride', expect.any(String), expect.any(Array)));
+    alertSpy.mock.calls.find((c) => c[0] === 'Unfinished ride')[2].find((b) => b.text === 'Throw away').onPress();
+    expect(mockDiscardRecording).toHaveBeenCalledTimes(1);
+    expect(mockRecorder.finish).not.toHaveBeenCalled();
+  });
+
+  it('does not look for an unfinished ride off a custom route, or mid-shift', async () => {
+    const first = render(<DriverDashboard navigation={nav} />);
+    await first.findByText('YOUR VEHICLE');
+    expect(mockPeekInterrupted).not.toHaveBeenCalled();
+    first.unmount();
+
+    mockCustomRoute = recordingRoute;
+    tracking();
+    const second = render(<DriverDashboard navigation={nav} />);
+    await second.findByText('YOUR VEHICLE');
+    expect(mockPeekInterrupted).not.toHaveBeenCalled();
   });
 });

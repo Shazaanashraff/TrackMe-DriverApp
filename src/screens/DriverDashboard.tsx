@@ -8,6 +8,8 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useAuth } from '../context/AuthContext';
 import { useMyVehicleQuery } from '../hooks/vehicle';
 import { useRouteDetailsQuery } from '../hooks/route';
+import { useCustomRouteQuery, useRouteRecorder } from '../hooks/customRoute';
+import { discardRecording, peekInterruptedRecording, restoreRecording } from '../services/routeRecorder';
 import { useTrackingSession } from '../hooks/useTrackingSession';
 import { useLocationBroadcast } from '../hooks/useLocationBroadcast';
 import { useBackgroundTracking } from '../hooks/useBackgroundTracking';
@@ -19,6 +21,9 @@ import ConfirmSheet from '../components/ui/ConfirmSheet';
 import DutyHero from '../features/dashboard/DutyHero';
 import VehicleCard from '../features/dashboard/VehicleCard';
 import OnBoardCard from '../features/dashboard/OnBoardCard';
+import CustomRouteCard from '../features/dashboard/CustomRouteCard';
+import StopNameSheet from '../features/dashboard/StopNameSheet';
+import { describeRunOutcome, describeStopResult } from '../features/dashboard/customRouteMessages';
 import { useSocketConnection } from '../features/dashboard/useSocketConnection';
 import BroadcastPanel from '../features/communications/BroadcastPanel';
 
@@ -80,6 +85,19 @@ const DriverDashboard = ({ navigation }: Props) => {
   // pipeline runs and buffers, the screen stays awake, background tracking is
   // eligible. It just hasn't reached the server yet (chunk 1).
   const onDuty = tracking || session.status === 'pending';
+
+  // A custom-route vehicle records its first rides: the same GO -> End journey the
+  // driver always does, with the GPS track kept for the manager's route.
+  const customRouteQuery = useCustomRouteQuery();
+  const customRoute = hasVehicle ? customRouteQuery.data ?? null : null;
+  const recordingRides = customRoute?.status === 'RECORDING';
+  const recorder = useRouteRecorder({ enabled: recordingRides, onDuty, vehicleId });
+  const [stopNotice, setStopNotice] = useState('');
+  useEffect(() => {
+    if (!stopNotice) return undefined;
+    const timer = setTimeout(() => setStopNotice(''), 3000);
+    return () => clearTimeout(timer);
+  }, [stopNotice]);
   const background = useBackgroundTracking(onDuty);
   const broadcast = useLocationBroadcast({
     active: onDuty,
@@ -139,10 +157,61 @@ const DriverDashboard = ({ navigation }: Props) => {
     }
   };
 
-  const handleStop = () => {
-    session.stop(vehicleId);
-    setShowEndConfirm(false);
+  const showOutcome = (outcome: Parameters<typeof describeRunOutcome>[0] | null) => {
+    const message = outcome ? describeRunOutcome(outcome) : null;
+    if (message) Alert.alert(message.title, message.body);
   };
+
+  // Ending the journey also sends the ride being recorded (or saves it for later when
+  // there is no signal). Off a custom route this is exactly what it always was.
+  const handleStop = async () => {
+    setShowEndConfirm(false);
+    const outcome = recorder.isRecording ? await recorder.finish() : null;
+    session.stop(vehicleId);
+    showOutcome(outcome);
+  };
+
+  // The stop's position is saved on the tap; the name is asked for straight after, once
+  // the vehicle is stationary, and can be skipped.
+  const [namingStop, setNamingStop] = useState<number | null>(null);
+  const handleAddStop = () => {
+    const result = recorder.addStop();
+    setStopNotice(describeStopResult(result));
+    if (result.ok) setNamingStop(result.stop.t);
+  };
+  const handleSaveStopName = (name: string) => {
+    if (namingStop !== null && name && recorder.nameStop(namingStop, name)) {
+      setStopNotice(`Stop saved as "${name}"`);
+    }
+    setNamingStop(null);
+  };
+
+  const handleDiscardRide = () => {
+    Alert.alert('Discard this ride?', 'It will not count towards your route.', [
+      { text: 'Keep recording', style: 'cancel' },
+      { text: 'Discard', style: 'destructive', onPress: () => { void recorder.discard(); } },
+    ]);
+  };
+
+  // A ride cut off by a crash or a killed app is offered back once, before a new shift.
+  useEffect(() => {
+    if (!recordingRides || onDuty) return undefined;
+    let cancelled = false;
+    void peekInterruptedRecording().then((saved) => {
+      if (cancelled || !saved) return;
+      Alert.alert('Unfinished ride', 'Your last ride was cut off. Send what was recorded, or throw it away?', [
+        { text: 'Throw away', style: 'destructive', onPress: () => { void discardRecording(); } },
+        {
+          text: 'Send it',
+          onPress: () => {
+            void restoreRecording().then(() => recorder.finish()).then(showOutcome);
+          },
+        },
+      ]);
+    });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recordingRides, onDuty]);
 
   const firstName = user?.name?.split(' ')[0];
 
@@ -170,6 +239,21 @@ const DriverDashboard = ({ navigation }: Props) => {
             onGoPress={handleStart}
             onEndPress={() => setShowEndConfirm(true)}
           />
+
+          {customRoute && customRoute.status !== 'ACTIVE' ? (
+            <CustomRouteCard
+              status={customRoute.status}
+              acceptedRuns={customRoute.acceptedRuns}
+              requiredRuns={customRoute.requiredRuns}
+              onDuty={onDuty}
+              distanceMeters={recorder.distanceMeters}
+              stopCount={recorder.stopCount}
+              lastStopName={recorder.lastStopName}
+              onAddStop={handleAddStop}
+              onDiscard={handleDiscardRide}
+              notice={stopNotice}
+            />
+          ) : null}
 
           <AppText variant="overline" color={theme.color.text.muted} style={styles.sectionTitle}>YOUR VEHICLE</AppText>
           <VehicleCard vehicle={vehicle} />
@@ -208,6 +292,11 @@ const DriverDashboard = ({ navigation }: Props) => {
         onDismiss={background.dismissOffer}
       />
 
+      <StopNameSheet
+        visible={namingStop !== null}
+        onSave={handleSaveStopName}
+        onSkip={() => setNamingStop(null)}
+      />
       <ConfirmSheet
         visible={showEndConfirm}
         title="End this journey?"

@@ -13,6 +13,11 @@ interface FormInputProps {
   // Forwarded to the underlying TextInput along with the rest of the props.
   autoCorrect?: boolean;
   secureTextEntry?: boolean;
+  maxLength?: number;
+  autoFocus?: boolean;
+  returnKeyType?: string;
+  onSubmitEditing?: () => void;
+  testID?: string;
   showToggle?: boolean;
   style?: ViewStyle;
 }

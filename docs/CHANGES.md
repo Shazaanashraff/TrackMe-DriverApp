@@ -22,6 +22,26 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-11-04: Name the stops while recording a custom route
+- **Branch:** main
+- **Modules touched:** route-management ([ROUTE_MANAGEMENT.md](modules/ROUTE_MANAGEMENT.md))
+- **What changed:** after *Add stop* a "Name this stop" sheet asks for a name (e.g. a student's house), with quick suggestions and Skip. The card shows the last stop's name. The name is saved with the ride and sent with the upload; the manager can still rename at review.
+- **Why:** parents see the stops on their map and get an arrival alert, so stops need names; the manager used to name every one.
+- **Contract impact:** none - `stops[].name` was already accepted by `POST /api/driver/custom-routes/runs`.
+- **Tests:** `StopNameSheet.test.tsx` (new), `routeRecorder.test.ts` (+7), `CustomRouteCard.test.tsx` (+2), `DriverDashboard.test.js` (+4).
+- **Docs updated:** ROUTE_MANAGEMENT.md, TESTING_GUIDE.md.
+- **Follow-ups / known issues:** not yet tried on a real phone.
+
+## 2026-11-04: Custom routes v2 - record the first 5 rides
+- **Branch:** main
+- **Modules touched:** route-management ([ROUTE_MANAGEMENT.md](modules/ROUTE_MANAGEMENT.md), written for the first time), dashboard ([DASHBOARD.md](modules/DASHBOARD.md))
+- **What changed:** a driver whose vehicle the manager marked "custom route" sees "Ride n of 5" on Home. Their first rides are recorded as they drive their normal GO to End journey (same GPS stream as the live broadcast; Add stop marks stops) and uploaded when the journey ends - queued if there is no signal, saved if the app is killed, with an "unfinished ride" prompt. Ending a journey on a non-custom vehicle is unchanged. `getRouteById` now sends the driver's token.
+- **Why:** the custom-route feature was removed in 2026-08 (it recorded once and had no way to merge rides); v2 is `CUSTOM_ROUTES_V2_PLAN.md` at the repo root.
+- **Contract impact:** new `GET /api/driver/custom-routes/current`, `POST .../runs`, `DELETE .../runs/:id` (backend `CUSTOM_ROUTES.md`).
+- **Tests:** `routeRecorder.test.ts`, `hooks/customRoute/__tests__/customRoute.test.ts`, `CustomRouteCard.test.tsx`, `customRouteMessages.test.ts`; updated `DriverDashboard.test.js`, `backgroundLocation.test.ts`, `api.test.ts`.
+- **Docs updated:** ROUTE_MANAGEMENT.md, DASHBOARD.md, TESTING_GUIDE.md (custom-route section rewritten), `scripts/check-docs.mjs` module map.
+- **Follow-ups / known issues:** not yet run on a real phone (adb); the pre-existing `tsc` errors in `ErrorBoundary.tsx` / `api.test.ts` (`global`) are unrelated.
+
 ## 2026-10-25: "Rider update" popup for account-deletion notices
 - **Branch:** feature/account-deletion-password
 - **Modules touched:** communications — [`docs/modules/COMMUNICATIONS.md`](modules/COMMUNICATIONS.md)

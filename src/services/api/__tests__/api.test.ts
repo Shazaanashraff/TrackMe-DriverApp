@@ -11,14 +11,18 @@ describe('api surface stability', () => {
     'getRouteById',
     'getDriverTrips',
     'getDriverTripDetails',
+    'getCurrentCustomRoute',
+    'submitCustomRouteRun',
+    'discardCustomRouteRun',
   ];
 
   it.each(expectedMethods)('exports %s as a function', (method) => {
     expect(typeof (api as Record<string, unknown>)[method]).toBe('function');
   });
 
-  // My Routes and custom-route recording were removed. getRouteById stays because
-  // the trip-progress card uses it.
+  // My Routes and the old (v1) custom-route recording were removed. getRouteById stays
+  // because the trip-progress card uses it. Custom routes are back as v2: the driver's
+  // first rides are recorded (getCurrentCustomRoute / submitCustomRouteRun above).
   it.each([
     'getRoutes',
     'getRoutesManagementList',

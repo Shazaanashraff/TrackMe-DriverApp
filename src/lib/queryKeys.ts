@@ -3,6 +3,7 @@ export const qk = {
   myEnrollmentKey: () => ['me', 'enrollment-key'] as const,
   myVehicle: () => ['vehicle', 'mine'] as const,
   route: (routeId: string) => ['routes', 'detail', routeId] as const,
+  customRoute: () => ['custom-route', 'current'] as const,
   trips: (page: number) => ['trips', 'history', page] as const,
   boardingRoster: (vehicleId: string) => ['boarding', 'roster', vehicleId] as const,
 };

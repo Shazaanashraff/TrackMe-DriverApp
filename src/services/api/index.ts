@@ -4,6 +4,7 @@ import * as routes from './routes';
 import * as trips from './trips';
 import * as boarding from './boarding';
 import * as appReleases from './appReleases';
+import * as customRoutes from './customRoutes';
 
 const api = {
   // auth
@@ -20,6 +21,11 @@ const api = {
 
   // routes
   getRouteById: routes.getRouteById,
+
+  // custom routes (the first rides of a custom-route vehicle are recorded)
+  getCurrentCustomRoute: customRoutes.getCurrentCustomRoute,
+  submitCustomRouteRun: customRoutes.submitCustomRouteRun,
+  discardCustomRouteRun: customRoutes.discardCustomRouteRun,
 
   // trips
   getDriverTrips: trips.getDriverTrips,

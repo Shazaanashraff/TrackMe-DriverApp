@@ -9,6 +9,7 @@ import {
   getTrackingTarget,
 } from './locationDispatch';
 import { usableHeading } from '../helpers/locationUtils';
+import { restoreRecording } from './routeRecorder';
 
 export const LOCATION_TASK_NAME = 'trackme-driver-location';
 
@@ -36,6 +37,9 @@ export async function handleBackgroundLocations(locations: TaskLocation[]): Prom
 
   await restoreDispatchState();
   if (!getTrackingTarget()) return;
+  // A custom-route ride in progress when the process was killed picks up again, so
+  // the fixes delivered here still reach its track.
+  await restoreRecording();
 
   if (getConnectionState().status !== 'connected') {
     const token = await AsyncStorage.getItem('token');

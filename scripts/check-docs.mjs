@@ -53,8 +53,8 @@ const MODULES = [
     /^src\/features\/bus-registration\//, /^src\/hooks\/bus\//, /BusRegistrationScreen/,
   ]},
   { doc: 'docs/modules/ROUTE_MANAGEMENT.md', label: 'route-management', match: [
-    /^src\/features\/route-management\//, /^src\/hooks\/routes\//,
-    /RouteManagementScreen/, /CustomRouteRecorder/,
+    /^src\/hooks\/customRoute\//, /routeRecorder/, /CustomRouteCard/, /customRouteMessages/,
+    /^src\/services\/api\/customRoutes\./,
   ]},
   { doc: 'docs/modules/EARNINGS.md', label: 'earnings', match: [
     /^src\/features\/earnings\//, /^src\/hooks\/earnings\//, /DriverEarningsScreen/,

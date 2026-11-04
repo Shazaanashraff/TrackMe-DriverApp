@@ -1,8 +1,12 @@
 import { API_URL } from '../../config';
 import { requestJson } from './transport';
+import { authHeaders } from './authHeaders';
 
-// Public. Full route document (stops + distance + source/destination) for one route.
-// Used by the driver dashboard's trip-progress card. Only resolves PUBLIC routes.
-export async function getRouteById(routeId: string) {
-  return requestJson(`${API_URL}/api/routes/${encodeURIComponent(routeId)}`);
+// Full route document (stops + distance + source/destination) for one route. Public
+// routes resolve for anyone; a custom route (recorded by a driver) only for the
+// people it belongs to, so the signed-in driver's token goes along when there is one.
+export async function getRouteById(routeId: string, token?: string | null) {
+  return requestJson(`${API_URL}/api/routes/${encodeURIComponent(routeId)}`, token
+    ? { headers: authHeaders(token) }
+    : undefined);
 }

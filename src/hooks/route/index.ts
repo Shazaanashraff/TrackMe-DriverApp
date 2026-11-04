@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '../../context/AuthContext';
 import { qk } from '../../lib/queryKeys';
 import api from '../../services/api';
 
@@ -27,11 +28,13 @@ function unwrap<T>(response: unknown): T {
 }
 
 // Route geometry changes rarely, so cache it for a while. Only runs when we have a
-// routeId. A 404 (e.g. a manager's PRIVATE custom route) surfaces as a query error.
+// routeId. A 404 surfaces as a query error.
 export function useRouteDetailsQuery(routeId: string | undefined) {
+  // The token lets a custom route (only readable by its own driver) resolve too.
+  const { token } = useAuth() as { token: string | null };
   return useQuery({
     queryKey: qk.route(routeId ?? ''),
-    queryFn: async () => unwrap<RouteDetails>(await api.getRouteById(routeId as string)),
+    queryFn: async () => unwrap<RouteDetails>(await api.getRouteById(routeId as string, token)),
     enabled: !!routeId,
     staleTime: FIVE_MINUTES,
     retry: false,

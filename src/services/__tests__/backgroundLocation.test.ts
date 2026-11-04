@@ -13,6 +13,12 @@ jest.mock('../locationDispatch', () => ({
   getTrackingTarget: () => mockGetTrackingTarget(),
 }));
 
+const mockRestoreRecording = jest.fn().mockResolvedValue(undefined);
+jest.mock('../routeRecorder', () => ({
+  __esModule: true,
+  restoreRecording: () => mockRestoreRecording(),
+}));
+
 const mockConnectSocket = jest.fn();
 const mockGetConnectionState = jest.fn();
 
@@ -94,6 +100,17 @@ describe('handleBackgroundLocations', () => {
     mockGetTrackingTarget.mockReturnValue(null);
     await handleBackgroundLocations([location(6.9271, 79.8612)]);
     expect(mockDispatchFix).not.toHaveBeenCalled();
+    expect(mockRestoreRecording).not.toHaveBeenCalled();
+  });
+
+  // A custom-route ride in progress when the process was killed must keep collecting
+  // its track from the fixes the OS delivers, and it must be listening before they go out.
+  it('re-attaches a custom-route ride in progress before dispatching the fixes', async () => {
+    const order: string[] = [];
+    mockRestoreRecording.mockImplementationOnce(async () => { order.push('restore'); });
+    mockDispatchFix.mockImplementationOnce(() => { order.push('dispatch'); });
+    await handleBackgroundLocations([location(6.9271, 79.8612, 1000)]);
+    expect(order).toEqual(['restore', 'dispatch']);
   });
 
   it('ignores an empty batch', async () => {
