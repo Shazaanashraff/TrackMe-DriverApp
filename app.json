@@ -64,7 +64,12 @@
           "cameraPermission": "Pingo uses the camera to scan a passenger's QR pass when they board or alight."
         }
       ],
-      "expo-notifications"
+      [
+        "expo-notifications",
+        {
+          "color": "#172033"
+        }
+      ]
     ],
     "extra": {
       "eas": {

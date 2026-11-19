@@ -31,6 +31,8 @@ jest.mock('expo-constants', () => ({ expoConfig: { extra: {} } }));
 jest.mock('expo-notifications', () => ({
   setNotificationHandler: jest.fn(),
   addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  getLastNotificationResponseAsync: jest.fn(() => Promise.resolve(null)),
   addPushTokenListener: jest.fn(() => ({ remove: jest.fn() })),
 }));
 

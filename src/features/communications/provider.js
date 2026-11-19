@@ -29,6 +29,11 @@ export function popupFor(event) {
   const title = isRiderAccountUpdate(event) ? 'Rider update' : ABSENCE_TITLES[event.absenceStatus] || 'New message';
   return { title, body: event.text || '', absence: Boolean(event.absenceStatus) };
 }
+// Where a tapped push goes: the Absences list for an absence change, else the Riders tab.
+export const pushTapParams = (data) => ({ screen: 'Riders', params: data?.absenceStatus ? { tab: 'absences', openedAt: Date.now() } : undefined });
+// The push that launched the app is returned by getLastNotificationResponseAsync on every
+// call; remember it so signing out and back in does not replay the same tap.
+let handledLaunchPush = null;
 const isRiderAccountUpdate = (event) => /^account-(deleted|restored):/.test(String(event?.eventId));
 export function CommunicationProvider({ children }) {
   const { user, token } = useAuth();
@@ -42,6 +47,8 @@ export function CommunicationProvider({ children }) {
   const seen = useRef(new Set());
   const requestRef = useRef(request);
   useEffect(() => { requestRef.current = request; }, [request]);
+  const navigationRef = useRef(navigation);
+  useEffect(() => { navigationRef.current = navigation; }, [navigation]);
   useEffect(() => {
     if (!accountId || !token) { disconnectSocket(); seen.current.clear(); return undefined; }
     const socket = connectSocket(token);
@@ -68,7 +75,7 @@ export function CommunicationProvider({ children }) {
   useEffect(() => { if (!banner) return undefined; const timer = setTimeout(() => setBanner(null), 5000); return () => clearTimeout(timer); }, [banner]);
   useEffect(() => {
     if (Platform.OS === 'web') return undefined;
-    let notifications; let received; let rotation; let foreground; let stopped = false;
+    let notifications; let received; let response; let rotation; let foreground; let tapTimer; let stopped = false;
     // register() runs on mount, every minute and on every return to the foreground. On
     // Android, asking for a permission (even one already granted) opens the system's
     // permission screen, which backgrounds the app; coming back asked again, so the app
@@ -81,7 +88,12 @@ export function CommunicationProvider({ children }) {
       try {
         const projectId = Constants.expoConfig?.extra?.eas?.projectId || Constants.easConfig?.projectId;
         if (!projectId) return;
-        if (Platform.OS === 'android') await notifications.setNotificationChannelAsync('communications', { name: 'Messages and absence changes', importance: notifications.AndroidImportance.HIGH });
+        if (Platform.OS === 'android') {
+          const lockscreenVisibility = notifications.AndroidNotificationVisibility?.PUBLIC;
+          await notifications.setNotificationChannelAsync('communications', { name: 'Messages and absence changes', importance: notifications.AndroidImportance.HIGH, lockscreenVisibility });
+          // App-update notices from the backend use this channel.
+          await notifications.setNotificationChannelAsync('account', { name: 'Account and app updates', importance: notifications.AndroidImportance.DEFAULT, lockscreenVisibility });
+        }
         let permission = await notifications.getPermissionsAsync();
         if (permission.status !== 'granted' && permission.canAskAgain !== false && !asked) {
           asked = true;
@@ -93,6 +105,20 @@ export function CommunicationProvider({ children }) {
         await requestRef.current('/notifications/device-token', 'POST', { token: result.data });
         await AsyncStorage.setItem('communication-push-token', result.data);
       } catch { /* Registration retries on foreground and every minute while signed in. */ }
+    };
+    // Open the screen for a tapped push. When the navigator is not ready yet (a tap that
+    // launched the app from a killed state) retry for about ten seconds.
+    const openTap = data => {
+      if (data?.type !== 'COMMUNICATION') return;
+      let tries = 0;
+      clearInterval(tapTimer);
+      const attempt = () => {
+        const nav = navigationRef.current;
+        if (nav?.isReady?.()) { nav.navigate('MainTabs', pushTapParams(data)); return true; }
+        tries += 1;
+        return tries >= 20;
+      };
+      if (!attempt()) tapTimer = setInterval(() => { if (attempt()) clearInterval(tapTimer); }, 500);
     };
     try {
       notifications = require('expo-notifications');
@@ -106,12 +132,18 @@ export function CommunicationProvider({ children }) {
         const popup = popupFor(data);
         if (popup) setBanner({ ...popup, body: popup.body || n.request.content.body || '' });
       });
+      response = notifications.addNotificationResponseReceivedListener(r => openTap(r.notification.request.content.data));
+      notifications.getLastNotificationResponseAsync?.().then(r => {
+        if (!r || stopped || r.notification.request.identifier === handledLaunchPush) return;
+        handledLaunchPush = r.notification.request.identifier;
+        openTap(r.notification.request.content.data);
+      }).catch(() => {});
       rotation = notifications.addPushTokenListener(register);
       foreground = AppState.addEventListener('change', state => { if (state === 'active') void register(); });
       void register();
     } catch { return undefined; }
     const timer = setInterval(register, 60000);
-    return () => { stopped = true; clearInterval(timer); received?.remove(); rotation?.remove(); foreground?.remove(); };
+    return () => { stopped = true; clearInterval(timer); clearInterval(tapTimer); received?.remove(); response?.remove(); rotation?.remove(); foreground?.remove(); };
   }, [accountId, queryClient]);
   const openBanner = () => {
     if (banner?.absence && navigation?.isReady?.()) navigation.navigate('MainTabs', { screen: 'Riders', params: { tab: 'absences', openedAt: Date.now() } });

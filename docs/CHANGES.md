@@ -22,6 +22,20 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 
 ---
 
+## 2026-11-19 — Push for a backgrounded, locked or killed app: driver app
+- **Branch:** claude/magical-hawking-ea4tzr
+- **Modules touched:** communications ([`docs/modules/COMMUNICATIONS.md`](modules/COMMUNICATIONS.md))
+- **What changed:**
+  - Tapping a driver-update push opens the Absences list (absence change) or the Riders tab; the tap that launches a killed app does too (held until the navigator is ready, not replayed on re-login).
+  - Android channel `account` is created (the backend now sends app-update notices on it); both channels are lock-screen visible.
+  - `app.json`: notification accent colour.
+- **Why:** push for a backgrounded/locked/killed app, matching the passenger app and backend changes of the same day. Before, a tap on a push did nothing.
+- **Tests:** new `provider.pushtap.test.js` (7); two existing provider test mocks extended. Full run 773 passed.
+- **Docs updated:** `docs/modules/COMMUNICATIONS.md`, `docs/TESTING_GUIDE.md`
+- **Follow-ups / known issues:** needs this app's own Firebase app (`com.pingo.driverapp`) with its `google-services.json` as `GOOGLE_SERVICES_FILE`, an FCM V1 key on this Expo project, and APNs for iOS. Verify the cold-start tap on a real device.
+
+---
+
 ## 2026-11-04: Name the stops while recording a custom route
 - **Branch:** main
 - **Modules touched:** route-management ([ROUTE_MANAGEMENT.md](modules/ROUTE_MANAGEMENT.md))
