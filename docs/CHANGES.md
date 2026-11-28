@@ -69,6 +69,30 @@ Feeds [`CHANGELOG.md`](../CHANGELOG.md) at release time — see [`guides/RELEASI
 - **Docs updated:** n/a
 - **Follow-ups / known issues:** upload the `.aab` to Play internal + closed testing by hand (over the 10 MB browser-tool cap); register a matching APK on web-admin `/releases` if wanted.
 
+## 2026-10-23: Closed test drafted in Play Console (driver), docs only
+- **Branch:** main
+- **Modules touched:** release docs only
+- **What changed:** set up the closed-testing track (Sri Lanka, email list "testers", 14 addresses) and drafted release 9 (2.0.0). Play blocks saving/sending it with 2 errors: the location and foreground-service permission declarations. `guides/RELEASING.md` updated.
+- **Why:** production access needs a closed test with 12+ testers for 14 days.
+- **Contract impact:** none.
+- **Tests:** none — docs only.
+- **Docs updated:** `guides/RELEASING.md`
+- **Later the same day:** recorded the background-location demo video on the owner's phone over adb (`play-upload/demo/pingo-driver-background-location-demo.mp4`, 72 s, other notifications redacted) and fixed the driver console's privacy-policy and Data-safety deletion URLs (both were the dead `trackme-privacy` link; now pingo-privacy). Saved, not sent.
+- **Then:** the owner uploaded the video to Google Drive; I pasted the link into the Location permissions and Foreground service permissions declarations (both saved) and staged the closed-test release (errors cleared, not sent).
+- **Then:** the Drive link first returned HTTP 401; after the owner made it "Anyone with the link" I verified it anonymously (200, byte-identical file) and submitted the 14 pending changes (closed-test release, declarations, URLs) for review. Status "Changes in review", quick checks passed.
+- **Follow-ups / known issues:** once Google approves, testers opt in via `https://play.google.com/apps/testing/com.pingo.driverapp` (14 days each, 12+ needed). If Play rejects the Drive URL at review, re-upload to YouTube unlisted and update both declarations. The app briefly went on duty a few times while recording (vehicle NA-2356, ended each time).
+
+## 2026-10-21: Play Console status check, release checklist brought up to date
+- **Branch:** main
+- **Modules touched:** release docs only
+- **What changed:** checked the Play Console and corrected `guides/RELEASING.md`: 2.0.0 (versionCode 9) is live on Internal testing (since 2026-10-20 22:39, "Pingo testers"); category, contact email and tester list are done; 5 phone screenshots are in the store listing; App content shows 2 open declarations (Location permissions, Foreground service permissions); only "Set up your store listing" is left on the dashboard.
+- **Why:** the checklist still listed the tester list, category and screenshots as missing and the `.aab` as a draft.
+- **Contract impact:** none.
+- **Tests:** none — docs only.
+- **Docs updated:** `guides/RELEASING.md`
+- **Later the same day:** saved the default store listing (status "Ready to send for review", not sent).
+- **Follow-ups / known issues:** record the background-location demo video on a real phone (the dev machine has no Android SDK/emulator) and submit both declarations; start the closed test (12+ testers each opted in 14 days continuously).
+
 ## 2026-10-19: Absence strip in two colours
 - **Branch:** feature/absence-strip-colours
 - **Modules touched:** [COMMUNICATIONS](modules/COMMUNICATIONS.md)

@@ -63,9 +63,13 @@ npm run test:e2e:dry     # maestro test --dry-run .maestro
       answers drafted in [`store-assets/PLAY_LISTING.md`](../../store-assets/PLAY_LISTING.md).
 - [x] Signing credentials — EAS generated a keystore for `com.pingo.driverapp` on the first
       production build (2026-10-14). Download + back it up (`eas credentials -p android`).
-- [ ] Phone screenshots (min 2) — none exist yet; capture from a build.
+- [x] Phone screenshots (min 2) — 5 captured 2026-10-20 (source files in
+      `play-upload/screenshots/driver/`, git-ignored) and present in the Play Console store
+      listing (5 / 8).
 - [ ] Record the background-location demo video (script in `PLAY_LISTING.md`) and submit the
       declaration in Play Console — manual, needs a real device build. Expect review time.
+      The forms now exist: App content → "Location permissions" and "Foreground service
+      permissions" are the **2 declarations that need attention** (checked 2026-10-21).
 - [x] `EXPO_PUBLIC_API_URL` in `eas.json`'s `production` profile now matches user-app
       (`https://trackme-backend-jton.onrender.com`, `/health` verified OK 2026-10-14). It
       previously pointed at `bus-tracking-backend.onrender.com`, which is **suspended**
@@ -76,17 +80,64 @@ npm run test:e2e:dry     # maestro test --dry-run .maestro
       Data safety (precise location, name, email, user IDs, device IDs; no crash reporting),
       Advertising ID = no, government / financial / health = no — saved as drafts. Store listing
       text, 512 icon and feature graphic saved as a draft. **Nothing has been sent for review.**
-- [ ] Still to do in Play Console (browser automation became too laggy): store-settings category
-      (Maps & Navigation) + contact email (mohamedshazaan7@gmail.com), the internal-testing tester
-      list, and the **sensitive-permissions declaration** (background location + foreground
-      service) — that form usually only appears after the first `.aab` is uploaded.
-- [x] `build f92f8462…` (versionCode 2) `.aab` is uploaded as a **draft Internal-testing release
-      `2 (1.0.0)`** (seen in Play Console 2026-10-18; track still "Inactive", not rolled out).
-      File at `play-upload/driver/pingo-driverapp-v2.aab` (git-ignored; delete once rolled out).
+- [x] Store-settings category + contact email and the internal-testing tester list "Pingo testers"
+      (1 user) are done (verified in the console 2026-10-21; the old "still to do" list here
+      was stale).
+- [x] **2.0.0 (versionCode 9) is live on Internal testing** (released 2026-10-20 22:39, status
+      "Available to internal testers"). Uploaded by hand from
+      `play-upload/v2.0.0/driver/pingo-driverapp-2.0.0-vc9.aab` (git-ignored). It supersedes the
+      earlier draft `2 (1.0.0)` (`build f92f8462…`); delete
+      `play-upload/driver/pingo-driverapp-v2.aab`.
+- [x] **Play Console state, verified in the console 2026-10-21:** dashboard tasks all done except
+      **"Set up your store listing"** (saved later the same day, below). Nothing has been sent for
+      review; Production is "Inactive".
+- [x] **Default store listing saved 2026-10-21** (Next → Review → Save; AI-asset declaration left
+      at "Don't label assets"). It reads "Ready to send for review" in Publishing overview — it
+      has **not** been sent.
+- [x] **Closed test set up 2026-10-23, staged but NOT sent.** Track "Closed testing - Alpha"
+      (id `4699644338460816233`): country Sri Lanka only, testers = email list "testers"
+      (14 addresses), release `9 (2.0.0)` with en-US notes. The two blocking errors (undeclared
+      location + foreground-service permissions) cleared once both declarations were saved; the
+      Preview step now shows only the harmless missing-deobfuscation-file warning, and the release
+      was saved to Publishing overview. **Submitted for review 2026-10-23** ("Submit 14 changes
+      for review"); status "Changes in review" — Play's quick checks passed and the changes are
+      with Google (reviews are typically under 7 days). Once approved the track goes live and
+      testers use `https://play.google.com/apps/testing/com.pingo.driverapp` to opt in; their 14
+      days start then.
+- [ ] **Closed test before production access** (personal account created after Nov 2023): 12+
+      testers each opted in continuously for the preceding 14 days when you press "Apply for
+      production" (see the passenger app's RELEASING.md for the rule and its source). Internal
+      testing does not count. Start it alongside the passenger app's.
+- [x] **Demo video recorded 2026-10-23** on the owner's Redmi Note 9S (Android 12, USB debugging,
+      2.0.0 versionCode 9 already installed) with `adb shell screenrecord`, driven by a script that
+      only taps verified buttons. File (git-ignored):
+      `play-upload/demo/pingo-driver-background-location-demo.mp4` (72 s, 720x1600). It shows:
+      off-duty screen -> GO -> system location prompt -> in-app disclosure ("Keep sharing when
+      your screen is off") -> Continue -> Android's "Location permission" page -> Allow all the
+      time -> You're live -> the persistent notification ("Pingo is sharing your location") ->
+      home screen while still sharing -> back in the app -> "End this journey?" sheet. Other
+      notifications in the shade are redacted; `take5_raw.mp4` next to it is the UNREDACTED
+      original, do not upload it. Not shown: the vehicle moving on a rider's map (optional per
+      the shot list) and the final "off duty" frame.
+- [x] Video uploaded to Google Drive by the owner (2026-10-23) and the link
+      `https://drive.google.com/file/d/1DETHvZhXwIJvqwbkN2mbBIscS0FI9Jbg/view?usp=sharing` pasted
+      into App content → **Location permissions** (app purpose + feature text + video link) and
+      **Foreground service permissions** (task "User-initiated location sharing" + video link);
+      both saved. The Location form's field says "YouTube video" but accepted the Drive URL.
+- [x] **Drive link is public (verified 2026-10-23).** It first returned HTTP 401 (restricted); after
+      the owner set General access to Anyone with the link → Viewer, an anonymous request returns
+      200 and serves a file byte-identical (same SHA-256) to the redacted local video. If Play
+      rejects a Drive URL at review, re-upload to YouTube (unlisted) and replace the link in both
+      declarations.
+- [x] Driver console privacy-policy URL and Data-safety "Delete account URL" were the dead
+      `trackme-privacy` address; both now point at `https://shazaanashraff.github.io/pingo-privacy/`
+      (fixed 2026-10-23, saved, not yet sent for review).
 - [x] Direct APK `1.0.1` (versionCode 3, `com.pingo.driverapp`, label Pingo) built from the new
       `apk` profile and published as `pingo-driver-1.0.1.apk` on GitHub release `apps-v1.0.1`;
       registered on web-admin `/releases` 2026-10-18 (replaces the TrackMe-named 1.0.0).
-- [ ] Add the Play "App signing key" SHA-1 to Google Cloud if Maps/OAuth keys are used by this app.
+- [x] Play "App signing key" SHA-1 in Google Cloud — done by the owner 2026-10-21 (passenger app;
+      the driver app uses no Google sign-in, and its Maps key restriction should be re-checked
+      if the map is blank in a Play-installed build).
 
 ## Tagging (works today)
 
